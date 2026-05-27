@@ -38,3 +38,19 @@ class ProductCatalogResponse(BaseModel):
     page: int
     limit: int
     pages: int
+
+
+class CustomerCreate(BaseModel):
+    name: str
+    email: str
+    phone: str
+
+
+class CustomerResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    phone: str
+
+    class Config:
+        from_attributes = True
