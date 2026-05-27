@@ -54,3 +54,36 @@ class CustomerResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+from datetime import datetime
+
+
+class OrderItemCreate(BaseModel):
+    product_id: int
+    quantity: int
+
+
+class OrderCreate(BaseModel):
+    customer_id: int
+    items: list[OrderItemCreate]
+
+
+class OrderItemResponse(BaseModel):
+    id: int
+    product_id: int
+    quantity: int
+    product: ProductResponse
+
+    class Config:
+        from_attributes = True
+
+
+class OrderResponse(BaseModel):
+    id: int
+    customer_id: int
+    status: str
+    created_at: datetime
+    items: list[OrderItemResponse]
+
+    class Config:
+        from_attributes = True
