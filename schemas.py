@@ -77,11 +77,11 @@ class OrderItemResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
 class OrderResponse(BaseModel):
     id: int
     customer_id: int
     status: str
+    total_price: float
     created_at: datetime
     items: list[OrderItemResponse]
 

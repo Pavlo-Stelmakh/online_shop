@@ -11,7 +11,6 @@ router = APIRouter(
     tags=["orders"]
 )
 
-
 @router.post("", response_model=OrderResponse)
 def create_order(
     order_data: OrderCreate,
@@ -26,12 +25,15 @@ def create_order(
 
     order = Order(
         customer_id=order_data.customer_id,
-        status="new"
+        status="new",
+        total_price=0
     )
 
     db.add(order)
     db.commit()
     db.refresh(order)
+
+    total_price = 0
 
     for item_data in order_data.items:
         product = db.query(Product).filter(
@@ -44,6 +46,9 @@ def create_order(
                 detail=f"Product with id {item_data.product_id} not found"
             )
 
+        item_total = product.price * item_data.quantity
+        total_price += item_total
+
         order_item = OrderItem(
             order_id=order.id,
             product_id=item_data.product_id,
@@ -51,6 +56,8 @@ def create_order(
         )
 
         db.add(order_item)
+
+    order.total_price = total_price
 
     db.commit()
     db.refresh(order)

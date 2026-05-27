@@ -38,17 +38,19 @@ class Customer(Base):
 
     orders = relationship("Order", back_populates="customer")
 
+
 class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
     customer_id = Column(Integer, ForeignKey("customers.id"))
     status = Column(String, default="new")
+    total_price = Column(Float, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     customer = relationship("Customer", back_populates="orders")
     items = relationship("OrderItem", back_populates="order")
-
+    
 
 class OrderItem(Base):
     __tablename__ = "order_items"
