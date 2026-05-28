@@ -88,3 +88,9 @@ class OrderResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class StatsSummaryResponse(BaseModel):
+    products_count: int
+    customers_count: int
+    orders_count: int
+    total_revenue: float
