@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -71,6 +71,16 @@ def get_orders(db: Session = Depends(get_db)):
     return orders
 
 
+@router.get("/by-status", response_model=list[OrderResponse])
+def get_orders_by_status(
+    status: str = Query(..., pattern="^(new|paid|shipped|cancelled)$"),
+    db: Session = Depends(get_db)
+):
+    orders = db.query(Order).filter(Order.status == status).all()
+
+    return orders
+
+
 @router.get("/{order_id}", response_model=OrderResponse)
 def get_order(
     order_id: int,
@@ -83,11 +93,10 @@ def get_order(
 
     return order
 
-
 @router.put("/{order_id}/status", response_model=OrderResponse)
 def update_order_status(
     order_id: int,
-    status: str,
+    status: str = Query(..., pattern="^(new|paid|shipped|cancelled)$"),
     db: Session = Depends(get_db)
 ):
     order = db.query(Order).filter(Order.id == order_id).first()

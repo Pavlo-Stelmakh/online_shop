@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CategoryCreate(BaseModel):
@@ -57,15 +57,14 @@ class CustomerResponse(BaseModel):
 
 from datetime import datetime
 
-
 class OrderItemCreate(BaseModel):
     product_id: int
-    quantity: int
+    quantity: int = Field(..., ge=1)
 
 
 class OrderCreate(BaseModel):
     customer_id: int
-    items: list[OrderItemCreate]
+    items: list[OrderItemCreate] = Field(..., min_length=1)
 
 
 class OrderItemResponse(BaseModel):

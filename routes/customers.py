@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Customer
-from schemas import CustomerCreate, CustomerResponse
+from models import Customer, Order
+from schemas import CustomerCreate, CustomerResponse, OrderResponse
 
 
 router = APIRouter(
@@ -93,4 +93,20 @@ def delete_customer(
     db.delete(customer)
     db.commit()
 
-    return {"message": "Customer deleted successfully"}
+    return ({"message": "Customer deleted successfully"}
+
+
+@router.get("/{customer_id}/orders", response_model=list[OrderResponse]))
+def get_customer_orders(
+    customer_id: int,
+    db: Session = Depends(get_db)
+):
+    customer = db.query(Customer).filter(Customer.id == customer_id).first()
+
+    if customer is None:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    orders = db.query(Order).filter(Order.customer_id == customer_id).all()
+
+    return orders
+
