@@ -104,6 +104,7 @@ def get_order(
     return order
 
 
+
 @router.put("/{order_id}/status", response_model=OrderResponse)
 def update_order_status(
     order_id: int,
@@ -115,10 +116,23 @@ def update_order_status(
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    if order.status == "cancelled":
+    allowed_transitions = {
+        "new": ["paid", "cancelled"],
+        "paid": ["shipped", "cancelled"],
+        "shipped": [],
+        "cancelled": []
+    }
+
+    if status == order.status:
         raise HTTPException(
             status_code=400,
-            detail="Order is already cancelled"
+            detail=f"Order already has status '{status}'"
+        )
+
+    if status not in allowed_transitions[order.status]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot change order status from '{order.status}' to '{status}'"
         )
 
     if status == "cancelled":
