@@ -21,6 +21,7 @@ class Product(Base):
     name = Column(String, index=True)
     price = Column(Float)
     description = Column(String)
+    stock = Column(Integer, default=0)
 
     category_id = Column(Integer, ForeignKey("categories.id"))
 
@@ -50,7 +51,7 @@ class Order(Base):
 
     customer = relationship("Customer", back_populates="orders")
     items = relationship("OrderItem", back_populates="order")
-    
+
 
 class OrderItem(Base):
     __tablename__ = "order_items"

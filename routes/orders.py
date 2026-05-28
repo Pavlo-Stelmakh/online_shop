@@ -1,3 +1,5 @@
+from itertools import product
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -46,8 +48,16 @@ def create_order(
                 detail=f"Product with id {item_data.product_id} not found"
             )
 
+        if product.stock < item_data.quantity:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Not enough stock for product {product.name}"
+            )
+
         item_total = product.price * item_data.quantity
         total_price += item_total
+
+        product.stock -= item_data.quantity
 
         order_item = OrderItem(
             order_id=order.id,

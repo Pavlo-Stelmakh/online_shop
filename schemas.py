@@ -17,6 +17,7 @@ class ProductCreate(BaseModel):
     name: str
     price: float
     description: str
+    stock: int = Field(..., ge=0)
     category_id: int
 
 
@@ -25,6 +26,7 @@ class ProductResponse(BaseModel):
     name: str
     price: float
     description: str
+    stock: int
     category_id: int
     category: CategoryResponse
 
