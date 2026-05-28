@@ -103,6 +103,7 @@ def get_order(
 
     return order
 
+
 @router.put("/{order_id}/status", response_model=OrderResponse)
 def update_order_status(
     order_id: int,
@@ -113,6 +114,19 @@ def update_order_status(
 
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.status == "cancelled":
+        raise HTTPException(
+            status_code=400,
+            detail="Order is already cancelled"
+        )
+
+    if status == "cancelled":
+        for item in order.items:
+            product = db.query(Product).filter(Product.id == item.product_id).first()
+
+            if product is not None:
+                product.stock += item.quantity
 
     order.status = status
 
