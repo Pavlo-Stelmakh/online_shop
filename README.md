@@ -40,6 +40,8 @@ online_shop/
 ├── models.py
 ├── schemas.py
 ├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
 ├── .gitignore
 ├── README.md
 ├── routes/
@@ -107,6 +109,28 @@ Alternative documentation page:
 
 ```text
 http://127.0.0.1:8000/redoc
+```
+
+## Run with Docker
+
+The project can also be run with Docker.
+
+Build and start the container:
+
+```bash
+docker compose up --build
+```
+
+Open the API documentation:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Stop the container:
+
+```bash
+docker compose down
 ```
 
 ## Database Migrations
