@@ -109,6 +109,71 @@ Alternative documentation page:
 http://127.0.0.1:8000/redoc
 ```
 
+## Database Migrations
+
+This project uses Alembic for database migrations.
+
+Alembic allows changing the database structure without deleting the existing database file.
+
+### Create a New Migration
+
+After changing SQLAlchemy models in `models.py`, create a new migration:
+
+```bash
+alembic revision --autogenerate -m "describe your changes"
+```
+
+Example:
+
+```bash
+alembic revision --autogenerate -m "add product stock"
+```
+
+### Apply Migrations
+
+Apply all pending migrations:
+
+```bash
+alembic upgrade head
+```
+
+This updates the database structure to the latest version.
+
+### Migration Files
+
+Migration files are stored in:
+
+```text
+alembic/versions/
+```
+
+Each migration file describes changes to the database structure.
+
+### Important Notes
+
+Do not delete `shop.db` when changing models.
+
+Use Alembic migrations instead.
+
+Typical workflow:
+
+```text
+1. Change models.py
+2. Create migration
+3. Review migration file
+4. Apply migration
+5. Run tests
+6. Commit changes
+```
+
+Commands:
+
+```bash
+alembic revision --autogenerate -m "migration message"
+alembic upgrade head
+python -m pytest
+```
+
 ## API Endpoints
 
 ### Home
