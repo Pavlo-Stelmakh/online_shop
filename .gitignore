@@ -9,6 +9,7 @@ venv/
 # SQLite database
 *.db
 *.sqlite3
+test_shop.db
 
 # PyCharm settings
 .idea/
