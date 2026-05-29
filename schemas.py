@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class CategoryCreate(BaseModel):
@@ -9,9 +9,7 @@ class CategoryResponse(BaseModel):
     id: int
     name: str
 
-    class Config:
-        from_attributes = True
-
+    model_config = ConfigDict(from_attributes=True)
 
 class ProductCreate(BaseModel):
     name: str
@@ -30,9 +28,7 @@ class ProductResponse(BaseModel):
     category_id: int
     category: CategoryResponse
 
-    class Config:
-        from_attributes = True
-
+    model_config = ConfigDict(from_attributes=True)
 
 class ProductCatalogResponse(BaseModel):
     items: list[ProductResponse]
@@ -54,8 +50,7 @@ class CustomerResponse(BaseModel):
     email: str
     phone: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 from datetime import datetime
 
@@ -75,8 +70,7 @@ class OrderItemResponse(BaseModel):
     quantity: int
     product: ProductResponse
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class OrderResponse(BaseModel):
     id: int
@@ -86,8 +80,7 @@ class OrderResponse(BaseModel):
     created_at: datetime
     items: list[OrderItemResponse]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class StatsSummaryResponse(BaseModel):
     products_count: int
