@@ -1,5 +1,7 @@
 # Online Shop API
 
+![Run API Tests](https://github.com/Pavlo-Stelmakh/online_shop/actions/workflows/tests.yml/badge.svg)
+
 Backend API for a simple online shop built with FastAPI, SQLite, SQLAlchemy and Pytest.
 
 The project demonstrates core backend functionality for an online store: products, categories, customers, orders, stock management, order status rules, statistics and automated API tests.
