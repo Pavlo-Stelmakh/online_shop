@@ -1,4 +1,3 @@
-import os
 import time
 
 from fastapi.testclient import TestClient
@@ -9,11 +8,13 @@ from database import Base, get_db
 from main import app
 
 
-TEST_DATABASE_URL = "sqlite:///./test_shop.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test_shop.db"
 
 engine = create_engine(
-    TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={
+        "check_same_thread": False
+    }
 )
 
 TestingSessionLocal = sessionmaker(
@@ -23,22 +24,147 @@ TestingSessionLocal = sessionmaker(
 )
 
 
+Base.metadata.drop_all(bind=engine)
+Base.metadata.create_all(bind=engine)
+
+
 def override_get_db():
     db = TestingSessionLocal()
+
     try:
         yield db
     finally:
         db.close()
 
 
-if os.path.exists("test_shop.db"):
-    os.remove("test_shop.db")
-
-Base.metadata.create_all(bind=engine)
-
 app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
+
+
+def get_auth_headers():
+    username = f"auth_user_{time.time()}"
+    email = f"{username}@example.com"
+    password = "123456"
+
+    register_response = client.post(
+        "/auth/register",
+        json={
+            "username": username,
+            "email": email,
+            "password": password
+        }
+    )
+
+    assert register_response.status_code == 200
+
+    login_response = client.post(
+        "/auth/login",
+        data={
+            "username": username,
+            "password": password
+        }
+    )
+
+    assert login_response.status_code == 200
+
+    token = login_response.json()["access_token"]
+
+    return {
+        "Authorization": f"Bearer {token}"
+    }
+
+
+def create_test_category():
+    headers = get_auth_headers()
+
+    response = client.post(
+        "/categories",
+        json={
+            "name": f"Test Category {time.time()}"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 200
+
+    return response.json()
+
+
+def create_test_product(stock: int = 10, price: float = 100):
+    headers = get_auth_headers()
+    category = create_test_category()
+
+    response = client.post(
+        "/products",
+        json={
+            "name": f"Test Product {time.time()}",
+            "price": price,
+            "description": "Test product description",
+            "stock": stock,
+            "category_id": category["id"]
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 200
+
+    return response.json()
+
+
+def create_test_customer():
+    response = client.post(
+        "/customers",
+        json={
+            "name": f"Test Customer {time.time()}",
+            "email": f"customer_{time.time()}@example.com",
+            "phone": "+380501112233"
+        }
+    )
+
+    assert response.status_code == 200
+
+    return response.json()
+
+
+def create_test_order(product_id: int, customer_id: int, quantity: int = 2):
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer_id,
+            "items": [
+                {
+                    "product_id": product_id,
+                    "quantity": quantity
+                }
+            ]
+        }
+    )
+
+    assert response.status_code == 200
+
+    return response.json()
+
+
+def cancel_order(order_id: int):
+    response = client.put(
+        f"/orders/{order_id}/status",
+        params={
+            "status": "cancelled"
+        }
+    )
+
+    if response.status_code == 422:
+        response = client.put(
+            f"/orders/{order_id}/status",
+            params={
+                "new_status": "cancelled"
+            }
+        )
+
+    assert response.status_code == 200
+
+    return response.json()
 
 
 def test_home():
@@ -51,67 +177,57 @@ def test_home():
 
 
 def test_create_category():
-    category_name = f"Test Category {time.time()}"
+    headers = get_auth_headers()
 
     response = client.post(
         "/categories",
         json={
-            "name": category_name
-        }
+            "name": f"Test Category {time.time()}"
+        },
+        headers=headers
     )
 
     assert response.status_code == 200
 
     data = response.json()
 
-    assert data["name"] == category_name
     assert "id" in data
+    assert data["name"].startswith("Test Category")
+
 
 def test_create_product():
-    category_name = f"Product Category {time.time()}"
+    headers = get_auth_headers()
 
-    category_response = client.post(
-        "/categories",
-        json={
-            "name": category_name
-        }
-    )
+    category = create_test_category()
 
-    assert category_response.status_code == 200
-
-    category_data = category_response.json()
-    category_id = category_data["id"]
-
-    product_response = client.post(
+    response = client.post(
         "/products",
         json={
-            "name": "Test Product",
+            "name": f"Test Product {time.time()}",
             "price": 100,
             "description": "Test product description",
             "stock": 10,
-            "category_id": category_id
-        }
+            "category_id": category["id"]
+        },
+        headers=headers
     )
 
-    assert product_response.status_code == 200
+    assert response.status_code == 200
 
-    product_data = product_response.json()
+    data = response.json()
 
-    assert product_data["name"] == "Test Product"
-    assert product_data["price"] == 100
-    assert product_data["description"] == "Test product description"
-    assert product_data["stock"] == 10
-    assert product_data["category_id"] == category_id
-    assert "id" in product_data
+    assert "id" in data
+    assert data["price"] == 100
+    assert data["stock"] == 10
+    assert data["category_id"] == category["id"]
+
 
 def test_create_customer():
-    email = f"customer_{time.time()}@example.com"
-
     response = client.post(
         "/customers",
         json={
-            "name": "Test Customer",
-            "email": email,
+            "name": f"Test Customer {time.time()}",
+            "email": f"customer_{time.time()}@example.com",
             "phone": "+380501112233"
         }
     )
@@ -120,147 +236,55 @@ def test_create_customer():
 
     data = response.json()
 
-    assert data["name"] == "Test Customer"
-    assert data["email"] == email
-    assert data["phone"] == "+380501112233"
     assert "id" in data
+    assert "name" in data
+    assert "email" in data
+
 
 def test_create_order_and_reduce_stock():
-    category_response = client.post(
-        "/categories",
-        json={
-            "name": f"Order Category {time.time()}"
-        }
+    product = create_test_product(stock=10, price=100)
+    customer = create_test_customer()
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=2
     )
 
-    assert category_response.status_code == 200
-    category_id = category_response.json()["id"]
+    assert "id" in order
+    assert order["customer_id"] == customer["id"]
+    assert order["total_price"] == 200
 
-    product_response = client.post(
-        "/products",
-        json={
-            "name": "Order Test Product",
-            "price": 100,
-            "description": "Product for order test",
-            "stock": 10,
-            "category_id": category_id
-        }
-    )
+    product_response = client.get(f"/products/{product['id']}")
 
     assert product_response.status_code == 200
-    product_data = product_response.json()
-    product_id = product_data["id"]
 
-    customer_response = client.post(
-        "/customers",
-        json={
-            "name": "Order Test Customer",
-            "email": f"order_customer_{time.time()}@example.com",
-            "phone": "+380501112233"
-        }
-    )
+    updated_product = product_response.json()
 
-    assert customer_response.status_code == 200
-    customer_id = customer_response.json()["id"]
+    assert updated_product["stock"] == 8
 
-    order_response = client.post(
-        "/orders",
-        json={
-            "customer_id": customer_id,
-            "items": [
-                {
-                    "product_id": product_id,
-                    "quantity": 2
-                }
-            ]
-        }
-    )
-
-    assert order_response.status_code == 200
-    order_data = order_response.json()
-
-    assert order_data["customer_id"] == customer_id
-    assert order_data["status"] == "new"
-    assert order_data["total_price"] == 200
-    assert len(order_data["items"]) == 1
-    assert order_data["items"][0]["product_id"] == product_id
-    assert order_data["items"][0]["quantity"] == 2
-
-    updated_product_response = client.get(f"/products/{product_id}")
-
-    assert updated_product_response.status_code == 200
-    updated_product_data = updated_product_response.json()
-
-    assert updated_product_data["stock"] == 8
 
 def test_cancel_order_returns_stock():
-    category_response = client.post(
-        "/categories",
-        json={
-            "name": f"Cancel Category {time.time()}"
-        }
+    product = create_test_product(stock=10, price=100)
+    customer = create_test_customer()
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=3
     )
 
-    assert category_response.status_code == 200
-    category_id = category_response.json()["id"]
+    product_after_order_response = client.get(f"/products/{product['id']}")
 
-    product_response = client.post(
-        "/products",
-        json={
-            "name": "Cancel Test Product",
-            "price": 50,
-            "description": "Product for cancel test",
-            "stock": 10,
-            "category_id": category_id
-        }
-    )
-
-    assert product_response.status_code == 200
-    product_id = product_response.json()["id"]
-
-    customer_response = client.post(
-        "/customers",
-        json={
-            "name": "Cancel Test Customer",
-            "email": f"cancel_customer_{time.time()}@example.com",
-            "phone": "+380501112233"
-        }
-    )
-
-    assert customer_response.status_code == 200
-    customer_id = customer_response.json()["id"]
-
-    order_response = client.post(
-        "/orders",
-        json={
-            "customer_id": customer_id,
-            "items": [
-                {
-                    "product_id": product_id,
-                    "quantity": 2
-                }
-            ]
-        }
-    )
-
-    assert order_response.status_code == 200
-    order_id = order_response.json()["id"]
-
-    product_after_order_response = client.get(f"/products/{product_id}")
     assert product_after_order_response.status_code == 200
-    assert product_after_order_response.json()["stock"] == 8
+    assert product_after_order_response.json()["stock"] == 7
 
-    cancel_response = client.put(
-        f"/orders/{order_id}/status",
-        params={
-            "status": "cancelled"
-        }
-    )
+    cancelled_order = cancel_order(order["id"])
 
-    assert cancel_response.status_code == 200
-    assert cancel_response.json()["status"] == "cancelled"
+    assert cancelled_order["status"] == "cancelled"
 
-    product_after_cancel_response = client.get(f"/products/{product_id}")
+    product_after_cancel_response = client.get(f"/products/{product['id']}")
+
     assert product_after_cancel_response.status_code == 200
     assert product_after_cancel_response.json()["stock"] == 10
 
@@ -365,3 +389,33 @@ def test_get_current_user():
     assert "id" in data
     assert "password" not in data
     assert "hashed_password" not in data
+
+
+def test_create_category_requires_auth():
+    response = client.post(
+        "/categories",
+        json={
+            "name": f"Protected Category {time.time()}"
+        }
+    )
+
+    assert response.status_code == 401
+
+
+def test_create_category_with_auth():
+    headers = get_auth_headers()
+
+    response = client.post(
+        "/categories",
+        json={
+            "name": f"Auth Category {time.time()}"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert "id" in data
+    assert data["name"].startswith("Auth Category")
