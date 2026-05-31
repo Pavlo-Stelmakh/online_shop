@@ -113,23 +113,32 @@ def create_test_product(stock: int = 10, price: float = 100):
     return response.json()
 
 
-def create_test_customer():
+def create_test_customer(headers=None):
+    if headers is None:
+        headers = get_auth_headers(role="customer")
+
     response = client.post(
         "/customers",
         json={
             "name": f"Test Customer {time.time()}",
             "email": f"customer_{time.time()}@example.com",
             "phone": "+380501112233"
-        }
+        },
+        headers=headers
     )
 
     assert response.status_code == 200
 
     return response.json()
 
-
-def create_test_order(product_id: int, customer_id: int, quantity: int = 2):
-    headers = get_auth_headers(role="customer")
+def create_test_order(
+    product_id: int,
+    customer_id: int,
+    quantity: int = 2,
+    headers=None
+):
+    if headers is None:
+        headers = get_auth_headers(role="customer")
 
     response = client.post(
         "/orders",
@@ -228,15 +237,17 @@ def test_create_product():
     assert data["stock"] == 10
     assert data["category_id"] == category["id"]
 
-
 def test_create_customer():
+    headers = get_auth_headers(role="customer")
+
     response = client.post(
         "/customers",
         json={
             "name": f"Test Customer {time.time()}",
             "email": f"customer_{time.time()}@example.com",
             "phone": "+380501112233"
-        }
+        },
+        headers=headers
     )
 
     assert response.status_code == 200
@@ -244,18 +255,21 @@ def test_create_customer():
     data = response.json()
 
     assert "id" in data
+    assert "user_id" in data
     assert "name" in data
     assert "email" in data
 
-
 def test_create_order_and_reduce_stock():
     product = create_test_product(stock=10, price=100)
-    customer = create_test_customer()
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
 
     order = create_test_order(
         product_id=product["id"],
         customer_id=customer["id"],
-        quantity=2
+        quantity=2,
+        headers=customer_headers
     )
 
     assert "id" in order
@@ -270,15 +284,17 @@ def test_create_order_and_reduce_stock():
 
     assert updated_product["stock"] == 8
 
-
 def test_cancel_order_returns_stock():
     product = create_test_product(stock=10, price=100)
-    customer = create_test_customer()
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
 
     order = create_test_order(
         product_id=product["id"],
         customer_id=customer["id"],
-        quantity=3
+        quantity=3,
+        headers=customer_headers
     )
 
     product_after_order_response = client.get(f"/products/{product['id']}")
@@ -599,11 +615,11 @@ def test_create_order_requires_auth():
 
     assert response.status_code == 401
 
-
 def test_customer_can_create_order():
     product = create_test_product(stock=10, price=100)
-    customer = create_test_customer()
-    headers = get_auth_headers(role="customer")
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
 
     response = client.post(
         "/orders",
@@ -616,7 +632,7 @@ def test_customer_can_create_order():
                 }
             ]
         },
-        headers=headers
+        headers=customer_headers
     )
 
     assert response.status_code == 200
@@ -649,48 +665,52 @@ def test_admin_can_get_all_orders():
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
-
 def test_customer_cannot_update_order_status():
     product = create_test_product(stock=10, price=100)
-    customer = create_test_customer()
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
 
     order = create_test_order(
         product_id=product["id"],
         customer_id=customer["id"],
-        quantity=1
+        quantity=1,
+        headers=customer_headers
     )
-
-    headers = get_auth_headers(role="customer")
 
     response = client.put(
         f"/orders/{order['id']}/status",
         params={
             "status": "paid"
         },
-        headers=headers
+        headers=customer_headers
     )
 
     assert response.status_code == 403
     assert response.json()["detail"] == "Admin access required"
 
+    
 def test_admin_can_update_order_status():
     product = create_test_product(stock=10, price=100)
-    customer = create_test_customer()
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
 
     order = create_test_order(
         product_id=product["id"],
         customer_id=customer["id"],
-        quantity=1
+        quantity=1,
+        headers=customer_headers
     )
 
-    headers = get_auth_headers(role="admin")
+    admin_headers = get_auth_headers(role="admin")
 
     response = client.put(
         f"/orders/{order['id']}/status",
         params={
             "status": "paid"
         },
-        headers=headers
+        headers=admin_headers
     )
 
     assert response.status_code == 200

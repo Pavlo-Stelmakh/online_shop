@@ -43,9 +43,9 @@ class CustomerCreate(BaseModel):
     email: str
     phone: str
 
-
 class CustomerResponse(BaseModel):
     id: int
+    user_id: int
     name: str
     email: str
     phone: str

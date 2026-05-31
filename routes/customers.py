@@ -2,32 +2,33 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Customer, Order
+from models import Customer, Order, User
 from schemas import CustomerCreate, CustomerResponse, OrderResponse
-
+from routes.auth import get_current_user, get_admin_user
 
 router = APIRouter(
     prefix="/customers",
     tags=["customers"]
 )
 
-
 @router.post("", response_model=CustomerResponse)
 def create_customer(
     customer_data: CustomerCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     existing_customer = db.query(Customer).filter(
-        Customer.email == customer_data.email
+        Customer.user_id == current_user.id
     ).first()
 
     if existing_customer is not None:
         raise HTTPException(
             status_code=400,
-            detail="Customer with this email already exists"
+            detail="Customer profile already exists for this user"
         )
 
     customer = Customer(
+        user_id=current_user.id,
         name=customer_data.name,
         email=customer_data.email,
         phone=customer_data.phone
@@ -39,9 +40,11 @@ def create_customer(
 
     return customer
 
-
 @router.get("", response_model=list[CustomerResponse])
-def get_customers(db: Session = Depends(get_db)):
+def get_customers(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
     customers = db.query(Customer).all()
     return customers
 
@@ -110,3 +113,20 @@ def get_customer_orders(
 
     return orders
 
+
+@router.get("/me", response_model=CustomerResponse)
+def get_my_customer_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    customer = db.query(Customer).filter(
+        Customer.user_id == current_user.id
+    ).first()
+
+    if customer is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Customer profile not found"
+        )
+
+    return customer

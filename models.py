@@ -28,15 +28,16 @@ class Product(Base):
     category = relationship("Category", back_populates="products")
 
 
-
 class Customer(Base):
     __tablename__ = "customers"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
     phone = Column(String)
 
+    user = relationship("User")
     orders = relationship("Order", back_populates="customer")
 
 

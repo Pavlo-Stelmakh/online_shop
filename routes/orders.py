@@ -25,7 +25,16 @@ def create_order(
     ).first()
 
     if customer is None:
-        raise HTTPException(status_code=404, detail="Customer not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Customer not found"
+        )
+
+    if current_user.role != "admin" and customer.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You can create orders only for your own customer profile"
+        )
 
     order = Order(
         customer_id=order_data.customer_id,
