@@ -419,3 +419,46 @@ def test_create_category_with_auth():
 
     assert "id" in data
     assert data["name"].startswith("Auth Category")
+
+def test_create_product_requires_auth():
+    category = create_test_category()
+
+    response = client.post(
+        "/products",
+        json={
+            "name": f"Protected Product {time.time()}",
+            "price": 100,
+            "description": "Protected product test",
+            "stock": 10,
+            "category_id": category["id"]
+        }
+    )
+
+    assert response.status_code == 401
+
+
+def test_update_product_requires_auth():
+    product = create_test_product()
+
+    response = client.put(
+        f"/products/{product['id']}",
+        json={
+            "name": "Updated Product",
+            "price": 150,
+            "description": "Updated description",
+            "stock": 20,
+            "category_id": product["category_id"]
+        }
+    )
+
+    assert response.status_code == 401
+
+def test_delete_product_requires_auth():
+    product = create_test_product()
+
+    response = client.delete(
+        f"/products/{product['id']}"
+    )
+
+    assert response.status_code == 401
+
