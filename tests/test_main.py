@@ -543,3 +543,33 @@ def test_admin_can_create_product():
     assert data["stock"] == 10
 
 
+def test_customer_cannot_update_product():
+    product = create_test_product()
+    headers = get_auth_headers(role="customer")
+
+    response = client.put(
+        f"/products/{product['id']}",
+        json={
+            "name": "Customer Updated Product",
+            "price": 200,
+            "description": "Customer should not update product",
+            "stock": 20,
+            "category_id": product["category_id"]
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin access required"
+
+def test_customer_cannot_delete_product():
+    product = create_test_product()
+    headers = get_auth_headers(role="customer")
+
+    response = client.delete(
+        f"/products/{product['id']}",
+        headers=headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin access required"
