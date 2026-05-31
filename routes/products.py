@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from database import get_db
-from routes.auth import get_current_user
+from routes.auth import get_admin_user
 from models import Product, Category, User
 from schemas import ProductCreate, ProductResponse, ProductCatalogResponse
 
@@ -17,7 +17,7 @@ router = APIRouter(
 def create_product(
     product_data: ProductCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_admin_user)
 ):
     category = db.query(Category).filter(Category.id == product_data.category_id).first()
 
@@ -188,7 +188,7 @@ def update_product(
     product_id: int,
     product_data: ProductCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_admin_user)
 ):
     product = db.query(Product).filter(Product.id == product_id).first()
 
@@ -216,7 +216,7 @@ def update_product(
 def delete_product(
     product_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_admin_user)
 ):
     product = db.query(Product).filter(Product.id == product_id).first()
 

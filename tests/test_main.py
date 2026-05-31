@@ -42,8 +42,8 @@ app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 
-def get_auth_headers():
-    username = f"auth_user_{time.time()}"
+def get_auth_headers(role: str = "admin"):
+    username = f"{role}_user_{time.time()}"
     email = f"{username}@example.com"
     password = "123456"
 
@@ -52,7 +52,8 @@ def get_auth_headers():
         json={
             "username": username,
             "email": email,
-            "password": password
+            "password": password,
+            "role": role
         }
     )
 
@@ -461,4 +462,39 @@ def test_delete_product_requires_auth():
     )
 
     assert response.status_code == 401
+
+
+def test_customer_cannot_create_category():
+    headers = get_auth_headers(role="customer")
+
+    response = client.post(
+        "/categories",
+        json={
+            "name": f"Customer Forbidden Category {time.time()}"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin access required"
+
+
+def test_admin_can_create_category():
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/categories",
+        json={
+            "name": f"Admin Allowed Category {time.time()}"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert "id" in data
+    assert data["name"].startswith("Admin Allowed Category")
+
 
