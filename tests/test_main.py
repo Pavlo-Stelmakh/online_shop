@@ -498,3 +498,48 @@ def test_admin_can_create_category():
     assert data["name"].startswith("Admin Allowed Category")
 
 
+def test_customer_cannot_create_product():
+    category = create_test_category()
+    headers = get_auth_headers(role="customer")
+
+    response = client.post(
+        "/products",
+        json={
+            "name": f"Customer Forbidden Product {time.time()}",
+            "price": 100,
+            "description": "Customer should not create product",
+            "stock": 10,
+            "category_id": category["id"]
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin access required"
+
+
+def test_admin_can_create_product():
+    category = create_test_category()
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json={
+            "name": f"Admin Allowed Product {time.time()}",
+            "price": 100,
+            "description": "Admin can create product",
+            "stock": 10,
+            "category_id": category["id"]
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert "id" in data
+    assert data["name"].startswith("Admin Allowed Product")
+    assert data["stock"] == 10
+
+
