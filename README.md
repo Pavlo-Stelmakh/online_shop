@@ -326,6 +326,43 @@ Example response:
   "total_revenue": 2400
 }
 ```
+
+## Authentication and Roles
+
+The project includes JWT-based authentication and role-based access control.
+
+### Authentication Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/auth/register` | Register a new user |
+| POST | `/auth/login` | Login and receive JWT access token |
+| GET | `/auth/me` | Get current authenticated user |
+
+### User Roles
+
+The project supports two user roles:
+
+| Role | Description |
+|---|---|
+| `admin` | Can manage categories and products |
+| `customer` | Can view data and create orders |
+
+### Register Admin User
+
+Example request:
+
+```json
+{
+  "username": "admin_user",
+  "email": "admin@example.com",
+  "password": "123456",
+  "role": "admin"
+}
+```
+
+
+
 ## Order Status Rules
 
 Allowed order statuses:
