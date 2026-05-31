@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Order, OrderItem, Customer, Product
+from models import Order, OrderItem, Customer, Product, User
 from schemas import OrderCreate, OrderResponse
+from routes.auth import get_current_user, get_admin_user
 
 
 router = APIRouter(
@@ -16,7 +17,8 @@ router = APIRouter(
 @router.post("", response_model=OrderResponse)
 def create_order(
     order_data: OrderCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     customer = db.query(Customer).filter(
         Customer.id == order_data.customer_id
@@ -74,9 +76,11 @@ def create_order(
 
     return order
 
-
 @router.get("", response_model=list[OrderResponse])
-def get_orders(db: Session = Depends(get_db)):
+def get_orders(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
     orders = db.query(Order).all()
     return orders
 
@@ -94,7 +98,8 @@ def get_orders_by_status(
 @router.get("/{order_id}", response_model=OrderResponse)
 def get_order(
     order_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
 ):
     order = db.query(Order).filter(Order.id == order_id).first()
 
@@ -109,7 +114,8 @@ def get_order(
 def update_order_status(
     order_id: int,
     status: str = Query(..., pattern="^(new|paid|shipped|cancelled)$"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
 ):
     order = db.query(Order).filter(Order.id == order_id).first()
 
@@ -153,7 +159,8 @@ def update_order_status(
 @router.delete("/{order_id}")
 def delete_order(
     order_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
 ):
     order = db.query(Order).filter(Order.id == order_id).first()
 

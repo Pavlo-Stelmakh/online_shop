@@ -129,6 +129,8 @@ def create_test_customer():
 
 
 def create_test_order(product_id: int, customer_id: int, quantity: int = 2):
+    headers = get_auth_headers(role="customer")
+
     response = client.post(
         "/orders",
         json={
@@ -139,20 +141,23 @@ def create_test_order(product_id: int, customer_id: int, quantity: int = 2):
                     "quantity": quantity
                 }
             ]
-        }
+        },
+        headers=headers
     )
 
     assert response.status_code == 200
 
     return response.json()
 
-
 def cancel_order(order_id: int):
+    headers = get_auth_headers(role="admin")
+
     response = client.put(
         f"/orders/{order_id}/status",
         params={
             "status": "cancelled"
-        }
+        },
+        headers=headers
     )
 
     if response.status_code == 422:
@@ -160,7 +165,8 @@ def cancel_order(order_id: int):
             f"/orders/{order_id}/status",
             params={
                 "new_status": "cancelled"
-            }
+            },
+            headers=headers
         )
 
     assert response.status_code == 200
@@ -573,3 +579,122 @@ def test_customer_cannot_delete_product():
 
     assert response.status_code == 403
     assert response.json()["detail"] == "Admin access required"
+
+def test_create_order_requires_auth():
+    product = create_test_product()
+    customer = create_test_customer()
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {
+                    "product_id": product["id"],
+                    "quantity": 1
+                }
+            ]
+        }
+    )
+
+    assert response.status_code == 401
+
+
+def test_customer_can_create_order():
+    product = create_test_product(stock=10, price=100)
+    customer = create_test_customer()
+    headers = get_auth_headers(role="customer")
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {
+                    "product_id": product["id"],
+                    "quantity": 2
+                }
+            ]
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["customer_id"] == customer["id"]
+    assert data["total_price"] == 200
+    assert data["status"] == "new"
+
+def test_customer_cannot_get_all_orders():
+    headers = get_auth_headers(role="customer")
+
+    response = client.get(
+        "/orders",
+        headers=headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin access required"
+
+def test_admin_can_get_all_orders():
+    headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        "/orders",
+        headers=headers
+    )
+
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+def test_customer_cannot_update_order_status():
+    product = create_test_product(stock=10, price=100)
+    customer = create_test_customer()
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1
+    )
+
+    headers = get_auth_headers(role="customer")
+
+    response = client.put(
+        f"/orders/{order['id']}/status",
+        params={
+            "status": "paid"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin access required"
+
+def test_admin_can_update_order_status():
+    product = create_test_product(stock=10, price=100)
+    customer = create_test_customer()
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1
+    )
+
+    headers = get_auth_headers(role="admin")
+
+    response = client.put(
+        f"/orders/{order['id']}/status",
+        params={
+            "status": "paid"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["status"] == "paid"
