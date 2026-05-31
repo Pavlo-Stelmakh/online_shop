@@ -689,7 +689,7 @@ def test_customer_cannot_update_order_status():
     assert response.status_code == 403
     assert response.json()["detail"] == "Admin access required"
 
-    
+
 def test_admin_can_update_order_status():
     product = create_test_product(stock=10, price=100)
 
@@ -718,3 +718,33 @@ def test_admin_can_update_order_status():
     data = response.json()
 
     assert data["status"] == "paid"
+
+
+def test_customer_cannot_create_order_for_another_customer():
+    product = create_test_product(stock=10, price=100)
+
+    customer_1_headers = get_auth_headers(role="customer")
+    customer_1 = create_test_customer(headers=customer_1_headers)
+
+    customer_2_headers = get_auth_headers(role="customer")
+    customer_2 = create_test_customer(headers=customer_2_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer_2["id"],
+            "items": [
+                {
+                    "product_id": product["id"],
+                    "quantity": 1
+                }
+            ]
+        },
+        headers=customer_1_headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == (
+        "You can create orders only for your own customer profile"
+    )
+
