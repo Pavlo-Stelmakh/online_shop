@@ -376,6 +376,22 @@ If the user is authenticated but does not have the admin role, the API returns:
 }
 ```
 
+### Admin-Only Routes
+
+The following routes require an authenticated user with the `admin` role:
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/categories` | Create category |
+| POST | `/products` | Create product |
+| PUT | `/products/{product_id}` | Update product |
+| DELETE | `/products/{product_id}` | Delete product |
+| GET | `/orders` | Get all orders |
+| GET | `/orders/{order_id}` | Get order by ID |
+| PUT | `/orders/{order_id}/status` | Update order status |
+| DELETE | `/orders/{order_id}` | Delete order |
+
+
 ## Roles and Permissions Summary
 
 The project uses role-based access control for protected API endpoints.
@@ -390,6 +406,12 @@ The project uses role-based access control for protected API endpoints.
 | Delete product | Yes | No | No |
 | Create order | Yes | Yes | Yes |
 | View own profile `/auth/me` | Yes | Yes | No |
+| Create order | Yes | Yes | No |
+| View all orders | Yes | No | No |
+| View single order | Yes | No | No |
+| Update order status | Yes | No | No |
+| Delete order | Yes | No | No |
+
 
 ### Access Rules
 
