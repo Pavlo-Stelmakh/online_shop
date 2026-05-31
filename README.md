@@ -361,6 +361,48 @@ Example request:
 }
 ```
 
+If the user is not authenticated, the API returns:
+
+```json
+{
+  "detail": "Not authenticated"
+}
+```
+If the user is authenticated but does not have the admin role, the API returns:
+
+```json
+{
+  "detail": "Admin access required"
+}
+```
+
+## Roles and Permissions Summary
+
+The project uses role-based access control for protected API endpoints.
+
+| Action | Admin | Customer | Not Authenticated |
+|---|---:|---:|---:|
+| View categories | Yes | Yes | Yes |
+| Create category | Yes | No | No |
+| View products | Yes | Yes | Yes |
+| Create product | Yes | No | No |
+| Update product | Yes | No | No |
+| Delete product | Yes | No | No |
+| Create order | Yes | Yes | Yes |
+| View own profile `/auth/me` | Yes | Yes | No |
+
+### Access Rules
+
+Public routes can be used without authentication.
+
+Protected routes require a valid JWT access token.
+
+Admin-only routes require both:
+
+```text
+valid JWT token
+role = admin
+```
 
 
 ## Order Status Rules
