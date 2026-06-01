@@ -93,6 +93,31 @@ pip install -r requirements.txt
 
 ```
 
+## Environment Variables
+
+The project uses environment variables for JWT authentication settings.
+
+Create a `.env` file in the project root:
+
+```env
+SECRET_KEY=your_real_secret_key_here
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+Example values are provided in:
+
+
+```text
+.env.example
+```
+The .env file is ignored by Git and must not be committed to GitHub.
+
+Required environment variables:
+
+| Variable | Description |
+|---|---|
+| `SECRET_KEY` | Secret key used to sign JWT access tokens |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT access token expiration time in minutes |
+
 ## Run the Project
 
 Start the local development server:
