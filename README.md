@@ -142,6 +142,15 @@ http://127.0.0.1:8000/redoc
 
 The project can also be run with Docker.
 
+Before running the project with Docker, create a `.env` file in the project root.
+
+You can use `.env.example` as a template:
+
+```env
+SECRET_KEY=your_real_secret_key_here
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+
 Build and start the container:
 
 ```bash
