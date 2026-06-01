@@ -49,19 +49,6 @@ def get_customers(
     return customers
 
 
-@router.get("/{customer_id}", response_model=CustomerResponse)
-def get_customer(
-    customer_id: int,
-    db: Session = Depends(get_db)
-):
-    customer = db.query(Customer).filter(Customer.id == customer_id).first()
-
-    if customer is None:
-        raise HTTPException(status_code=404, detail="Customer not found")
-
-    return customer
-
-
 @router.put("/{customer_id}", response_model=CustomerResponse)
 def update_customer(
     customer_id: int,
@@ -128,5 +115,18 @@ def get_my_customer_profile(
             status_code=404,
             detail="Customer profile not found"
         )
+
+    return customer
+
+
+@router.get("/{customer_id}", response_model=CustomerResponse)
+def get_customer(
+    customer_id: int,
+    db: Session = Depends(get_db)
+):
+    customer = db.query(Customer).filter(Customer.id == customer_id).first()
+
+    if customer is None:
+        raise HTTPException(status_code=404, detail="Customer not found")
 
     return customer

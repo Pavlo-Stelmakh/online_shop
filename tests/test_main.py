@@ -748,3 +748,37 @@ def test_customer_cannot_create_order_for_another_customer():
         "You can create orders only for your own customer profile"
     )
 
+def test_customer_can_get_own_profile():
+    headers = get_auth_headers(role="customer")
+
+    customer = create_test_customer(headers=headers)
+
+    response = client.get(
+        "/customers/me",
+        headers=headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["id"] == customer["id"]
+    assert data["user_id"] == customer["user_id"]
+    assert data["email"] == customer["email"]
+
+
+def test_customer_me_without_profile_returns_404():
+    headers = get_auth_headers(role="customer")
+
+    response = client.get(
+        "/customers/me",
+        headers=headers
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Customer profile not found"
+
+def test_customer_me_requires_auth():
+    response = client.get("/customers/me")
+
+    assert response.status_code == 401
