@@ -19,3 +19,5 @@ test_shop.db
 
 # Pytest cache
 .pytest_cache/
+
+.env

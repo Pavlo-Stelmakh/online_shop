@@ -1,13 +1,18 @@
+import os
 from datetime import datetime, timedelta, UTC
 
+from dotenv import load_dotenv
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 
+load_dotenv()
 
-SECRET_KEY = "change_this_secret_key"
+
+SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret_key")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
+ACCESS_TOKEN_EXPIRE_MINUTES = int(
+    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
+)
 
 password_context = CryptContext(
     schemes=["bcrypt"],
