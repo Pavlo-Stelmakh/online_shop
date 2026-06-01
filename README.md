@@ -404,13 +404,16 @@ The project uses role-based access control for protected API endpoints.
 | Create product | Yes | No | No |
 | Update product | Yes | No | No |
 | Delete product | Yes | No | No |
-| Create order | Yes | Yes | Yes |
-| View own profile `/auth/me` | Yes | Yes | No |
-| Create order | Yes | Yes | No |
+| Create own customer profile | Yes | Yes | No |
+| View own customer profile `/customers/me` | Yes | Yes | No |
+| Create order for own customer profile | Yes | Yes | No |
+| Create order for another customer profile | Yes | No | No |
 | View all orders | Yes | No | No |
 | View single order | Yes | No | No |
 | Update order status | Yes | No | No |
 | Delete order | Yes | No | No |
+| View own profile `/auth/me` | Yes | Yes | No |
+
 
 
 ### Access Rules
@@ -425,6 +428,88 @@ Admin-only routes require both:
 valid JWT token
 role = admin
 ```
+
+If the user is not authenticated, the API returns:
+
+
+```text
+{
+  "detail": "Not authenticated"
+}
+```
+
+If the user is authenticated but does not have the admin role, the API returns:
+
+
+```text
+{
+  "detail": "Admin access required"
+}
+```
+
+## Customer Ownership Logic
+
+The project links application users to customer profiles.
+
+There are two related entities:
+
+| Entity | Purpose |
+|---|---|
+| `User` | Used for authentication, JWT tokens, and roles |
+| `Customer` | Used as a shop customer profile for orders |
+
+Each customer profile is connected to a user through:
+
+```text
+customers.user_id
+```
+
+### Customer Profile
+
+Authenticated users can create their own customer profile.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/customers` | Create customer profile for current authenticated user |
+| GET | `/customers/me` | Get current user's customer profile |
+
+
+If the authenticated user does not have a customer profile, the API returns:
+
+```text
+{
+  "detail": "Customer profile not found"
+}
+```
+
+
+### Order Ownership Rule
+A customer can create orders only for their own customer profile.
+
+For example, if customer_1 is authenticated, they cannot create an order using the customer_id of customer_2.
+
+If a customer tries to create an order for another customer profile, the API returns:
+
+
+```text
+{
+  "detail": "Customer profile not found"
+}
+```
+
+### Admin Exception
+
+Users with the admin role can manage orders and customer data according to admin-only permissions.
+
+This means:
+
+| Action | Admin | Customer |
+|---|---:|---:|
+| Create order for own customer profile | Yes | Yes |
+| Create order for another customer profile | Yes | No |
+| View all orders | Yes | No |
+| Update order status | Yes | No |
+| Delete order | Yes | No |
 
 
 ## Order Status Rules
@@ -449,7 +534,21 @@ paid → cancelled
 
 shipped → final status
 cancelled → final status
-```
+``## Customer Ownership Logic
+
+The project links application users to customer profiles.
+
+There are two related entities:
+
+| Entity | Purpose |
+|---|---|
+| `User` | Used for authentication, JWT tokens, and roles |
+| `Customer` | Used as a shop customer profile for orders |
+
+Each customer profile is connected to a user through:
+
+```text
+customers.user_id`
 
 Invalid status transitions are rejected by the API.
 
