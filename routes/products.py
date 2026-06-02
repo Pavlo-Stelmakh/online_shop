@@ -38,7 +38,6 @@ def create_product(
 
     return product
 
-
 @router.get("", response_model=list[ProductResponse])
 def get_products(
     skip: int = 0,
@@ -47,6 +46,8 @@ def get_products(
     min_price: float | None = None,
     max_price: float | None = None,
     in_stock: bool | None = None,
+    sort_by: str | None = None,
+    sort_order: str = "asc",
     db: Session = Depends(get_db)
 ):
     query = db.query(Product)
@@ -62,6 +63,32 @@ def get_products(
 
     if in_stock is True:
         query = query.filter(Product.stock > 0)
+
+    allowed_sort_fields = {
+        "name": Product.name,
+        "price": Product.price,
+        "stock": Product.stock,
+        "id": Product.id
+    }
+
+    if sort_by is not None:
+        if sort_by not in allowed_sort_fields:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid sort_by value"
+            )
+
+        sort_column = allowed_sort_fields[sort_by]
+
+        if sort_order == "desc":
+            query = query.order_by(sort_column.desc())
+        elif sort_order == "asc":
+            query = query.order_by(sort_column.asc())
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid sort_order value"
+            )
 
     products = query.offset(skip).limit(limit).all()
 

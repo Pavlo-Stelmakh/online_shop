@@ -908,3 +908,77 @@ def test_get_products_filter_in_stock():
 
     for product in data:
         assert product["stock"] > 0
+
+
+def test_get_products_sort_by_price_asc():
+    create_test_product(stock=10, price=300)
+    create_test_product(stock=10, price=100)
+    create_test_product(stock=10, price=200)
+
+    response = client.get(
+        "/products",
+        params={
+            "sort_by": "price",
+            "sort_order": "asc",
+            "skip": 0,
+            "limit": 20
+        }
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    prices = [product["price"] for product in data]
+
+    assert prices == sorted(prices)
+
+
+def test_get_products_sort_by_price_desc():
+    create_test_product(stock=10, price=300)
+    create_test_product(stock=10, price=100)
+    create_test_product(stock=10, price=200)
+
+    response = client.get(
+        "/products",
+        params={
+            "sort_by": "price",
+            "sort_order": "desc",
+            "skip": 0,
+            "limit": 20
+        }
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    prices = [product["price"] for product in data]
+
+    assert prices == sorted(prices, reverse=True)
+
+
+def test_get_products_invalid_sort_by():
+    response = client.get(
+        "/products",
+        params={
+            "sort_by": "wrong_field",
+            "sort_order": "asc"
+        }
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid sort_by value"
+
+
+def test_get_products_invalid_sort_order():
+    response = client.get(
+        "/products",
+        params={
+            "sort_by": "price",
+            "sort_order": "wrong_order"
+        }
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid sort_order value"
