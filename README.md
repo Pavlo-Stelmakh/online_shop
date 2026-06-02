@@ -265,9 +265,12 @@ Example category:
 ### Products
 
 ```text
-POST /products
-GET /products?skip=0&limit=10
 GET /products
+GET /products?skip=0&limit=10
+GET /products?category_id=1
+GET /products?min_price=100&max_price=500
+GET /products?category_id=1&min_price=100&max_price=500&skip=0&limit=10
+POST /products
 GET /products/{product_id}
 PUT /products/{product_id}
 DELETE /products/{product_id}
@@ -307,6 +310,27 @@ Example:
 ```text
 GET /products?skip=0&limit=10
 ```
+
+### Product Filtering
+
+The products list supports filtering by category and price range.
+
+Available query parameters:
+
+| Parameter | Description | Example |
+|---|---|---|
+| `category_id` | Filter products by category ID | `category_id=1` |
+| `min_price` | Minimum product price | `min_price=100` |
+| `max_price` | Maximum product price | `max_price=500` |
+
+Examples:
+
+```text
+GET /products?category_id=1
+GET /products?min_price=100&max_price=500
+GET /products?category_id=1&min_price=100&max_price=500&skip=0&limit=10
+```
+
 
 ### Customers
 
