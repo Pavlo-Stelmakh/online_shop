@@ -322,13 +322,15 @@ Available query parameters:
 | `category_id` | Filter products by category ID | `category_id=1` |
 | `min_price` | Minimum product price | `min_price=100` |
 | `max_price` | Maximum product price | `max_price=500` |
+| `in_stock` | Return only products with stock greater than 0 | `in_stock=true` |
 
 Examples:
 
 ```text
 GET /products?category_id=1
 GET /products?min_price=100&max_price=500
-GET /products?category_id=1&min_price=100&max_price=500&skip=0&limit=10
+GET /products?in_stock=true
+GET /products?category_id=1&min_price=100&max_price=500&in_stock=true&skip=0&limit=10
 ```
 
 
