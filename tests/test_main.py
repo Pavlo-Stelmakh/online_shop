@@ -782,3 +782,24 @@ def test_customer_me_requires_auth():
     response = client.get("/customers/me")
 
     assert response.status_code == 401
+
+
+def test_get_products_with_pagination():
+    create_test_product(stock=10, price=100)
+    create_test_product(stock=10, price=200)
+    create_test_product(stock=10, price=300)
+
+    response = client.get(
+        "/products",
+        params={
+            "skip": 0,
+            "limit": 2
+        }
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert isinstance(data, list)
+    assert len(data) <= 2
