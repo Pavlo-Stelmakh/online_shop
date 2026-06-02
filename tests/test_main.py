@@ -1020,3 +1020,50 @@ def test_get_products_catalog_response():
 
     prices = [product["price"] for product in data["items"]]
     assert prices == sorted(prices)
+
+
+def test_get_products_invalid_negative_skip():
+    response = client.get(
+        "/products",
+        params={
+            "skip": -1,
+            "limit": 10
+        }
+    )
+
+    assert response.status_code == 422
+
+
+def test_get_products_invalid_limit_zero():
+    response = client.get(
+        "/products",
+        params={
+            "skip": 0,
+            "limit": 0
+        }
+    )
+
+    assert response.status_code == 422
+
+
+def test_get_products_invalid_limit_too_large():
+    response = client.get(
+        "/products",
+        params={
+            "skip": 0,
+            "limit": 101
+        }
+    )
+
+    assert response.status_code == 422
+
+
+def test_get_products_invalid_negative_min_price():
+    response = client.get(
+        "/products",
+        params={
+            "min_price": -1
+        }
+    )
+
+    assert response.status_code == 422

@@ -90,11 +90,11 @@ def create_product(
 
 @router.get("", response_model=list[ProductResponse])
 def get_products(
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     category_id: int | None = None,
-    min_price: float | None = None,
-    max_price: float | None = None,
+    min_price: float | None = Query(None, ge=0),
+    max_price: float | None = Query(None, ge=0),
     in_stock: bool | None = None,
     sort_by: str | None = None,
     sort_order: str = "asc",
@@ -218,11 +218,11 @@ def get_catalog_products_with_pages(
 
 @router.get("/catalog", response_model=ProductCatalogResponse)
 def get_products_catalog(
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     category_id: int | None = None,
-    min_price: float | None = None,
-    max_price: float | None = None,
+    min_price: float | None = Query(None, ge=0),
+    max_price: float | None = Query(None, ge=0),
     in_stock: bool | None = None,
     sort_by: str | None = None,
     sort_order: str = "asc",
