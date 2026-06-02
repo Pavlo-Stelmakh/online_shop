@@ -269,7 +269,9 @@ GET /products
 GET /products?skip=0&limit=10
 GET /products?category_id=1
 GET /products?min_price=100&max_price=500
-GET /products?category_id=1&min_price=100&max_price=500&skip=0&limit=10
+GET /products?in_stock=true
+GET /products?sort_by=price&sort_order=asc
+GET /products?category_id=1&min_price=100&max_price=500&in_stock=true&sort_by=price&sort_order=asc&skip=0&limit=10
 POST /products
 GET /products/{product_id}
 PUT /products/{product_id}
@@ -331,6 +333,43 @@ GET /products?category_id=1
 GET /products?min_price=100&max_price=500
 GET /products?in_stock=true
 GET /products?category_id=1&min_price=100&max_price=500&in_stock=true&skip=0&limit=10
+```
+
+### Product Sorting
+
+The products list supports sorting by selected fields.
+
+Available query parameters:
+
+| Parameter | Description | Allowed values | Default |
+|---|---|---|---|
+| `sort_by` | Field used for sorting | `id`, `name`, `price`, `stock` | None |
+| `sort_order` | Sorting direction | `asc`, `desc` | `asc` |
+
+Examples:
+
+```text
+GET /products?sort_by=price&sort_order=asc
+GET /products?sort_by=price&sort_order=desc
+GET /products?sort_by=name&sort_order=asc
+GET /products?sort_by=stock&sort_order=desc
+GET /products?category_id=1&min_price=100&max_price=500&in_stock=true&sort_by=price&sort_order=asc&skip=0&limit=10
+```
+
+Invalid sorting fields return an error:
+
+```json
+{
+  "detail": "Invalid sort_by value"
+}
+```
+
+Invalid sorting order values return an error:
+
+```json
+{
+  "detail": "Invalid sort_order value"
+}
 ```
 
 
