@@ -281,6 +281,7 @@ GET /products/filter
 GET /products/sort
 GET /products/limited
 GET /products/catalog
+GET /products/catalog?category_id=1&min_price=100&max_price=500&in_stock=true&sort_by=price&sort_order=asc&skip=0&limit=10
 GET /products/catalog/pages
 ```
 
@@ -370,6 +371,56 @@ Invalid sorting order values return an error:
 {
   "detail": "Invalid sort_order value"
 }
+```
+
+
+### Product Catalog Response
+
+The project provides an extended product catalog endpoint:
+
+```text
+GET /products/catalog
+```
+
+Unlike `GET /products`, this endpoint returns pagination metadata together with product items.
+
+Response example:
+
+```json
+{
+  "total": 25,
+  "skip": 0,
+  "limit": 10,
+  "items": [
+    {
+      "id": 1,
+      "name": "MacBook Air",
+      "price": 1200,
+      "description": "Apple laptop",
+      "stock": 5,
+      "category_id": 1
+    }
+  ]
+}
+```
+
+The catalog endpoint supports the same query parameters as `GET /products`:
+
+| Parameter | Description |
+|---|---|
+| `skip` | Number of products to skip |
+| `limit` | Maximum number of products to return |
+| `category_id` | Filter products by category ID |
+| `min_price` | Minimum product price |
+| `max_price` | Maximum product price |
+| `in_stock` | Return only products with stock greater than 0 |
+| `sort_by` | Sort field: `id`, `name`, `price`, `stock` |
+| `sort_order` | Sort direction: `asc`, `desc` |
+
+Example:
+
+```text
+GET /products/catalog?category_id=1&min_price=100&max_price=500&in_stock=true&sort_by=price&sort_order=asc&skip=0&limit=10
 ```
 
 
