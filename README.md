@@ -266,6 +266,7 @@ Example category:
 
 ```text
 POST /products
+GET /products?skip=0&limit=10
 GET /products
 GET /products/{product_id}
 PUT /products/{product_id}
@@ -290,6 +291,21 @@ Example product:
   "stock": 5,
   "category_id": 1
 }
+```
+
+### Product Pagination
+
+The products list supports pagination using query parameters:
+
+| Parameter | Description | Default |
+|---|---|---:|
+| `skip` | Number of products to skip | `0` |
+| `limit` | Maximum number of products to return | `10` |
+
+Example:
+
+```text
+GET /products?skip=0&limit=10
 ```
 
 ### Customers
