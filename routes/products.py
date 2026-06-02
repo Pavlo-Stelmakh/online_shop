@@ -44,12 +44,20 @@ def get_products(
     skip: int = 0,
     limit: int = 10,
     category_id: int | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
     db: Session = Depends(get_db)
 ):
     query = db.query(Product)
 
     if category_id is not None:
         query = query.filter(Product.category_id == category_id)
+
+    if min_price is not None:
+        query = query.filter(Product.price >= min_price)
+
+    if max_price is not None:
+        query = query.filter(Product.price <= max_price)
 
     products = query.offset(skip).limit(limit).all()
 

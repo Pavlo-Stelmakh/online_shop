@@ -857,3 +857,30 @@ def test_get_products_filter_by_category():
 
     for product in data:
         assert product["category_id"] == category_1["id"]
+
+
+def test_get_products_filter_by_price():
+    create_test_product(stock=10, price=100)
+    create_test_product(stock=10, price=300)
+    create_test_product(stock=10, price=700)
+
+    response = client.get(
+        "/products",
+        params={
+            "min_price": 100,
+            "max_price": 500,
+            "skip": 0,
+            "limit": 20
+        }
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert isinstance(data, list)
+    assert len(data) >= 1
+
+    for product in data:
+        assert product["price"] >= 100
+        assert product["price"] <= 500
