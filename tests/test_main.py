@@ -982,3 +982,41 @@ def test_get_products_invalid_sort_order():
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid sort_order value"
+
+
+def test_get_products_catalog_response():
+    create_test_product(stock=10, price=300)
+    create_test_product(stock=10, price=100)
+    create_test_product(stock=0, price=200)
+
+    response = client.get(
+        "/products/catalog",
+        params={
+            "skip": 0,
+            "limit": 2,
+            "in_stock": True,
+            "sort_by": "price",
+            "sort_order": "asc"
+        }
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert "total" in data
+    assert "skip" in data
+    assert "limit" in data
+    assert "items" in data
+
+    assert data["skip"] == 0
+    assert data["limit"] == 2
+    assert isinstance(data["total"], int)
+    assert isinstance(data["items"], list)
+    assert len(data["items"]) <= 2
+
+    for product in data["items"]:
+        assert product["stock"] > 0
+
+    prices = [product["price"] for product in data["items"]]
+    assert prices == sorted(prices)

@@ -107,3 +107,10 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str
 
+
+class ProductCatalogResponse(BaseModel):
+    total: int
+    skip: int
+    limit: int
+    items: list[ProductResponse]
+

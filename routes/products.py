@@ -13,6 +13,56 @@ router = APIRouter(
 )
 
 
+def apply_product_filters(
+    query,
+    category_id: int | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    in_stock: bool | None = None,
+    sort_by: str | None = None,
+    sort_order: str = "asc"
+):
+    if category_id is not None:
+        query = query.filter(Product.category_id == category_id)
+
+    if min_price is not None:
+        query = query.filter(Product.price >= min_price)
+
+    if max_price is not None:
+        query = query.filter(Product.price <= max_price)
+
+    if in_stock is True:
+        query = query.filter(Product.stock > 0)
+
+    allowed_sort_fields = {
+        "id": Product.id,
+        "name": Product.name,
+        "price": Product.price,
+        "stock": Product.stock
+    }
+
+    if sort_by is not None:
+        if sort_by not in allowed_sort_fields:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid sort_by value"
+            )
+
+        sort_column = allowed_sort_fields[sort_by]
+
+        if sort_order == "asc":
+            query = query.order_by(sort_column.asc())
+        elif sort_order == "desc":
+            query = query.order_by(sort_column.desc())
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid sort_order value"
+            )
+
+    return query
+
+
 @router.post("", response_model=ProductResponse)
 def create_product(
     product_data: ProductCreate,
@@ -52,47 +102,20 @@ def get_products(
 ):
     query = db.query(Product)
 
-    if category_id is not None:
-        query = query.filter(Product.category_id == category_id)
-
-    if min_price is not None:
-        query = query.filter(Product.price >= min_price)
-
-    if max_price is not None:
-        query = query.filter(Product.price <= max_price)
-
-    if in_stock is True:
-        query = query.filter(Product.stock > 0)
-
-    allowed_sort_fields = {
-        "name": Product.name,
-        "price": Product.price,
-        "stock": Product.stock,
-        "id": Product.id
-    }
-
-    if sort_by is not None:
-        if sort_by not in allowed_sort_fields:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid sort_by value"
-            )
-
-        sort_column = allowed_sort_fields[sort_by]
-
-        if sort_order == "desc":
-            query = query.order_by(sort_column.desc())
-        elif sort_order == "asc":
-            query = query.order_by(sort_column.asc())
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid sort_order value"
-            )
+    query = apply_product_filters(
+        query=query,
+        category_id=category_id,
+        min_price=min_price,
+        max_price=max_price,
+        in_stock=in_stock,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
 
     products = query.offset(skip).limit(limit).all()
 
     return products
+
 
 
 @router.get("/search", response_model=list[ProductResponse])
@@ -151,36 +174,6 @@ def get_limited_products(
     return products
 
 
-@router.get("/catalog", response_model=list[ProductResponse])
-def get_catalog_products(
-    search: str | None = None,
-    min_price: float | None = None,
-    max_price: float | None = None,
-    order: str = Query("asc", pattern="^(asc|desc)$"),
-    limit: int = Query(10, ge=1, le=100),
-    db: Session = Depends(get_db)
-):
-    query = db.query(Product)
-
-    if search is not None:
-        query = query.filter(Product.name.ilike(f"%{search}%"))
-
-    if min_price is not None:
-        query = query.filter(Product.price >= min_price)
-
-    if max_price is not None:
-        query = query.filter(Product.price <= max_price)
-
-    if order == "desc":
-        query = query.order_by(Product.price.desc())
-    else:
-        query = query.order_by(Product.price.asc())
-
-    products = query.limit(limit).all()
-
-    return products
-
-
 @router.get("/catalog/pages", response_model=ProductCatalogResponse)
 def get_catalog_products_with_pages(
     search: str | None = None,
@@ -220,6 +213,42 @@ def get_catalog_products_with_pages(
         "page": page,
         "limit": limit,
         "pages": pages
+    }
+
+
+@router.get("/catalog", response_model=ProductCatalogResponse)
+def get_products_catalog(
+    skip: int = 0,
+    limit: int = 10,
+    category_id: int | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    in_stock: bool | None = None,
+    sort_by: str | None = None,
+    sort_order: str = "asc",
+    db: Session = Depends(get_db)
+):
+    query = db.query(Product)
+
+    query = apply_product_filters(
+        query=query,
+        category_id=category_id,
+        min_price=min_price,
+        max_price=max_price,
+        in_stock=in_stock,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
+
+    total = query.count()
+
+    products = query.offset(skip).limit(limit).all()
+
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "items": products
     }
 
 
