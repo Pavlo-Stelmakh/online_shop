@@ -884,3 +884,27 @@ def test_get_products_filter_by_price():
     for product in data:
         assert product["price"] >= 100
         assert product["price"] <= 500
+
+
+def test_get_products_filter_in_stock():
+    create_test_product(stock=10, price=100)
+    create_test_product(stock=0, price=200)
+
+    response = client.get(
+        "/products",
+        params={
+            "in_stock": True,
+            "skip": 0,
+            "limit": 20
+        }
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert isinstance(data, list)
+    assert len(data) >= 1
+
+    for product in data:
+        assert product["stock"] > 0

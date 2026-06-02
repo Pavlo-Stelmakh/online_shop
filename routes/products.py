@@ -46,6 +46,7 @@ def get_products(
     category_id: int | None = None,
     min_price: float | None = None,
     max_price: float | None = None,
+    in_stock: bool | None = None,
     db: Session = Depends(get_db)
 ):
     query = db.query(Product)
@@ -58,6 +59,9 @@ def get_products(
 
     if max_price is not None:
         query = query.filter(Product.price <= max_price)
+
+    if in_stock is True:
+        query = query.filter(Product.stock > 0)
 
     products = query.offset(skip).limit(limit).all()
 
