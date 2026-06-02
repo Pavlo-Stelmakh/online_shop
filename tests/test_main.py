@@ -803,3 +803,57 @@ def test_get_products_with_pagination():
 
     assert isinstance(data, list)
     assert len(data) <= 2
+
+
+def test_get_products_filter_by_category():
+    category_1 = create_test_category()
+    category_2 = create_test_category()
+
+    headers = get_auth_headers(role="admin")
+
+    product_1_response = client.post(
+        "/products",
+        json={
+            "name": f"Category One Product {time.time()}",
+            "price": 100,
+            "description": "Product in category 1",
+            "stock": 10,
+            "category_id": category_1["id"]
+        },
+        headers=headers
+    )
+
+    assert product_1_response.status_code == 200
+
+    product_2_response = client.post(
+        "/products",
+        json={
+            "name": f"Category Two Product {time.time()}",
+            "price": 200,
+            "description": "Product in category 2",
+            "stock": 10,
+            "category_id": category_2["id"]
+        },
+        headers=headers
+    )
+
+    assert product_2_response.status_code == 200
+
+    response = client.get(
+        "/products",
+        params={
+            "category_id": category_1["id"],
+            "skip": 0,
+            "limit": 10
+        }
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert isinstance(data, list)
+    assert len(data) >= 1
+
+    for product in data:
+        assert product["category_id"] == category_1["id"]

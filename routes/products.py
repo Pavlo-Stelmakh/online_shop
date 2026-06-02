@@ -38,13 +38,21 @@ def create_product(
 
     return product
 
+
 @router.get("", response_model=list[ProductResponse])
 def get_products(
     skip: int = 0,
     limit: int = 10,
+    category_id: int | None = None,
     db: Session = Depends(get_db)
 ):
-    products = db.query(Product).offset(skip).limit(limit).all()
+    query = db.query(Product)
+
+    if category_id is not None:
+        query = query.filter(Product.category_id == category_id)
+
+    products = query.offset(skip).limit(limit).all()
+
     return products
 
 
