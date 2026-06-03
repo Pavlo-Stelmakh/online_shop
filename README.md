@@ -261,6 +261,22 @@ GET /
 
 Returns a simple message confirming that the API is running.
 
+
+### Health Check
+
+The project includes a health check endpoint that can be used for deployment checks and monitoring.
+
+```text
+GET /health
+```
+Response:
+
+```text
+{
+  "status": "ok"
+}
+```
+
 ### Categories
 
 ```text
@@ -546,6 +562,9 @@ Example response:
   "total_revenue": 2400
 }
 ```
+
+
+
 
 ## Authentication and Roles
 
