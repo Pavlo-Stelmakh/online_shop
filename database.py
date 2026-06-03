@@ -1,11 +1,26 @@
+import os
+
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = "sqlite:///./shop.db"
+
+load_dotenv()
+
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    SQLALCHEMY_DATABASE_URL = DATABASE_URL
+    connect_args = {}
+else:
+    SQLALCHEMY_DATABASE_URL = "sqlite:///./shop.db"
+    connect_args = {"check_same_thread": False}
+
 
 engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL,
+    connect_args=connect_args
 )
 
 SessionLocal = sessionmaker(
