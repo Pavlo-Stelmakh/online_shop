@@ -6,6 +6,23 @@ Backend API for a simple online shop built with FastAPI, SQLite, SQLAlchemy and 
 
 The project demonstrates core backend functionality for an online store: products, categories, customers, orders, stock management, order status rules, statistics and automated API tests.
 
+## Project Features
+
+- FastAPI backend for an online shop
+- SQLite database with SQLAlchemy ORM
+- Alembic database migrations
+- JWT authentication
+- Role-based access control: `admin` and `customer`
+- User-to-customer ownership logic
+- Protected admin routes for products, categories and orders
+- Product catalog with pagination, filtering, sorting and metadata response
+- Order status management with stock return on cancellation
+- Environment variables via `.env`
+- Docker and Docker Compose support
+- Automated tests with pytest
+- GitHub Actions CI workflow
+
+
 ## Tech Stack
 
 - Python
