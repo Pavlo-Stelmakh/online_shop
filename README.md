@@ -314,6 +314,43 @@ Example:
 GET /products?skip=0&limit=10
 ```
 
+
+### Product Query Parameter Validation
+
+Product list endpoints validate query parameters.
+
+Validation rules:
+
+| Parameter | Rule |
+|---|---|
+| `skip` | Must be greater than or equal to `0` |
+| `limit` | Must be between `1` and `100` |
+| `min_price` | Must be greater than or equal to `0` |
+| `max_price` | Must be greater than or equal to `0` |
+
+These rules apply to:
+
+```text
+GET /products
+GET /products/catalog
+```
+
+Invalid query parameters return:
+
+```json
+{
+  "detail": [
+    {
+      "type": "...",
+      "loc": ["query", "limit"],
+      "msg": "...",
+      "input": "..."
+    }
+  ]
+}
+```
+
+
 ### Product Filtering
 
 The products list supports filtering by category and price range.
