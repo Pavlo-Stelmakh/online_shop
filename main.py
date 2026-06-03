@@ -16,6 +16,10 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 app.include_router(categories_router)
 app.include_router(products_router)
 app.include_router(customers_router)
