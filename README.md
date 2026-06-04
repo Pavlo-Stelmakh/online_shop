@@ -23,6 +23,41 @@ The project demonstrates core backend functionality for an online store: product
 - GitHub Actions CI workflow
 
 
+## Deployment
+
+The project is deployed on Render.
+
+Production API:
+
+```text
+https://online-shop-api-z9y4.onrender.com
+```
+
+Swagger documentation:
+
+```text
+https://online-shop-api-z9y4.onrender.com/docs
+```
+
+Health check:
+
+```text
+https://online-shop-api-z9y4.onrender.com/health
+```
+
+The deployed version uses Render PostgreSQL through the `DATABASE_URL` environment variable.
+
+Deployment stack:
+
+| Component | Service |
+|---|---|
+| API hosting | Render Web Service |
+| Database | Render PostgreSQL |
+| Runtime | Python 3 |
+| Start command | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
+| Build command | `pip install -r requirements.txt && alembic upgrade head` |
+
+
 ## Tech Stack
 
 - Python
