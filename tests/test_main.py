@@ -200,7 +200,9 @@ def test_home():
 
     assert response.status_code == 200
     assert response.json() == {
-        "message": "Online shop API with SQLite is working"
+        "message": "Online Shop API is running",
+        "docs": "/docs",
+        "health": "/health"
     }
 
 
@@ -1104,3 +1106,4 @@ def test_register_user_cannot_create_admin():
     data = response.json()
 
     assert data["role"] == "customer"
+
