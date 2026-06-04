@@ -304,7 +304,39 @@ Required environment variables:
 | `SECRET_KEY` | Secret key used to sign JWT access tokens |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT access token expiration time in minutes |
 
+
+## Admin Seed Script
+
+Public registration always creates users with the `customer` role.
+
+Admin users are created separately using the seed script:
+
+```bash
+python seed_admin.py
+```
+
+The script reads admin credentials from environment variables:
+
+| Variable | Description |
+|---|---|
+| `ADMIN_USERNAME` | Admin username |
+| `ADMIN_EMAIL` | Admin email |
+| `ADMIN_PASSWORD` | Admin password |
+
+Example `.env` values:
+
+```env
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=change_this_admin_password
+```
+
+If the admin user does not exist, the script creates it.  
+If the admin user already exists, the script updates the email, password and role.
+
+
 ## Run the Project
+
 
 Start the local development server:
 
