@@ -6,6 +6,8 @@ from sqlalchemy.orm import sessionmaker
 
 from database import Base, get_db
 from main import app
+from models import User
+
 
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_shop.db"
@@ -41,7 +43,6 @@ app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
 
-
 def get_auth_headers(role: str = "admin"):
     username = f"{role}_user_{time.time()}"
     email = f"{username}@example.com"
@@ -52,12 +53,24 @@ def get_auth_headers(role: str = "admin"):
         json={
             "username": username,
             "email": email,
-            "password": password,
-            "role": role
+            "password": password
         }
     )
 
     assert register_response.status_code == 200
+
+    if role == "admin":
+        db = TestingSessionLocal()
+
+        try:
+            user = db.query(User).filter(
+                User.username == username
+            ).first()
+
+            user.role = "admin"
+            db.commit()
+        finally:
+            db.close()
 
     login_response = client.post(
         "/auth/login",
@@ -74,7 +87,6 @@ def get_auth_headers(role: str = "admin"):
     return {
         "Authorization": f"Bearer {token}"
     }
-
 
 def create_test_category():
     headers = get_auth_headers()
@@ -1074,3 +1086,21 @@ def test_health_check():
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_register_user_cannot_create_admin():
+    response = client.post(
+        "/auth/register",
+        json={
+            "username": f"not_admin_{time.time()}",
+            "email": f"not_admin_{time.time()}@example.com",
+            "password": "123456",
+            "role": "admin"
+        }
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["role"] == "customer"

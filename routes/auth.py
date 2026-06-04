@@ -83,12 +83,12 @@ def register_user(
             status_code=400,
             detail="Email already exists"
         )
-
+    
     user = User(
         username=user_data.username,
         email=user_data.email,
         hashed_password=hash_password(user_data.password),
-        role = user_data.role
+        role="customer"
     )
 
     db.add(user)
