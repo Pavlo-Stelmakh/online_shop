@@ -58,6 +58,27 @@ Deployment stack:
 | Build command | `pip install -r requirements.txt && alembic upgrade head` |
 
 
+### Deployment Status
+
+The deployed API was tested successfully on Render.
+
+Verified production features:
+
+- Health check endpoint
+- Swagger documentation
+- Admin registration and authorization
+- Customer registration and authorization
+- Category creation by admin
+- Product creation by admin
+- Product catalog with filtering, sorting and pagination
+- Customer profile creation
+- Order creation by customer
+- Product stock reduction after order creation
+- Admin access to orders
+- Order status update by admin
+- PostgreSQL data persistence after redeploy
+
+
 ## How to Test in Swagger
 
 Open the deployed Swagger documentation:
