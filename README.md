@@ -13,6 +13,7 @@ The project demonstrates core backend functionality for an online store: product
 - Alembic database migrations
 - JWT authentication
 - Role-based access control: `admin` and `customer`
+- Secure user registration: public registration always creates `customer` users
 - User-to-customer ownership logic
 - Protected admin routes for products, categories and orders
 - Product catalog with pagination, filtering, sorting and metadata response
@@ -68,6 +69,8 @@ Verified production features:
 - Swagger documentation
 - Admin registration and authorization
 - Customer registration and authorization
+- Admin self-registration prevention
+- Customer cannot access admin-only routes
 - Category creation by admin
 - Product creation by admin
 - Product catalog with filtering, sorting and pagination
