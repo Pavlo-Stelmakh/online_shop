@@ -58,6 +58,116 @@ Deployment stack:
 | Build command | `pip install -r requirements.txt && alembic upgrade head` |
 
 
+## How to Test in Swagger
+
+Open the deployed Swagger documentation:
+
+```text
+https://online-shop-api-z9y4.onrender.com/docs
+```
+
+### 1. Create an admin user
+
+Use:
+
+```text
+POST /auth/register
+```
+
+Example request body:
+
+```json
+{
+  "username": "admin_demo",
+  "email": "admin_demo@example.com",
+  "password": "123456",
+  "role": "admin"
+}
+```
+
+### 2. Authorize in Swagger
+
+Click the **Authorize** button in Swagger.
+
+Use:
+
+```text
+username: admin_demo
+password: 123456
+```
+
+Leave `client_id` and `client_secret` empty.
+
+### 3. Test admin-only endpoints
+
+After authorization, the admin user can create categories and products.
+
+Example category endpoint:
+
+```text
+POST /categories
+```
+
+Example product endpoint:
+
+```text
+POST /products
+```
+
+### 4. Create a customer user
+
+Use:
+
+```text
+POST /auth/register
+```
+
+Example request body:
+
+```json
+{
+  "username": "customer_demo",
+  "email": "customer_demo@example.com",
+  "password": "123456",
+  "role": "customer"
+}
+```
+
+Then authorize as `customer_demo`.
+
+### 5. Create customer profile
+
+Use:
+
+```text
+POST /customers
+```
+
+Example request body:
+
+```json
+{
+  "name": "Demo Customer",
+  "email": "customer_demo@example.com",
+  "phone": "+380501112233"
+}
+```
+
+### 6. Test product catalog
+
+Use:
+
+```text
+GET /products/catalog
+```
+
+Example query:
+
+```text
+GET /products/catalog?skip=0&limit=10&sort_by=id&sort_order=asc
+```
+
+
 ## Tech Stack
 
 - Python
