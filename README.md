@@ -18,6 +18,7 @@ The project demonstrates core backend functionality for an online store: product
 - Protected admin routes for products, categories and orders
 - Product catalog with pagination, filtering, sorting and metadata response
 - Product image URL support
+- Admin-only low stock products endpoint
 - Order status management with stock return on cancellation
 - Environment variables via `.env`
 - Docker and Docker Compose support
@@ -527,6 +528,7 @@ POST /products
 GET /products/{product_id}
 PUT /products/{product_id}
 DELETE /products/{product_id}
+GET /products/low-stock?threshold=5
 GET /products/search
 GET /products/filter
 GET /products/sort
@@ -550,6 +552,30 @@ Example product:
   "category_id": 1
 }
 ```
+
+### Products
+
+```text
+POST /products
+GET /products
+GET /products/{product_id}
+PUT /products/{product_id}
+DELETE /products/{product_id}
+GET /products/low-stock?threshold=5
+```
+
+Products include name, price, description, optional image URL, stock and category.
+
+#### Low Stock Products
+
+```text
+GET /products/low-stock?threshold=5
+```
+
+Returns products where stock is less than or equal to the provided threshold.
+
+This endpoint is available only for admin users.
+
 
 ### Product Pagination
 
