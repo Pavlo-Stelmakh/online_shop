@@ -1173,3 +1173,68 @@ def test_create_product_without_image_url():
     data = product_response.json()
 
     assert data["image_url"] is None
+
+
+def test_admin_can_get_low_stock_products():
+    create_test_product(stock=2, price=100)
+    create_test_product(stock=10, price=200)
+
+    headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        "/products/low-stock",
+        params={
+            "threshold": 5
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert isinstance(data, list)
+    assert len(data) >= 1
+
+    for product in data:
+        assert product["stock"] <= 5
+
+
+def test_customer_cannot_get_low_stock_products():
+    headers = get_auth_headers(role="customer")
+
+    response = client.get(
+        "/products/low-stock",
+        params={
+            "threshold": 5
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin access required"
+
+
+def test_low_stock_requires_auth():
+    response = client.get(
+        "/products/low-stock",
+        params={
+            "threshold": 5
+        }
+    )
+
+    assert response.status_code == 401
+
+
+def test_low_stock_invalid_negative_threshold():
+    headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        "/products/low-stock",
+        params={
+            "threshold": -1
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 422
