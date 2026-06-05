@@ -95,24 +95,25 @@ Open the deployed Swagger documentation:
 https://online-shop-api-z9y4.onrender.com/docs
 ```
 
-### 1. Create an admin user
+### 1. Create or update an admin user
 
-Use:
+Admin users are not created through public registration.
 
-```text
-POST /auth/register
+Use the admin seed script:
+
+```bash
+python seed_admin.py
 ```
 
-Example request body:
+The script uses these environment variables:
 
-```json
-{
-  "username": "admin_demo",
-  "email": "admin_demo@example.com",
-  "password": "123456",
-  "role": "admin"
-}
+```env
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=change_this_admin_password
 ```
+
+On Render, these values are configured in the Web Service environment variables.
 
 ### 2. Authorize in Swagger
 
@@ -121,8 +122,8 @@ Click the **Authorize** button in Swagger.
 Use:
 
 ```text
-username: admin_demo
-password: 123456
+username: your ADMIN_USERNAME
+password: your ADMIN_PASSWORD
 ```
 
 Leave `client_id` and `client_secret` empty.
@@ -157,8 +158,7 @@ Example request body:
 {
   "username": "customer_demo",
   "email": "customer_demo@example.com",
-  "password": "123456",
-  "role": "customer"
+  "password": "123456"
 }
 ```
 
