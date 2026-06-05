@@ -1107,3 +1107,69 @@ def test_register_user_cannot_create_admin():
 
     assert data["role"] == "customer"
 
+def test_create_product_with_image_url():
+    headers = get_auth_headers(role="admin")
+
+    category_response = client.post(
+        "/categories",
+        json={
+            "name": f"Image Category {time.time()}"
+        },
+        headers=headers
+    )
+
+    assert category_response.status_code == 200
+
+    category_id = category_response.json()["id"]
+
+    product_response = client.post(
+        "/products",
+        json={
+            "name": f"Image Product {time.time()}",
+            "price": 100,
+            "description": "Product with image URL",
+            "image_url": "https://example.com/product-image.jpg",
+            "stock": 5,
+            "category_id": category_id
+        },
+        headers=headers
+    )
+
+    assert product_response.status_code == 200
+
+    data = product_response.json()
+
+    assert data["image_url"] == "https://example.com/product-image.jpg"
+
+def test_create_product_without_image_url():
+    headers = get_auth_headers(role="admin")
+
+    category_response = client.post(
+        "/categories",
+        json={
+            "name": f"No Image Category {time.time()}"
+        },
+        headers=headers
+    )
+
+    assert category_response.status_code == 200
+
+    category_id = category_response.json()["id"]
+
+    product_response = client.post(
+        "/products",
+        json={
+            "name": f"No Image Product {time.time()}",
+            "price": 150,
+            "description": "Product without image URL",
+            "stock": 3,
+            "category_id": category_id
+        },
+        headers=headers
+    )
+
+    assert product_response.status_code == 200
+
+    data = product_response.json()
+
+    assert data["image_url"] is None

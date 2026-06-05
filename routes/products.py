@@ -78,6 +78,7 @@ def create_product(
         name=product_data.name,
         price=product_data.price,
         description=product_data.description,
+        image_url=product_data.image_url,
         stock=product_data.stock,
         category_id=product_data.category_id
     )
@@ -282,6 +283,7 @@ def update_product(
     product.name = product_data.name
     product.price = product_data.price
     product.description = product_data.description
+    product.image_url = product_data.image_url
     product.stock = product_data.stock
     product.category_id = product_data.category_id
 
