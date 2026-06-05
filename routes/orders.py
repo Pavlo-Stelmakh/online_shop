@@ -104,6 +104,28 @@ def get_orders_by_status(
     return orders
 
 
+@router.get("/my", response_model=list[OrderResponse])
+def get_my_orders(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    customer = db.query(Customer).filter(
+        Customer.user_id == current_user.id
+    ).first()
+
+    if customer is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Customer profile not found"
+        )
+
+    orders = db.query(Order).filter(
+        Order.customer_id == customer.id
+    ).all()
+
+    return orders
+
+
 @router.get("/{order_id}", response_model=OrderResponse)
 def get_order(
     order_id: int,
