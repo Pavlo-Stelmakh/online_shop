@@ -17,6 +17,7 @@ The project demonstrates core backend functionality for an online store: product
 - User-to-customer ownership logic
 - Protected admin routes for products, categories and orders
 - Product catalog with pagination, filtering, sorting and metadata response
+- Product image URL support
 - Order status management with stock return on cancellation
 - Environment variables via `.env`
 - Docker and Docker Compose support
@@ -535,7 +536,7 @@ GET /products/catalog?category_id=1&min_price=100&max_price=500&in_stock=true&so
 GET /products/catalog/pages
 ```
 
-Products include name, price, description, stock and category.
+Products include name, price, description, optional image URL, stock and category.
 
 Example product:
 
@@ -544,6 +545,7 @@ Example product:
   "name": "MacBook Air",
   "price": 1200,
   "description": "Apple laptop",
+  "image_url": "https://example.com/macbook-air.jpg",
   "stock": 5,
   "category_id": 1
 }
@@ -683,7 +685,8 @@ Response example:
       "id": 1,
       "name": "MacBook Air",
       "price": 1200,
-      "description": "Apple laptop",
+      "description": "Apple laptop", 
+      "image_url": "https://example.com/macbook-air.jpg",
       "stock": 5,
       "category_id": 1
     }
