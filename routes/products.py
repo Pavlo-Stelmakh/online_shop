@@ -253,6 +253,19 @@ def get_products_catalog(
     }
 
 
+@router.get("/low-stock", response_model=list[ProductResponse])
+def get_low_stock_products(
+    threshold: int = Query(5, ge=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    products = db.query(Product).filter(
+        Product.stock <= threshold
+    ).all()
+
+    return products
+
+
 @router.get("/{product_id}", response_model=ProductResponse)
 def get_product(product_id: int, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id).first()
