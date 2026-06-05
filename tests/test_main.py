@@ -1238,3 +1238,98 @@ def test_low_stock_invalid_negative_threshold():
     )
 
     assert response.status_code == 422
+
+
+def test_customer_can_get_own_orders():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=2,
+        headers=customer_headers
+    )
+
+    response = client.get(
+        "/orders/my",
+        headers=customer_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert isinstance(data, list)
+    assert len(data) >= 1
+
+    order_ids = [item["id"] for item in data]
+
+    assert order["id"] in order_ids
+
+    for item in data:
+        assert item["customer_id"] == customer["id"]
+
+
+def test_customer_cannot_get_other_customer_orders_in_my_orders():
+    product_1 = create_test_product(stock=10, price=100)
+    product_2 = create_test_product(stock=10, price=200)
+
+    customer_1_headers = get_auth_headers(role="customer")
+    customer_1 = create_test_customer(headers=customer_1_headers)
+
+    customer_2_headers = get_auth_headers(role="customer")
+    customer_2 = create_test_customer(headers=customer_2_headers)
+
+    order_1 = create_test_order(
+        product_id=product_1["id"],
+        customer_id=customer_1["id"],
+        quantity=1,
+        headers=customer_1_headers
+    )
+
+    order_2 = create_test_order(
+        product_id=product_2["id"],
+        customer_id=customer_2["id"],
+        quantity=1,
+        headers=customer_2_headers
+    )
+
+    response = client.get(
+        "/orders/my",
+        headers=customer_1_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    order_ids = [item["id"] for item in data]
+
+    assert order_1["id"] in order_ids
+    assert order_2["id"] not in order_ids
+
+    for item in data:
+        assert item["customer_id"] == customer_1["id"]
+
+
+def test_my_orders_requires_auth():
+    response = client.get("/orders/my")
+
+    assert response.status_code == 401
+
+
+def test_my_orders_without_customer_profile_returns_404():
+    headers = get_auth_headers(role="customer")
+
+    response = client.get(
+        "/orders/my",
+        headers=headers
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Customer profile not found"
+
+
