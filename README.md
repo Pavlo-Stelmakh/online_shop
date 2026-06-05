@@ -2,7 +2,7 @@
 
 ![Run API Tests](https://github.com/Pavlo-Stelmakh/online_shop/actions/workflows/tests.yml/badge.svg)
 
-Backend API for a simple online shop built with FastAPI, SQLite, SQLAlchemy and Pytest.
+Backend API for a simple online shop built with FastAPI, SQLAlchemy, SQLite for local development, PostgreSQL for production deployment, and Pytest.
 
 The project demonstrates core backend functionality for an online store: products, categories, customers, orders, stock management, order status rules, statistics and automated API tests.
 
@@ -196,17 +196,20 @@ Example query:
 GET /products/catalog?skip=0&limit=10&sort_by=id&sort_order=asc
 ```
 
-
 ## Tech Stack
 
 - Python
 - FastAPI
-- SQLite
 - SQLAlchemy
 - Pydantic
+- SQLite for local development
+- PostgreSQL for production deployment on Render
+- Alembic
 - Pytest
 - HTTPX
 - Uvicorn
+- Docker and Docker Compose
+- GitHub Actions
 
 ## Features
 
@@ -1175,42 +1178,48 @@ The project includes automated API tests.
 Tests check the main business logic of the application:
 
 ```text
-home endpoint
+home and health endpoints
+authentication and JWT login
+secure public registration
+role-based access control
 category creation
 product creation
-customer creation
+product filtering, sorting and pagination
+customer profile creation
+customer ownership logic
 order creation
 stock reduction after order creation
 stock return after order cancellation
+order status validation
+admin-only route protection
 ```
-
 Run tests:
 
 ```bash
 python -m pytest
 ```
-
 Expected result:
 
 ```text
-6 passed
+All tests passed
 ```
+Current test suite includes more than 40 automated API tests covering authentication, roles, products, categories, customers, orders, stock logic, order status rules, deployment endpoints and security behavior.
 
 The tests use a separate SQLite database:
 
 ```text
 test_shop.db
 ```
-
-The main application uses:
+Local development uses SQLite by default:
 
 ```text
 shop.db
 ```
+Production deployment uses PostgreSQL through the DATABASE_URL environment variable.
 
-Both database files are ignored by Git.
+Database files are ignored by Git.
 
-This means tests do not affect the main application database.
+This means tests do not affect the local development database or the production PostgreSQL database.
 
 ## Git Ignore
 
@@ -1336,97 +1345,27 @@ Update README
 
 Use short and clear commit messages that explain what was changed.
 
+
 ## Current Project Status
 
-Implemented features:
+The project is a deployed portfolio-ready backend API for an online shop.
+
+Current production status:
 
 ```text
-FastAPI application structure
-SQLite database connection
-SQLAlchemy models
-Pydantic schemas
-Route-based project structure
-Product API
-Category API
-Customer API
-Order API
-Order items
-Product stock management
-Order total price calculation
-Order cancellation logic
-Order status validation
-Order status transition rules
-Shop statistics endpoint
-Automated API tests
-Separate test database
-Git and GitHub setup
-README documentation
-```
-
-Current entities:
-
-```text
-Category
-Product
-Customer
-Order
-OrderItem
-```
-
-Current route files:
-
-```text
-routes/categories.py
-routes/products.py
-routes/customers.py
-routes/orders.py
-routes/stats.py
-```
-
-Current database files:
-
-```text
-shop.db       — main local application database
-test_shop.db  — separate database for automated tests
-```
-
-Both database files are ignored by Git.
-
-Current test coverage:
-
-```text
-home endpoint
-category creation
-product creation
-customer creation
-order creation
-stock reduction after order creation
-stock return after order cancellation
-```
-
-Current project status:
-
-```text
-The project is functional as a local backend API for a simple online shop.
-It can be run locally, tested automatically and stored on GitHub.
-```
-
-
-
-
-## Future Improvements
-
-Possible next steps:
-
-- Add user authentication
-- Add admin/user roles
-- Add Alembic database migrations
-- Add Docker support
-- Add frontend interface
-- Add pagination for customers and orders
-- Add product images
-- Add order history with detailed customer information
-- Add CI testing with GitHub Actions
+FastAPI application deployed on Render
+Render PostgreSQL connected through DATABASE_URL
+JWT authentication implemented
+Public registration creates customer users only
+Admin users are managed through seed_admin.py
+Role-based access control implemented
+Product catalog supports pagination, filtering and sorting
+Order creation reduces product stock
+Order cancellation returns product stock
+Admin users can manage categories, products and orders
+Customer users can create orders only for their own customer profile
+Automated tests are configured with pytest
+GitHub Actions CI workflow is configured
 
 
 ## Future Improvements
