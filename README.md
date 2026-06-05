@@ -45,6 +45,11 @@ Health check:
 ```text
 https://online-shop-api-z9y4.onrender.com/health
 ```
+Root endpoint:
+
+```text
+https://online-shop-api-z9y4.onrender.com/
+```
 
 The deployed version uses Render PostgreSQL through the `DATABASE_URL` environment variable.
 
@@ -459,9 +464,17 @@ python -m pytest
 ```text
 GET /
 ```
+Returns a simple response confirming that the API is running and provides quick links to documentation and health check.
 
-Returns a simple message confirming that the API is running.
+Response:
 
+```json
+{
+  "message": "Online Shop API is running",
+  "docs": "/docs",
+  "health": "/health"
+}
+```
 
 ### Health Check
 
