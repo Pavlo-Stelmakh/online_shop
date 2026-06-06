@@ -85,12 +85,28 @@ def create_order(
 
     return order
 
+
 @router.get("", response_model=list[OrderResponse])
 def get_orders(
+    status: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
-    orders = db.query(Order).all()
+    allowed_statuses = ["new", "paid", "shipped", "cancelled"]
+
+    query = db.query(Order)
+
+    if status is not None:
+        if status not in allowed_statuses:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid order status"
+            )
+
+        query = query.filter(Order.status == status)
+
+    orders = query.all()
+
     return orders
 
 
