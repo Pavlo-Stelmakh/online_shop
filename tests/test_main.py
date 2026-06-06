@@ -1333,3 +1333,106 @@ def test_my_orders_without_customer_profile_returns_404():
     assert response.json()["detail"] == "Customer profile not found"
 
 
+def test_customer_can_get_own_order_by_id():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    response = client.get(
+        f"/orders/{order['id']}",
+        headers=customer_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["id"] == order["id"]
+    assert data["customer_id"] == customer["id"]
+
+
+def test_customer_cannot_get_other_customer_order_by_id():
+    product_1 = create_test_product(stock=10, price=100)
+    product_2 = create_test_product(stock=10, price=200)
+
+    customer_1_headers = get_auth_headers(role="customer")
+    customer_1 = create_test_customer(headers=customer_1_headers)
+
+    customer_2_headers = get_auth_headers(role="customer")
+    customer_2 = create_test_customer(headers=customer_2_headers)
+
+    create_test_order(
+        product_id=product_1["id"],
+        customer_id=customer_1["id"],
+        quantity=1,
+        headers=customer_1_headers
+    )
+
+    order_2 = create_test_order(
+        product_id=product_2["id"],
+        customer_id=customer_2["id"],
+        quantity=1,
+        headers=customer_2_headers
+    )
+
+    response = client.get(
+        f"/orders/{order_2['id']}",
+        headers=customer_1_headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Access denied"
+
+
+def test_admin_can_get_any_order_by_id():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        f"/orders/{order['id']}",
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["id"] == order["id"]
+
+
+def test_get_order_by_id_requires_auth():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    response = client.get(f"/orders/{order['id']}")
+
+    assert response.status_code == 401
+

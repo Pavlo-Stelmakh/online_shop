@@ -130,12 +130,34 @@ def get_my_orders(
 def get_order(
     order_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_admin_user)
+    current_user: User = Depends(get_current_user)
 ):
     order = db.query(Order).filter(Order.id == order_id).first()
 
     if order is None:
-        raise HTTPException(status_code=404, detail="Order not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found"
+        )
+
+    if current_user.role == "admin":
+        return order
+
+    customer = db.query(Customer).filter(
+        Customer.user_id == current_user.id
+    ).first()
+
+    if customer is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Customer profile not found"
+        )
+
+    if order.customer_id != customer.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
 
     return order
 
