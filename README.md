@@ -21,6 +21,7 @@ The project demonstrates core backend functionality for an online store: product
 - Admin-only low stock products endpoint
 - Order status management with stock return on cancellation
 - Customer order history endpoint
+- Protected single order access by customer ownership
 - Environment variables via `.env`
 - Docker and Docker Compose support
 - Automated tests with pytest
@@ -774,6 +775,29 @@ GET /orders/{order_id}
 PUT /orders/{order_id}/status
 DELETE /orders/{order_id}
 GET /orders/by-status
+```
+
+
+#### Single Order Access Rules
+
+```text
+GET /orders/{order_id}
+```
+
+Access rules:
+
+| User | Access |
+|---|---|
+| Admin | Can view any order |
+| Customer | Can view only own orders |
+| Not authenticated | Cannot access |
+
+If a customer tries to access another customer's order, the API returns:
+
+```json
+{
+  "detail": "Access denied"
+}
 ```
 
 Orders contain one or more order items.
