@@ -20,6 +20,7 @@ The project demonstrates core backend functionality for an online store: product
 - Product image URL support
 - Admin-only low stock products endpoint
 - Order status management with stock return on cancellation
+- Customer order history endpoint
 - Environment variables via `.env`
 - Docker and Docker Compose support
 - Automated tests with pytest
@@ -768,6 +769,7 @@ Example customer:
 ```text
 POST /orders
 GET /orders
+GET /orders/my
 GET /orders/{order_id}
 PUT /orders/{order_id}/status
 DELETE /orders/{order_id}
@@ -789,6 +791,18 @@ Example order:
   ]
 }
 ```
+
+
+#### Customer Order History
+
+```text
+GET /orders/my
+```
+
+Returns orders that belong to the currently authenticated customer.
+
+This endpoint requires customer authentication and returns only the current user's own orders.
+
 
 ### Statistics
 
