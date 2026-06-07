@@ -22,6 +22,7 @@ The project demonstrates core backend functionality for an online store: product
 - Admin order filtering by status
 - Admin order filtering by customer
 - Admin order filtering by date range
+- Admin order pagination
 - Order status management with stock return on cancellation
 - Customer order history endpoint
 - Protected single order access by customer ownership
@@ -773,6 +774,7 @@ Example customer:
 ```text
 POST /orders
 GET /orders
+GET /orders?skip=0&limit=10
 GET /orders?status=new
 GET /orders?customer_id=2
 GET /orders?status=new&customer_id=2
@@ -852,6 +854,29 @@ YYYY-MM-DD
 
 Invalid date format returns validation error `422`.
 
+
+#### Order Pagination
+
+```text
+GET /orders?skip=0&limit=10
+```
+
+Admin users can paginate the orders list.
+
+Pagination parameters:
+
+| Parameter | Description |
+|---|---|
+| `skip` | Number of orders to skip |
+| `limit` | Maximum number of orders to return |
+
+Validation rules:
+
+```text
+skip >= 0
+1 <= limit <= 100
+```
+Orders are returned newest first.
 
 #### Customer Order History
 
