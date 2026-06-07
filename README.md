@@ -21,6 +21,7 @@ The project demonstrates core backend functionality for an online store: product
 - Admin-only low stock products endpoint
 - Admin order filtering by status
 - Admin order filtering by customer
+- Admin order filtering by date range
 - Order status management with stock return on cancellation
 - Customer order history endpoint
 - Protected single order access by customer ownership
@@ -775,6 +776,9 @@ GET /orders
 GET /orders?status=new
 GET /orders?customer_id=2
 GET /orders?status=new&customer_id=2
+GET /orders?date_from=2026-06-01
+GET /orders?date_to=2026-06-30
+GET /orders?status=new&customer_id=2&date_from=2026-06-01&date_to=2026-06-30
 GET /orders/my
 GET /orders/{order_id}
 PUT /orders/{order_id}/status
@@ -827,6 +831,40 @@ GET /orders?customer_id=2
 GET /orders?status=new&customer_id=2
 ```
 
+#### Order Date Filtering
+
+```text
+GET /orders?date_from=2026-06-01
+GET /orders?date_to=2026-06-30
+GET /orders?date_from=2026-06-01&date_to=2026-06-30
+GET /orders?status=new&customer_id=2&date_from=2026-06-01&date_to=2026-06-30
+```
+
+Admin users can filter orders by creation date.
+
+Date filters can be combined with status and customer filters.
+
+Date format:
+
+```text
+YYYY-MM-DD
+```
+
+Invalid date format returns validation error `422`.
+
+
+#### Customer Order History
+
+```text
+GET /orders/my
+```
+
+Returns orders that belong to the currently authenticated customer.
+
+This endpoint requires customer authentication and returns only the current user's own orders.
+
+
+
 #### Single Order Access Rules
 
 ```text
@@ -864,17 +902,6 @@ Example order:
   ]
 }
 ```
-
-
-#### Customer Order History
-
-```text
-GET /orders/my
-```
-
-Returns orders that belong to the currently authenticated customer.
-
-This endpoint requires customer authentication and returns only the current user's own orders.
 
 
 ### Statistics
