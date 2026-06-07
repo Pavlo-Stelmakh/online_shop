@@ -677,7 +677,15 @@ def test_admin_can_get_all_orders():
     )
 
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+
+    body = response.json()
+
+    assert "total" in body
+    assert "skip" in body
+    assert "limit" in body
+    assert "items" in body
+    assert isinstance(body["items"], list)
+
 
 def test_customer_cannot_update_order_status():
     product = create_test_product(stock=10, price=100)
@@ -1480,7 +1488,8 @@ def test_admin_can_filter_orders_by_status():
 
     assert response.status_code == 200
 
-    data = response.json()
+    body = response.json()
+    data = body["items"]
 
     order_ids = [order["id"] for order in data]
 
@@ -1526,7 +1535,8 @@ def test_admin_can_filter_paid_orders():
 
     assert response.status_code == 200
 
-    data = response.json()
+    body = response.json()
+    data = body["items"]
 
     order_ids = [item["id"] for item in data]
 
@@ -1602,7 +1612,8 @@ def test_admin_can_filter_orders_by_customer_id():
 
     assert response.status_code == 200
 
-    data = response.json()
+    body = response.json()
+    data = body["items"]
 
     order_ids = [order["id"] for order in data]
 
@@ -1657,7 +1668,8 @@ def test_admin_can_filter_orders_by_status_and_customer_id():
 
     assert response.status_code == 200
 
-    data = response.json()
+    body = response.json()
+    data = body["items"]
 
     order_ids = [order["id"] for order in data]
 
@@ -1681,7 +1693,11 @@ def test_admin_filter_orders_by_unknown_customer_id_returns_empty_list():
     )
 
     assert response.status_code == 200
-    assert response.json() == []
+
+    body = response.json()
+
+    assert body["items"] == []
+    assert body["total"] == 0
 
 
 def test_customer_cannot_filter_orders_by_customer_id():
@@ -1726,7 +1742,9 @@ def test_admin_can_filter_orders_by_date_from():
 
     assert response.status_code == 200
 
-    data = response.json()
+    body = response.json()
+    data = body["items"]
+
     order_ids = [item["id"] for item in data]
 
     assert order["id"] in order_ids
@@ -1759,7 +1777,9 @@ def test_admin_can_filter_orders_by_date_to():
 
     assert response.status_code == 200
 
-    data = response.json()
+    body = response.json()
+    data = body["items"]
+
     order_ids = [item["id"] for item in data]
 
     assert order["id"] in order_ids
@@ -1795,7 +1815,9 @@ def test_admin_can_filter_orders_by_status_customer_and_date_range():
 
     assert response.status_code == 200
 
-    data = response.json()
+    body = response.json()
+    data = body["items"]
+
     order_ids = [item["id"] for item in data]
 
     assert order["id"] in order_ids
@@ -1862,8 +1884,11 @@ def test_admin_can_get_orders_with_pagination():
 
     assert response.status_code == 200
 
-    data = response.json()
+    body = response.json()
+    data = body["items"]
 
+    assert body["skip"] == 0
+    assert body["limit"] == 2
     assert isinstance(data, list)
     assert len(data) <= 2
 
@@ -1920,9 +1945,12 @@ def test_admin_can_filter_orders_by_status_with_pagination():
     )
 
     assert response.status_code == 200
+    
+    body = response.json()
+    data = body["items"]
 
-    data = response.json()
-
+    assert body["skip"] == 0
+    assert body["limit"] == 2
     assert isinstance(data, list)
     assert len(data) <= 2
 
