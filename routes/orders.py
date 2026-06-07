@@ -51,13 +51,13 @@ def create_order(
     )
 
     db.add(order)
-    db.commit()
-    db.refresh(order)
+    db.flush()
 
     total_price = 0
 
     for item_data in order_data.items:
         if item_data.quantity <= 0:
+            db.rollback()
             raise HTTPException(
                 status_code=400,
                 detail="Invalid quantity"
@@ -68,12 +68,14 @@ def create_order(
         ).first()
 
         if product is None:
+            db.rollback()
             raise HTTPException(
                 status_code=404,
                 detail=f"Product with id {item_data.product_id} not found"
             )
 
         if product.stock < item_data.quantity:
+            db.rollback()
             raise HTTPException(
                 status_code=400,
                 detail=f"Not enough stock for product {product.name}"
