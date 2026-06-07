@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CategoryCreate(BaseModel):
@@ -58,12 +58,12 @@ from datetime import datetime
 
 class OrderItemCreate(BaseModel):
     product_id: int
-    quantity: int = Field(..., ge=1)
+    quantity: int
 
 
 class OrderCreate(BaseModel):
     customer_id: int
-    items: list[OrderItemCreate] = Field(..., min_length=1)
+    items: list[OrderItemCreate]
 
 
 class OrderItemResponse(BaseModel):

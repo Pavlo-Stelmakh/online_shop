@@ -2007,6 +2007,122 @@ def test_get_orders_invalid_limit_too_large_returns_422():
     assert response.status_code == 422
 
 
+def test_create_order_with_empty_items_returns_400():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": []
+        },
+        headers=customer_headers
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Order must contain at least one item"
+
+
+def test_create_order_with_zero_quantity_returns_400():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {
+                    "product_id": product["id"],
+                    "quantity": 0
+                }
+            ]
+        },
+        headers=customer_headers
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid quantity"
+
+
+def test_create_order_with_negative_quantity_returns_400():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {
+                    "product_id": product["id"],
+                    "quantity": -1
+                }
+            ]
+        },
+        headers=customer_headers
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid quantity"
+
+
+def test_create_order_with_unknown_product_returns_404():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {
+                    "product_id": 999999,
+                    "quantity": 1
+                }
+            ]
+        },
+        headers=customer_headers
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Product with id 999999 not found"
+
+
+def test_create_order_with_not_enough_stock_returns_400():
+    product = create_test_product(stock=1, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {
+                    "product_id": product["id"],
+                    "quantity": 2
+                }
+            ]
+        },
+        headers=customer_headers
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == f"Not enough stock for product {product['name']}"
+
+
+
+
+
+
+
 
 
 
