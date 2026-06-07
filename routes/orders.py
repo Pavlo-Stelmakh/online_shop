@@ -21,6 +21,13 @@ def create_order(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+
+    if not order_data.items:
+        raise HTTPException(
+            status_code=400,
+            detail="Order must contain at least one item"
+        )
+
     customer = db.query(Customer).filter(
         Customer.id == order_data.customer_id
     ).first()
@@ -50,6 +57,12 @@ def create_order(
     total_price = 0
 
     for item_data in order_data.items:
+        if item_data.quantity <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid quantity"
+            )
+
         product = db.query(Product).filter(
             Product.id == item_data.product_id
         ).first()
