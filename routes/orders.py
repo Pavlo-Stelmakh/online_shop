@@ -7,6 +7,7 @@ from database import get_db
 from models import Order, OrderItem, Customer, Product, User
 from schemas import OrderCreate, OrderResponse
 from routes.auth import get_current_user, get_admin_user
+from datetime import date, time, datetime
 
 
 router = APIRouter(
@@ -85,10 +86,13 @@ def create_order(
 
     return order
 
+
 @router.get("", response_model=list[OrderResponse])
 def get_orders(
     status: str | None = None,
     customer_id: int | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
@@ -107,6 +111,14 @@ def get_orders(
 
     if customer_id is not None:
         query = query.filter(Order.customer_id == customer_id)
+
+    if date_from is not None:
+        start_datetime = datetime.combine(date_from, time.min)
+        query = query.filter(Order.created_at >= start_datetime)
+
+    if date_to is not None:
+        end_datetime = datetime.combine(date_to, time.max)
+        query = query.filter(Order.created_at <= end_datetime)
 
     orders = query.all()
 

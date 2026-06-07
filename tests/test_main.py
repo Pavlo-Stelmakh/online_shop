@@ -1699,6 +1699,133 @@ def test_customer_cannot_filter_orders_by_customer_id():
     assert response.json()["detail"] == "Admin access required"
 
 
+def test_admin_can_filter_orders_by_date_from():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    admin_headers = get_auth_headers(role="admin")
+
+    today = order["created_at"][:10]
+
+    response = client.get(
+        "/orders",
+        params={
+            "date_from": today
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+    order_ids = [item["id"] for item in data]
+
+    assert order["id"] in order_ids
+
+
+def test_admin_can_filter_orders_by_date_to():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    admin_headers = get_auth_headers(role="admin")
+
+    today = order["created_at"][:10]
+
+    response = client.get(
+        "/orders",
+        params={
+            "date_to": today
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+    order_ids = [item["id"] for item in data]
+
+    assert order["id"] in order_ids
+
+
+def test_admin_can_filter_orders_by_status_customer_and_date_range():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    admin_headers = get_auth_headers(role="admin")
+
+    today = order["created_at"][:10]
+
+    response = client.get(
+        "/orders",
+        params={
+            "status": "new",
+            "customer_id": customer["id"],
+            "date_from": today,
+            "date_to": today
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+    order_ids = [item["id"] for item in data]
+
+    assert order["id"] in order_ids
+
+    for item in data:
+        assert item["status"] == "new"
+        assert item["customer_id"] == customer["id"]
+        assert item["created_at"][:10] == today
+
+
+def test_get_orders_invalid_date_format_returns_422():
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        "/orders",
+        params={
+            "date_from": "wrong-date"
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 422
+
+
+
+
+
+
+
+
     
 
 
