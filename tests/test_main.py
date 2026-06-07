@@ -1820,6 +1820,171 @@ def test_get_orders_invalid_date_format_returns_422():
     assert response.status_code == 422
 
 
+def test_admin_can_get_orders_with_pagination():
+    product_1 = create_test_product(stock=10, price=100)
+    product_2 = create_test_product(stock=10, price=200)
+    product_3 = create_test_product(stock=10, price=300)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    create_test_order(
+        product_id=product_1["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    create_test_order(
+        product_id=product_2["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    create_test_order(
+        product_id=product_3["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        "/orders",
+        params={
+            "skip": 0,
+            "limit": 2
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert isinstance(data, list)
+    assert len(data) <= 2
+
+
+def test_admin_can_filter_orders_by_status_with_pagination():
+    product_1 = create_test_product(stock=10, price=100)
+    product_2 = create_test_product(stock=10, price=200)
+    product_3 = create_test_product(stock=10, price=300)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order_1 = create_test_order(
+        product_id=product_1["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    order_2 = create_test_order(
+        product_id=product_2["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    order_3 = create_test_order(
+        product_id=product_3["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    admin_headers = get_auth_headers(role="admin")
+
+    paid_response = client.put(
+        f"/orders/{order_3['id']}/status",
+        params={
+            "status": "paid"
+        },
+        headers=admin_headers
+    )
+
+    assert paid_response.status_code == 200
+
+    response = client.get(
+        "/orders",
+        params={
+            "status": "new",
+            "skip": 0,
+            "limit": 2
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert isinstance(data, list)
+    assert len(data) <= 2
+
+    for order in data:
+        assert order["status"] == "new"
+
+    order_ids = [order["id"] for order in data]
+
+    assert order_3["id"] not in order_ids
+
+
+def test_get_orders_invalid_negative_skip_returns_422():
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        "/orders",
+        params={
+            "skip": -1,
+            "limit": 10
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 422
+
+
+def test_get_orders_invalid_limit_zero_returns_422():
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        "/orders",
+        params={
+            "skip": 0,
+            "limit": 0
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 422
+
+
+def test_get_orders_invalid_limit_too_large_returns_422():
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        "/orders",
+        params={
+            "skip": 0,
+            "limit": 101
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 422
+
+
+
+
+
+
+
+
 
 
 
