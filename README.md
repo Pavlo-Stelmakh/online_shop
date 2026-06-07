@@ -25,6 +25,7 @@ The project demonstrates core backend functionality for an online store: product
 - Admin order pagination
 - Orders metadata response with total, skip, limit and items
 - Order items validation and stock protection
+- Duplicate product validation in order items
 - Order transaction safety for multi-item orders
 - Order status management with stock return on cancellation
 - Customer order history endpoint
@@ -913,6 +914,7 @@ Validation rules:
 items must not be empty
 quantity must be greater than 0
 product_id must exist
+product_id must not be duplicated in the same order
 product stock must be greater than or equal to quantity
 ```
 
@@ -927,6 +929,12 @@ Validation errors:
 ```json
 {
   "detail": "Invalid quantity"
+}
+```
+
+```json
+{
+  "detail": "Duplicate product in order items"
 }
 ```
 
