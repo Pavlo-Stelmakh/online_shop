@@ -25,6 +25,7 @@ The project demonstrates core backend functionality for an online store: product
 - Admin order pagination
 - Orders metadata response with total, skip, limit and items
 - Order items validation and stock protection
+- Order transaction safety for multi-item orders
 - Order status management with stock return on cancellation
 - Customer order history endpoint
 - Protected single order access by customer ownership
@@ -940,6 +941,50 @@ Validation errors:
   "detail": "Not enough stock for product Product Name"
 }
 ```
+
+
+#### Order Transaction Safety
+
+`POST /orders` creates multi-item orders as a single consistent operation.
+
+Transaction safety rules:
+
+```text
+invalid multi-item orders do not reduce stock
+invalid multi-item orders do not create orders
+valid multi-item orders calculate total_price correctly
+valid multi-item orders reduce stock for all products
+```
+
+If one item in a multi-item order is invalid, the whole order is rejected.
+
+Example invalid multi-item order:
+
+```json
+{
+  "customer_id": 5,
+  "items": [
+    {
+      "product_id": 1,
+      "quantity": 1
+    },
+    {
+      "product_id": 999999,
+      "quantity": 1
+    }
+  ]
+}
+```
+
+Expected result:
+
+```json
+{
+  "detail": "Product with id 999999 not found"
+}
+```
+
+In this case, no order is created and product stock is not reduced.
 
 #### Customer Order History
 
