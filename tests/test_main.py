@@ -2118,6 +2118,170 @@ def test_create_order_with_not_enough_stock_returns_400():
     assert response.json()["detail"] == f"Not enough stock for product {product['name']}"
 
 
+def test_invalid_multi_item_order_does_not_reduce_stock():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {
+                    "product_id": product["id"],
+                    "quantity": 2
+                },
+                {
+                    "product_id": 999999,
+                    "quantity": 1
+                }
+            ]
+        },
+        headers=customer_headers
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Product with id 999999 not found"
+
+    product_response = client.get(f"/products/{product['id']}")
+
+    assert product_response.status_code == 200
+    assert product_response.json()["stock"] == 10
+
+
+def test_invalid_multi_item_order_does_not_create_order():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    admin_headers = get_auth_headers(role="admin")
+
+    before_response = client.get(
+        "/orders",
+        params={
+            "customer_id": customer["id"]
+        },
+        headers=admin_headers
+    )
+
+    assert before_response.status_code == 200
+
+    before_total = before_response.json()["total"]
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {
+                    "product_id": product["id"],
+                    "quantity": 2
+                },
+                {
+                    "product_id": 999999,
+                    "quantity": 1
+                }
+            ]
+        },
+        headers=customer_headers
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Product with id 999999 not found"
+
+    after_response = client.get(
+        "/orders",
+        params={
+            "customer_id": customer["id"]
+        },
+        headers=admin_headers
+    )
+
+    assert after_response.status_code == 200
+
+    after_total = after_response.json()["total"]
+
+    assert after_total == before_total
+
+
+def test_valid_multi_item_order_calculates_total_price_correctly():
+    product_1 = create_test_product(stock=10, price=100)
+    product_2 = create_test_product(stock=10, price=250)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {
+                    "product_id": product_1["id"],
+                    "quantity": 2
+                },
+                {
+                    "product_id": product_2["id"],
+                    "quantity": 3
+                }
+            ]
+        },
+        headers=customer_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["total_price"] == 950
+
+
+def test_valid_multi_item_order_reduces_stock_for_all_products():
+    product_1 = create_test_product(stock=10, price=100)
+    product_2 = create_test_product(stock=10, price=250)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {
+                    "product_id": product_1["id"],
+                    "quantity": 2
+                },
+                {
+                    "product_id": product_2["id"],
+                    "quantity": 3
+                }
+            ]
+        },
+        headers=customer_headers
+    )
+
+    assert response.status_code == 200
+
+    product_1_response = client.get(f"/products/{product_1['id']}")
+    product_2_response = client.get(f"/products/{product_2['id']}")
+
+    assert product_1_response.status_code == 200
+    assert product_2_response.status_code == 200
+
+    assert product_1_response.json()["stock"] == 8
+    assert product_2_response.json()["stock"] == 7
+
+
+
+
+
+
+
+
 
 
 
