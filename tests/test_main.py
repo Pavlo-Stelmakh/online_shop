@@ -1566,5 +1566,139 @@ def test_customer_cannot_get_all_orders_with_status_filter():
     assert response.json()["detail"] == "Admin access required"
 
 
+def test_admin_can_filter_orders_by_customer_id():
+    product_1 = create_test_product(stock=10, price=100)
+    product_2 = create_test_product(stock=10, price=200)
+
+    customer_1_headers = get_auth_headers(role="customer")
+    customer_1 = create_test_customer(headers=customer_1_headers)
+
+    customer_2_headers = get_auth_headers(role="customer")
+    customer_2 = create_test_customer(headers=customer_2_headers)
+
+    order_1 = create_test_order(
+        product_id=product_1["id"],
+        customer_id=customer_1["id"],
+        quantity=1,
+        headers=customer_1_headers
+    )
+
+    order_2 = create_test_order(
+        product_id=product_2["id"],
+        customer_id=customer_2["id"],
+        quantity=1,
+        headers=customer_2_headers
+    )
+
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        "/orders",
+        params={
+            "customer_id": customer_1["id"]
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    order_ids = [order["id"] for order in data]
+
+    assert order_1["id"] in order_ids
+    assert order_2["id"] not in order_ids
+
+    for order in data:
+        assert order["customer_id"] == customer_1["id"]
+
+
+def test_admin_can_filter_orders_by_status_and_customer_id():
+    product_1 = create_test_product(stock=10, price=100)
+    product_2 = create_test_product(stock=10, price=200)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order_1 = create_test_order(
+        product_id=product_1["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    order_2 = create_test_order(
+        product_id=product_2["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    admin_headers = get_auth_headers(role="admin")
+
+    paid_response = client.put(
+        f"/orders/{order_2['id']}/status",
+        params={
+            "status": "paid"
+        },
+        headers=admin_headers
+    )
+
+    assert paid_response.status_code == 200
+
+    response = client.get(
+        "/orders",
+        params={
+            "customer_id": customer["id"],
+            "status": "new"
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    order_ids = [order["id"] for order in data]
+
+    assert order_1["id"] in order_ids
+    assert order_2["id"] not in order_ids
+
+    for order in data:
+        assert order["customer_id"] == customer["id"]
+        assert order["status"] == "new"
+
+
+def test_admin_filter_orders_by_unknown_customer_id_returns_empty_list():
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        "/orders",
+        params={
+            "customer_id": 999999
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_customer_cannot_filter_orders_by_customer_id():
+    customer_headers = get_auth_headers(role="customer")
+
+    response = client.get(
+        "/orders",
+        params={
+            "customer_id": 1
+        },
+        headers=customer_headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin access required"
+
+
+    
 
 
