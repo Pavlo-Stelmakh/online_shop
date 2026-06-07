@@ -23,6 +23,7 @@ The project demonstrates core backend functionality for an online store: product
 - Admin order filtering by customer
 - Admin order filtering by date range
 - Admin order pagination
+- Orders metadata response with total, skip, limit and items
 - Order status management with stock return on cancellation
 - Customer order history endpoint
 - Protected single order access by customer ownership
@@ -877,6 +878,28 @@ skip >= 0
 1 <= limit <= 100
 ```
 Orders are returned newest first.
+
+#### Orders Metadata Response
+
+```json
+{
+  "total": 25,
+  "skip": 0,
+  "limit": 10,
+  "items": []
+}
+```
+
+The admin `GET /orders` endpoint returns pagination metadata.
+
+Response fields:
+
+| Field | Description |
+|---|---|
+| `total` | Total number of orders matching filters |
+| `skip` | Number of skipped orders |
+| `limit` | Maximum number of returned orders |
+| `items` | List of returned orders |
 
 #### Customer Order History
 
