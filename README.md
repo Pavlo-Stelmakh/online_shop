@@ -24,6 +24,7 @@ The project demonstrates core backend functionality for an online store: product
 - Admin order filtering by date range
 - Admin order pagination
 - Orders metadata response with total, skip, limit and items
+- Order items validation and stock protection
 - Order status management with stock return on cancellation
 - Customer order history endpoint
 - Protected single order access by customer ownership
@@ -900,6 +901,45 @@ Response fields:
 | `skip` | Number of skipped orders |
 | `limit` | Maximum number of returned orders |
 | `items` | List of returned orders |
+
+#### Order Items Validation
+
+`POST /orders` validates order items before creating an order.
+
+Validation rules:
+
+```text
+items must not be empty
+quantity must be greater than 0
+product_id must exist
+product stock must be greater than or equal to quantity
+```
+
+Validation errors:
+
+```json
+{
+  "detail": "Order must contain at least one item"
+}
+```
+
+```json
+{
+  "detail": "Invalid quantity"
+}
+```
+
+```json
+{
+  "detail": "Product with id 999999 not found"
+}
+```
+
+```json
+{
+  "detail": "Not enough stock for product Product Name"
+}
+```
 
 #### Customer Order History
 
