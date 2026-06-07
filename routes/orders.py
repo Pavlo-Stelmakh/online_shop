@@ -28,6 +28,14 @@ def create_order(
             detail="Order must contain at least one item"
         )
 
+    product_ids = [item.product_id for item in order_data.items]
+
+    if len(product_ids) != len(set(product_ids)):
+        raise HTTPException(
+            status_code=400,
+            detail="Duplicate product in order items"
+        )
+
     customer = db.query(Customer).filter(
         Customer.id == order_data.customer_id
     ).first()
