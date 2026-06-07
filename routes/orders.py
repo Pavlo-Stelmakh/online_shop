@@ -89,6 +89,8 @@ def create_order(
 
 @router.get("", response_model=list[OrderResponse])
 def get_orders(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     status: str | None = None,
     customer_id: int | None = None,
     date_from: date | None = None,
@@ -119,8 +121,8 @@ def get_orders(
     if date_to is not None:
         end_datetime = datetime.combine(date_to, time.max)
         query = query.filter(Order.created_at <= end_datetime)
-
-    orders = query.all()
+        
+    orders = query.order_by(Order.id.desc()).offset(skip).limit(limit).all()
 
     return orders
 
