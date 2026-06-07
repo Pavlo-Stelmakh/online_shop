@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Order, OrderItem, Customer, Product, User
-from schemas import OrderCreate, OrderResponse
+from schemas import OrderCreate, OrderResponse, OrderListResponse
 from routes.auth import get_current_user, get_admin_user
 from datetime import date, time, datetime
 
@@ -87,7 +87,7 @@ def create_order(
     return order
 
 
-@router.get("", response_model=list[OrderResponse])
+@router.get("", response_model=OrderListResponse)
 def get_orders(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
@@ -121,10 +121,18 @@ def get_orders(
     if date_to is not None:
         end_datetime = datetime.combine(date_to, time.max)
         query = query.filter(Order.created_at <= end_datetime)
-        
+
+    total = query.count()
+
     orders = query.order_by(Order.id.desc()).offset(skip).limit(limit).all()
 
-    return orders
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "items": orders
+    }
+
 
 
 @router.get("/by-status", response_model=list[OrderResponse])

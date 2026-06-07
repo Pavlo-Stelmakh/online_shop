@@ -84,6 +84,16 @@ class OrderResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class OrderListResponse(BaseModel):
+    total: int
+    skip: int
+    limit: int
+    items: list[OrderResponse]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class StatsSummaryResponse(BaseModel):
     products_count: int
     customers_count: int
