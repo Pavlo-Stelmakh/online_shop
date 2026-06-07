@@ -85,10 +85,10 @@ def create_order(
 
     return order
 
-
 @router.get("", response_model=list[OrderResponse])
 def get_orders(
     status: str | None = None,
+    customer_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
@@ -104,6 +104,9 @@ def get_orders(
             )
 
         query = query.filter(Order.status == status)
+
+    if customer_id is not None:
+        query = query.filter(Order.customer_id == customer_id)
 
     orders = query.all()
 
