@@ -12,8 +12,8 @@ class CategoryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class ProductCreate(BaseModel):
-    name: str
-    price: float
+    name: str = Field(..., min_length=1)
+    price: float = Field(..., gt=0)
     description: str
     image_url: str | None = None
     stock: int = Field(..., ge=0)
