@@ -18,6 +18,7 @@ The project demonstrates core backend functionality for an online store: product
 - Protected admin routes for products, categories and orders
 - Product catalog with pagination, filtering, sorting and metadata response
 - Product image URL support
+- Product update validation for name, price, stock and category
 - Admin-only low stock products endpoint
 - Admin order filtering by status
 - Admin order filtering by customer
@@ -563,18 +564,6 @@ Example product:
 }
 ```
 
-### Products
-
-```text
-POST /products
-GET /products
-GET /products/{product_id}
-PUT /products/{product_id}
-DELETE /products/{product_id}
-GET /products/low-stock?threshold=5
-```
-
-Products include name, price, description, optional image URL, stock and category.
 
 #### Low Stock Products
 
@@ -1771,6 +1760,34 @@ Possible fields:
 image_url
 image_filename
 ```
+
+
+#### Product Update Validation
+
+`PUT /products/{product_id}` validates product data before updating a product.
+
+Validation rules:
+
+```text
+name must not be empty
+price must be greater than 0
+stock must be greater than or equal to 0
+category_id must exist
+```
+
+Validation errors:
+
+```text
+422 Unprocessable Entity
+```
+
+```json
+{
+  "detail": "Category not found"
+}
+```
+
+
 
 ### Advanced Statistics
 
