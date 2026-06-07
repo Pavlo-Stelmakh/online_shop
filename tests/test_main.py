@@ -2276,7 +2276,32 @@ def test_valid_multi_item_order_reduces_stock_for_all_products():
     assert product_2_response.json()["stock"] == 7
 
 
+def test_create_order_with_duplicate_product_returns_400():
+    product = create_test_product(stock=10, price=100)
 
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {
+                    "product_id": product["id"],
+                    "quantity": 2
+                },
+                {
+                    "product_id": product["id"],
+                    "quantity": 3
+                }
+            ]
+        },
+        headers=customer_headers
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Duplicate product in order items"
 
 
 
