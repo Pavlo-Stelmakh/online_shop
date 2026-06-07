@@ -2304,7 +2304,88 @@ def test_create_order_with_duplicate_product_returns_400():
     assert response.json()["detail"] == "Duplicate product in order items"
 
 
+def test_update_product_with_negative_stock_returns_422():
+    product = create_test_product(stock=10, price=100)
+    category = create_test_category()
+    admin_headers = get_auth_headers(role="admin")
 
+    response = client.put(
+        f"/products/{product['id']}",
+        json={
+            "name": "Updated Product",
+            "price": 100,
+            "description": "Updated product description",
+            "image_url": None,
+            "stock": -1,
+            "category_id": category["id"]
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_product_with_zero_price_returns_422():
+    product = create_test_product(stock=10, price=100)
+    category = create_test_category()
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.put(
+        f"/products/{product['id']}",
+        json={
+            "name": "Updated Product",
+            "price": 0,
+            "description": "Updated product description",
+            "image_url": None,
+            "stock": 10,
+            "category_id": category["id"]
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_product_with_empty_name_returns_422():
+    product = create_test_product(stock=10, price=100)
+    category = create_test_category()
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.put(
+        f"/products/{product['id']}",
+        json={
+            "name": "",
+            "price": 100,
+            "description": "Updated product description",
+            "image_url": None,
+            "stock": 10,
+            "category_id": category["id"]
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_product_with_unknown_category_returns_404():
+    product = create_test_product(stock=10, price=100)
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.put(
+        f"/products/{product['id']}",
+        json={
+            "name": "Updated Product",
+            "price": 100,
+            "description": "Updated product description",
+            "image_url": None,
+            "stock": 10,
+            "category_id": 999999
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Category not found"
 
 
 
