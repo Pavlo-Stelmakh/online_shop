@@ -20,6 +20,7 @@ The project demonstrates core backend functionality for an online store: product
 - Product image URL support
 - Admin-only low stock products endpoint
 - Admin order filtering by status
+- Admin order filtering by customer
 - Order status management with stock return on cancellation
 - Customer order history endpoint
 - Protected single order access by customer ownership
@@ -772,6 +773,8 @@ Example customer:
 POST /orders
 GET /orders
 GET /orders?status=new
+GET /orders?customer_id=2
+GET /orders?status=new&customer_id=2
 GET /orders/my
 GET /orders/{order_id}
 PUT /orders/{order_id}/status
@@ -805,6 +808,23 @@ Invalid status values return:
 {
   "detail": "Invalid order status"
 }
+```
+#### Order Customer Filtering
+
+```text
+GET /orders?customer_id=2
+GET /orders?status=new&customer_id=2
+```
+
+Admin users can filter orders by customer ID.
+
+This filter can be combined with order status filtering.
+
+Examples:
+
+```text
+GET /orders?customer_id=2
+GET /orders?status=new&customer_id=2
 ```
 
 #### Single Order Access Rules
