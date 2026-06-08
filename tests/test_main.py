@@ -2748,7 +2748,33 @@ def test_delete_category_requires_auth():
     assert response.status_code == 401
 
 
+def test_admin_dashboard_returns_200():
+    response = client.get("/admin")
 
+    assert response.status_code == 200
+    assert "Online Shop Admin Dashboard" in response.text
+
+
+def test_admin_dashboard_contains_dashboard_cards():
+    response = client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Products" in response.text
+    assert "Categories" in response.text
+    assert "Customers" in response.text
+    assert "Orders" in response.text
+
+
+def test_admin_dashboard_contains_quick_links():
+    response = client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Swagger UI" in response.text
+    assert "Health Check" in response.text
+    assert "Product Catalog API" in response.text
+    assert "Low Stock API" in response.text
+    assert "Orders API" in response.text
+    assert "Categories API" in response.text
 
 
 
