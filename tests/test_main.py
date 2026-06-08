@@ -2777,7 +2777,32 @@ def test_admin_dashboard_contains_quick_links():
     assert "Categories API" in response.text
 
 
+def test_admin_products_page_returns_200():
+    response = client.get("/admin/products")
 
+    assert response.status_code == 200
+    assert "Admin Products" in response.text
+
+
+def test_admin_products_page_contains_product_table():
+    create_test_product(stock=10, price=100)
+
+    response = client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "ID" in response.text
+    assert "Name" in response.text
+    assert "Price" in response.text
+    assert "Stock" in response.text
+    assert "Category ID" in response.text
+
+
+def test_admin_dashboard_contains_admin_products_link():
+    response = client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Admin Products" in response.text
+    assert "/admin/products" in response.text
     
 
 

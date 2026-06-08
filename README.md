@@ -22,10 +22,17 @@ Production API:
 ```text
 https://online-shop-api-z9y4.onrender.com
 ```
+
 Swagger UI:
 
 ```text
 https://online-shop-api-z9y4.onrender.com/docs
+```
+
+Admin Dashboard:
+
+```text
+https://online-shop-api-z9y4.onrender.com/admin
 ```
 
 Health check:
@@ -111,10 +118,11 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 
 ### Deployment and Quality
 
+- Basic admin dashboard UI
 - Docker support
 - GitHub Actions CI
 - Render production deployment
-- Automated test suite with `108 passed`
+- Automated test suite with `111 passed`
 
 
 ## API Overview
@@ -163,7 +171,32 @@ GET /orders/{order_id}
 PATCH /orders/{order_id}/status
 ```
 
+## Admin Dashboard
 
+The project includes a basic admin dashboard UI available at:
+
+```text
+/admin
+```
+
+The dashboard provides a visual overview of the backend project.
+
+Current dashboard features:
+
+```text
+products count
+categories count
+customers count
+orders count
+production status
+quick links to Swagger and main API sections
+```
+
+Production dashboard:
+
+```text
+https://online-shop-api-z9y4.onrender.com/admin
+```
 
 ## Deployment
 
@@ -2163,6 +2196,7 @@ v2.7.0 — product catalog empty search validation
 v2.8.0 — category update validation
 v2.9.0 — category delete protection
 v3.0.0 — portfolio polish
+v3.1.0 — basic admin dashboard UI
 ```
 ## Project Status
 
