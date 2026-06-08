@@ -16,6 +16,7 @@ The project demonstrates core backend functionality for an online store: product
 - Secure user registration: public registration always creates `customer` users
 - User-to-customer ownership logic
 - Protected admin routes for products, categories and orders
+- Category update validation
 - Product catalog with pagination, filtering, sorting and metadata response
 - Product catalog search by name and description
 - Product catalog empty search validation
@@ -517,6 +518,7 @@ Response:
 POST /categories
 GET /categories
 GET /categories/{category_id}/products
+PUT /categories/{category_id}
 ```
 
 Categories are used to group products.
@@ -528,6 +530,45 @@ Example category:
   "name": "Laptops"
 }
 ```
+#### Category Update Validation
+
+`PUT /categories/{category_id}` allows admin users to update category names.
+
+Validation rules:
+
+```text
+name must not be empty
+category_id must exist
+category name must be unique
+```
+
+Successful update returns `200 OK`.
+
+```json
+{
+  "id": 1,
+  "name": "Updated Production Category"
+}
+```
+
+If category does not exist, the endpoint returns `404 Not Found`.
+
+```json
+{
+  "detail": "Category not found"
+}
+```
+
+If category name already exists, the endpoint returns `400 Bad Request`.
+
+```json
+{
+  "detail": "Category already exists"
+}
+```
+
+Empty category name returns `422 Unprocessable Entity`.
+
 
 ### Products
 
