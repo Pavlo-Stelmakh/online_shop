@@ -50,3 +50,19 @@ def admin_products(
             "products": products
         }
     )
+
+
+@router.get("/orders")
+def admin_orders(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    orders = db.query(Order).order_by(Order.id.desc()).all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_orders.html",
+        context={
+            "orders": orders
+        }
+    )
