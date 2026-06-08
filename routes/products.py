@@ -25,6 +25,12 @@ def apply_product_filters(
     if category_id is not None:
         query = query.filter(Product.category_id == category_id)
 
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise HTTPException(
+            status_code=400,
+            detail="min_price cannot be greater than max_price"
+        )
+
     if min_price is not None:
         query = query.filter(Product.price >= min_price)
 
