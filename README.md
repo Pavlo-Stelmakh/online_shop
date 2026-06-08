@@ -17,6 +17,7 @@ The project demonstrates core backend functionality for an online store: product
 - User-to-customer ownership logic
 - Protected admin routes for products, categories and orders
 - Category update validation
+- Category delete protection
 - Product catalog with pagination, filtering, sorting and metadata response
 - Product catalog search by name and description
 - Product catalog empty search validation
@@ -519,6 +520,7 @@ POST /categories
 GET /categories
 GET /categories/{category_id}/products
 PUT /categories/{category_id}
+DELETE /categories/{category_id}
 ```
 
 Categories are used to group products.
@@ -568,6 +570,45 @@ If category name already exists, the endpoint returns `400 Bad Request`.
 ```
 
 Empty category name returns `422 Unprocessable Entity`.
+
+
+#### Category Delete Protection
+
+`DELETE /categories/{category_id}` allows admin users to delete empty categories.
+
+Delete rules:
+
+```text
+admin users can delete empty categories
+unauthenticated users cannot delete categories
+customer users cannot delete categories
+category_id must exist
+categories with products cannot be deleted
+```
+
+Successful delete returns `200 OK`.
+
+```json
+{
+  "message": "Category deleted successfully"
+}
+```
+
+If category does not exist, the endpoint returns `404 Not Found`.
+
+```json
+{
+  "detail": "Category not found"
+}
+```
+
+If category has products, the endpoint returns `400 Bad Request`.
+
+```json
+{
+  "detail": "Cannot delete category with products"
+}
+```
 
 
 ### Products
