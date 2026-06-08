@@ -18,6 +18,7 @@ The project demonstrates core backend functionality for an online store: product
 - Protected admin routes for products, categories and orders
 - Product catalog with pagination, filtering, sorting and metadata response
 - Product catalog search by name and description
+- Product catalog empty search validation
 - Product catalog sort validation
 - Product catalog price range validation
 - Product image URL support
@@ -774,6 +775,31 @@ The response keeps the catalog metadata format:
   "items": []
 }
 ```
+
+#### Product Catalog Empty Search Validation
+
+`GET /products/catalog` validates search input.
+
+Validation rule:
+
+```text
+search cannot be empty or blank
+```
+
+Example invalid request:
+
+```text
+GET /products/catalog?search=%20%20%20
+```
+
+Invalid search value returns `400 Bad Request`.
+
+```json
+{
+  "detail": "search cannot be empty"
+}
+```
+
 
 #### Product Catalog Sort Validation
 
