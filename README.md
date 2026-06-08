@@ -49,6 +49,12 @@ Admin Orders Page:
 https://online-shop-api-z9y4.onrender.com/admin/orders
 ```
 
+Admin Categories Page:
+
+```text
+https://online-shop-api-z9y4.onrender.com/admin/categories
+```
+
 Health check:
 
 ```text
@@ -135,10 +141,11 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 - Basic admin dashboard UI
 - Admin products page
 - Admin orders page
+- Admin categories page
 - Docker support
 - GitHub Actions CI
 - Render production deployment
-- Automated test suite with `117 passed`
+- Automated test suite with `120 passed`
 
 
 ## API Overview
@@ -229,6 +236,21 @@ total price
 created at
 items count
 ```
+
+Admin categories page:
+
+```text
+/admin/categories
+```
+
+The admin categories page displays a categories table with:
+
+```text
+category id
+name
+products count
+```
+
 
 The dashboard provides a visual overview of the backend project.
 
@@ -2251,6 +2273,7 @@ v3.1.0 — basic admin dashboard UI
 v3.2.0 - admin products page
 v3.3.0 — admin orders page
 v3.3.0 — admin orders page
+v3.4.0 — admin categories page
 ```
 ## Project Status
 
