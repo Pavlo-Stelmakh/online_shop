@@ -119,10 +119,11 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 ### Deployment and Quality
 
 - Basic admin dashboard UI
+- Admin products page
 - Docker support
 - GitHub Actions CI
 - Render production deployment
-- Automated test suite with `111 passed`
+- Automated test suite with `114 passed`
 
 
 ## API Overview
@@ -177,6 +178,23 @@ The project includes a basic admin dashboard UI available at:
 
 ```text
 /admin
+```
+
+Admin products page:
+
+```text
+/admin/products
+```
+
+The admin products page displays a products table with:
+
+```text
+product id
+name
+price
+stock
+category id
+image URL
 ```
 
 The dashboard provides a visual overview of the backend project.
