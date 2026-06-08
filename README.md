@@ -17,6 +17,7 @@ The project demonstrates core backend functionality for an online store: product
 - User-to-customer ownership logic
 - Protected admin routes for products, categories and orders
 - Product catalog with pagination, filtering, sorting and metadata response
+- Product catalog search by name and description
 - Product image URL support
 - Product update validation for name, price, stock and category
 - Admin-only low stock products endpoint
@@ -545,6 +546,8 @@ GET /products/filter
 GET /products/sort
 GET /products/limited
 GET /products/catalog
+GET /products/catalog?search=Product
+GET /products/catalog?search=Product&in_stock=true
 GET /products/catalog?category_id=1&min_price=100&max_price=500&in_stock=true&sort_by=price&sort_order=asc&skip=0&limit=10
 GET /products/catalog/pages
 ```
@@ -737,7 +740,38 @@ Example:
 ```text
 GET /products/catalog?category_id=1&min_price=100&max_price=500&in_stock=true&sort_by=price&sort_order=asc&skip=0&limit=10
 ```
+#### Product Catalog Search
 
+```text
+GET /products/catalog?search=Product
+GET /products/catalog?search=Product&in_stock=true
+```
+
+The product catalog supports text search by product name and description.
+
+Search can be combined with existing catalog filters:
+
+```text
+category_id
+min_price
+max_price
+in_stock
+sort_by
+sort_order
+skip
+limit
+```
+
+The response keeps the catalog metadata format:
+
+```json
+{
+  "total": 1,
+  "skip": 0,
+  "limit": 10,
+  "items": []
+}
+```
 
 ### Customers
 
