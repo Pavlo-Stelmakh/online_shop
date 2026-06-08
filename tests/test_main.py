@@ -2584,7 +2584,28 @@ def test_products_catalog_invalid_price_range_returns_400():
     assert response.json()["detail"] == "min_price cannot be greater than max_price"
 
 
+def test_products_catalog_empty_search_returns_400():
+    response = client.get(
+        "/products/catalog",
+        params={
+            "search": ""
+        }
+    )
 
+    assert response.status_code == 400
+    assert response.json()["detail"] == "search cannot be empty"
+
+
+def test_products_catalog_blank_search_returns_400():
+    response = client.get(
+        "/products/catalog",
+        params={
+            "search": "   "
+        }
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "search cannot be empty"
 
 
 
