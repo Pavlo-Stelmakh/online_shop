@@ -55,3 +55,37 @@ def get_products_by_category(
     products = db.query(Product).filter(Product.category_id == category_id).all()
 
     return products
+
+
+@router.put("/{category_id}", response_model=CategoryResponse)
+def update_category(
+    category_id: int,
+    category_data: CategoryCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    category = db.query(Category).filter(Category.id == category_id).first()
+
+    if category is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Category not found"
+        )
+
+    existing_category = db.query(Category).filter(
+        Category.name == category_data.name,
+        Category.id != category_id
+    ).first()
+
+    if existing_category is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="Category already exists"
+        )
+
+    category.name = category_data.name
+
+    db.commit()
+    db.refresh(category)
+
+    return category
