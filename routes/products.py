@@ -250,7 +250,15 @@ def get_products_catalog(
 
 
     if search is not None:
-        search_pattern = f"%{search}%"
+        search_value = search.strip()
+
+        if not search_value:
+            raise HTTPException(
+                status_code=400,
+                detail="search cannot be empty"
+            )
+
+        search_pattern = f"%{search_value}%"
         query = query.filter(
             (Product.name.ilike(search_pattern)) |
             (Product.description.ilike(search_pattern))
