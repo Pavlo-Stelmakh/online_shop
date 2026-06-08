@@ -2571,6 +2571,19 @@ def test_products_catalog_sort_by_price_desc():
     assert prices == sorted(prices, reverse=True)
 
 
+def test_products_catalog_invalid_price_range_returns_400():
+    response = client.get(
+        "/products/catalog",
+        params={
+            "min_price": 500,
+            "max_price": 100
+        }
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "min_price cannot be greater than max_price"
+
+
 
 
 
