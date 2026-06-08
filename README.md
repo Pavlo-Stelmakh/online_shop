@@ -18,6 +18,7 @@ The project demonstrates core backend functionality for an online store: product
 - Protected admin routes for products, categories and orders
 - Product catalog with pagination, filtering, sorting and metadata response
 - Product catalog search by name and description
+- Product catalog sort validation
 - Product image URL support
 - Product update validation for name, price, stock and category
 - Admin-only low stock products endpoint
@@ -772,6 +773,48 @@ The response keeps the catalog metadata format:
   "items": []
 }
 ```
+
+#### Product Catalog Sort Validation
+
+`GET /products/catalog` supports validated sorting.
+
+Allowed `sort_by` values:
+
+```text
+id
+name
+price
+stock
+```
+
+Allowed `sort_order` values:
+
+```text
+asc
+desc
+```
+
+Examples:
+
+```text
+GET /products/catalog?sort_by=price&sort_order=asc
+GET /products/catalog?sort_by=price&sort_order=desc
+```
+
+Invalid sorting parameters return `400 Bad Request`.
+
+```json
+{
+  "detail": "Invalid sort_by value"
+}
+```
+
+```json
+{
+  "detail": "Invalid sort_order value"
+}
+```
+
 
 ### Customers
 
