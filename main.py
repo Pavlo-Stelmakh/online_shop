@@ -10,6 +10,7 @@ from routes.customers import router as customers_router
 from routes.orders import router as orders_router
 from routes.stats import router as stats_router
 from routes.auth import router as auth_router
+from routes import admin
 
 
 Base.metadata.create_all(bind=engine)
@@ -34,6 +35,7 @@ app.include_router(customers_router)
 app.include_router(orders_router)
 app.include_router(stats_router)
 app.include_router(auth_router)
+app.include_router(admin.router)
 
 
 def get_db():
