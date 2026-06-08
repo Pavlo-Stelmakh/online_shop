@@ -2842,3 +2842,29 @@ def test_admin_dashboard_contains_admin_orders_link():
     assert response.status_code == 200
     assert "Admin Orders" in response.text
     assert "/admin/orders" in response.text
+
+
+def test_admin_categories_page_returns_200():
+    response = client.get("/admin/categories")
+
+    assert response.status_code == 200
+    assert "Admin Categories" in response.text
+
+
+def test_admin_categories_page_contains_categories_table_headers():
+    create_test_category()
+
+    response = client.get("/admin/categories")
+
+    assert response.status_code == 200
+    assert "ID" in response.text
+    assert "Name" in response.text
+    assert "Products Count" in response.text
+
+
+def test_admin_dashboard_contains_admin_categories_link():
+    response = client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Admin Categories" in response.text
+    assert "/admin/categories" in response.text

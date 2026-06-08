@@ -66,3 +66,33 @@ def admin_orders(
             "orders": orders
         }
     )
+
+
+@router.get("/categories")
+def admin_categories(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    categories = db.query(Category).order_by(Category.id.desc()).all()
+
+    categories_with_counts = []
+
+    for category in categories:
+        products_count = db.query(Product).filter(
+            Product.category_id == category.id
+        ).count()
+
+        categories_with_counts.append(
+            {
+                "category": category,
+                "products_count": products_count
+            }
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_categories.html",
+        context={
+            "categories": categories_with_counts
+        }
+    )
