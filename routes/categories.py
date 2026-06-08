@@ -89,3 +89,34 @@ def update_category(
     db.refresh(category)
 
     return category
+
+@router.delete("/{category_id}")
+def delete_category(
+    category_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    category = db.query(Category).filter(Category.id == category_id).first()
+
+    if category is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Category not found"
+        )
+
+    products_count = db.query(Product).filter(
+        Product.category_id == category_id
+    ).count()
+
+    if products_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete category with products"
+        )
+
+    db.delete(category)
+    db.commit()
+
+    return {
+        "message": "Category deleted successfully"
+    }

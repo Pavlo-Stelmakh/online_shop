@@ -2672,9 +2672,80 @@ def test_update_category_with_empty_name_returns_422():
 
     assert response.status_code == 422
 
+def test_admin_can_delete_empty_category():
+    admin_headers = get_auth_headers(role="admin")
+    category = create_test_category()
+
+    response = client.delete(
+        f"/categories/{category['id']}",
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["message"] == "Category deleted successfully"
 
 
+def test_delete_category_not_found_returns_404():
+    admin_headers = get_auth_headers(role="admin")
 
+    response = client.delete(
+        "/categories/999999",
+        headers=admin_headers
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Category not found"
+
+
+def test_cannot_delete_category_with_products():
+    admin_headers = get_auth_headers(role="admin")
+    category = create_test_category()
+
+    product_response = client.post(
+        "/products",
+        json={
+            "name": f"Product In Category {time.time()}",
+            "price": 100,
+            "description": "Product linked to category",
+            "image_url": None,
+            "stock": 10,
+            "category_id": category["id"]
+        },
+        headers=admin_headers
+    )
+
+    assert product_response.status_code == 200
+
+    response = client.delete(
+        f"/categories/{category['id']}",
+        headers=admin_headers
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Cannot delete category with products"
+
+
+def test_customer_cannot_delete_category():
+    category = create_test_category()
+    customer_headers = get_auth_headers(role="customer")
+
+    response = client.delete(
+        f"/categories/{category['id']}",
+        headers=customer_headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin access required"
+
+
+def test_delete_category_requires_auth():
+    category = create_test_category()
+
+    response = client.delete(
+        f"/categories/{category['id']}"
+    )
+
+    assert response.status_code == 401
 
 
 
