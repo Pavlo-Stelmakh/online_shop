@@ -2522,7 +2522,53 @@ def test_products_catalog_search_with_in_stock_filter():
         assert item["stock"] > 0
 
 
+def test_products_catalog_invalid_sort_by_returns_400():
+    response = client.get(
+        "/products/catalog",
+        params={
+            "sort_by": "wrong_field",
+            "sort_order": "asc"
+        }
+    )
 
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid sort_by value"
+
+
+def test_products_catalog_invalid_sort_order_returns_400():
+    response = client.get(
+        "/products/catalog",
+        params={
+            "sort_by": "price",
+            "sort_order": "wrong_order"
+        }
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid sort_order value"
+
+
+def test_products_catalog_sort_by_price_desc():
+    create_test_product(stock=10, price=100)
+    create_test_product(stock=10, price=300)
+    create_test_product(stock=10, price=200)
+
+    response = client.get(
+        "/products/catalog",
+        params={
+            "sort_by": "price",
+            "sort_order": "desc",
+            "skip": 0,
+            "limit": 20
+        }
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+    prices = [product["price"] for product in data["items"]]
+
+    assert prices == sorted(prices, reverse=True)
 
 
 
