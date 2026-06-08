@@ -2,45 +2,167 @@
 
 ![Run API Tests](https://github.com/Pavlo-Stelmakh/online_shop/actions/workflows/tests.yml/badge.svg)
 
-Backend API for a simple online shop built with FastAPI, SQLAlchemy, SQLite for local development, PostgreSQL for production deployment, and Pytest.
+## Project Overview
 
-The project demonstrates core backend functionality for an online store: products, categories, customers, orders, stock management, order status rules, statistics and automated API tests.
+Online Shop API is a backend e-commerce project built with FastAPI.
+
+The project demonstrates a production-style API with authentication, role-based access control, product catalog management, order processing, stock protection, validation rules, automated tests, CI checks and deployment to Render.
+
+The API supports two main roles:
+
+```text
+admin
+customer
+```
+Admin users can manage products, categories and orders. Customer users can create orders, manage their customer profile and access their own order history.
+
+## Live Demo
+Production API:
+
+```text
+https://online-shop-api-z9y4.onrender.com
+```
+Swagger UI:
+
+```text
+https://online-shop-api-z9y4.onrender.com/docs
+```
+
+Health check:
+
+```text
+https://online-shop-api-z9y4.onrender.com/health
+```
+
+## Test Status
+
+Current automated test coverage:
+
+```text
+108 passed
+```
+Tests are run with:
+
+```bash
+python -m pytest
+```
+GitHub Actions is used for CI checks on pull requests and main branch updates.
+
+
+## Tech Stack
+
+- Python
+- FastAPI
+- SQLAlchemy ORM
+- SQLite for local development
+- PostgreSQL on Render
+- Alembic database migrations
+- JWT authentication
+- Passlib password hashing
+- Pytest
+- GitHub Actions
+- Docker
+- Render deployment
 
 ## Project Features
 
-- FastAPI backend for an online shop
-- SQLite database with SQLAlchemy ORM
-- Alembic database migrations
+### Authentication and Users
+
 - JWT authentication
+- Password hashing
 - Role-based access control: `admin` and `customer`
 - Secure user registration: public registration always creates `customer` users
+- Admin-only protected routes
 - User-to-customer ownership logic
-- Protected admin routes for products, categories and orders
-- Category update validation
-- Category delete protection
+
+### Products
+
+- Product CRUD
+- Product image URL support
+- Product update validation for name, price, stock and category
 - Product catalog with pagination, filtering, sorting and metadata response
 - Product catalog search by name and description
 - Product catalog empty search validation
 - Product catalog sort validation
 - Product catalog price range validation
-- Product image URL support
-- Product update validation for name, price, stock and category
 - Admin-only low stock products endpoint
-- Admin order filtering by status
-- Admin order filtering by customer
-- Admin order filtering by date range
-- Admin order pagination
-- Orders metadata response with total, skip, limit and items
+
+### Categories
+
+- Category CRUD
+- Category update validation
+- Category delete protection
+- Get products by category
+
+### Orders
+
+- Order creation
 - Order items validation and stock protection
 - Duplicate product validation in order items
 - Order transaction safety for multi-item orders
 - Order status management with stock return on cancellation
-- Customer order history endpoint
-- Protected single order access by customer ownership
-- Environment variables via `.env`
-- Docker and Docker Compose support
-- Automated tests with pytest
-- GitHub Actions CI workflow
+- Customer order history
+- Protected single order access
+- Admin order status filtering
+- Admin order customer filtering
+- Admin order date filtering
+- Admin order pagination
+- Orders metadata response with total, skip, limit and items
+
+### Deployment and Quality
+
+- Docker support
+- GitHub Actions CI
+- Render production deployment
+- Automated test suite with `108 passed`
+
+
+## API Overview
+
+### Authentication
+
+```text
+POST /auth/register
+POST /auth/token
+```
+
+### Customers
+
+```text
+POST /customers
+GET /customers/me
+```
+### Categories
+
+```text
+POST /categories
+GET /categories
+GET /categories/{category_id}/products
+PUT /categories/{category_id}
+DELETE /categories/{category_id}
+```
+### Products
+
+```text
+POST /products
+GET /products
+GET /products/{product_id}
+PUT /products/{product_id}
+DELETE /products/{product_id}
+GET /products/catalog
+GET /products/search
+GET /products/low-stock
+```
+### Orders
+
+```text
+POST /orders
+GET /orders
+GET /orders/my
+GET /orders/{order_id}
+PATCH /orders/{order_id}/status
+```
+
 
 
 ## Deployment
@@ -57,6 +179,7 @@ Swagger documentation:
 
 ```text
 https://online-shop-api-z9y4.onrender.com/docs
+
 ```
 
 Health check:
@@ -2012,19 +2135,65 @@ cancelled orders count
 best-selling products
 low-stock products
 revenue by period
+
 ```
 
-### Production Improvements
-
-Before using this project in production, add:
+## Version History
 
 ```text
-proper authentication
-secure configuration
-environment variables
-production database
-logging
-error monitoring
-input sanitization
-deployment setup
+
+v1.0.0 — base portfolio release
+v1.1.0 — product image URL support
+v1.2.0 — low stock endpoint
+v1.3.0 — customer order history
+v1.4.0 — protected single order access
+v1.5.0 — order status filtering
+v1.6.0 — admin order filtering by customer
+v1.7.0 — order date filtering
+v1.8.0 — order pagination
+v1.9.0 — orders metadata response
+v2.0.0 — order items validation and stock protection
+v2.1.0 — order total consistency and transaction safety
+v2.2.0 — order duplicate product validation
+v2.3.0 — product update validation
+v2.4.0 — product search endpoint
+v2.5.0 — product catalog sort validation
+v2.6.0 — product catalog price range validation
+v2.7.0 — product catalog empty search validation
+v2.8.0 — category update validation
+v2.9.0 — category delete protection
+v3.0.0 — portfolio polish
 ```
+## Project Status
+
+The project is deployed and production-tested on Render.
+
+Current status:
+
+```text
+Production-ready portfolio backend API
+```
+Main quality checks:
+
+```text
+108 automated tests passed
+GitHub Actions CI enabled
+Render deployment verified
+Swagger UI available
+Docker support included
+```
+## Future Improvements
+
+Possible future improvements:
+
+- Add product reviews and ratings
+- Add cart functionality
+- Add payment integration
+- Add order invoices
+- Add email notifications
+- Add refresh tokens
+- Add admin dashboard UI
+- Add advanced analytics
+- Add PostgreSQL-specific integration tests
+
+
