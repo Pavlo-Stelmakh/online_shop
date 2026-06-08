@@ -2608,7 +2608,69 @@ def test_products_catalog_blank_search_returns_400():
     assert response.json()["detail"] == "search cannot be empty"
 
 
+def test_admin_can_update_category():
+    admin_headers = get_auth_headers(role="admin")
+    category = create_test_category()
 
+    response = client.put(
+        f"/categories/{category['id']}",
+        json={
+            "name": f"Updated Category {time.time()}"
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["id"] == category["id"]
+    assert response.json()["name"].startswith("Updated Category")
+
+
+def test_update_category_not_found_returns_404():
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.put(
+        "/categories/999999",
+        json={
+            "name": "Updated Category"
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Category not found"
+
+
+def test_update_category_with_duplicate_name_returns_400():
+    admin_headers = get_auth_headers(role="admin")
+
+    category_1 = create_test_category()
+    category_2 = create_test_category()
+
+    response = client.put(
+        f"/categories/{category_2['id']}",
+        json={
+            "name": category_1["name"]
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Category already exists"
+
+
+def test_update_category_with_empty_name_returns_422():
+    admin_headers = get_auth_headers(role="admin")
+    category = create_test_category()
+
+    response = client.put(
+        f"/categories/{category['id']}",
+        json={
+            "name": ""
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 422
 
 
 

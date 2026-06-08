@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class CategoryCreate(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1)
 
 
 class CategoryResponse(BaseModel):
