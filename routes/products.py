@@ -225,6 +225,7 @@ def get_products_catalog(
     min_price: float | None = Query(None, ge=0),
     max_price: float | None = Query(None, ge=0),
     in_stock: bool | None = None,
+    search: str | None = None,
     sort_by: str | None = None,
     sort_order: str = "asc",
     db: Session = Depends(get_db)
@@ -240,6 +241,19 @@ def get_products_catalog(
         sort_by=sort_by,
         sort_order=sort_order
     )
+
+
+    if search is not None:
+        search_pattern = f"%{search}%"
+        query = query.filter(
+            (Product.name.ilike(search_pattern)) |
+            (Product.description.ilike(search_pattern))
+        )
+
+    total = query.count()
+
+    products = query.offset(skip).limit(limit).all()
+
 
     total = query.count()
 

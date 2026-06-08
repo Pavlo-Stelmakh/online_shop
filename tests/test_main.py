@@ -2388,6 +2388,140 @@ def test_update_product_with_unknown_category_returns_404():
     assert response.json()["detail"] == "Category not found"
 
 
+def test_products_catalog_search_by_name():
+    category = create_test_category()
+    admin_headers = get_auth_headers(role="admin")
+
+    product_response = client.post(
+        "/products",
+        json={
+            "name": f"Searchable Mouse {time.time()}",
+            "price": 100,
+            "description": "Regular product description",
+            "image_url": None,
+            "stock": 10,
+            "category_id": category["id"]
+        },
+        headers=admin_headers
+    )
+
+    assert product_response.status_code == 200
+
+    product = product_response.json()
+
+    response = client.get(
+        "/products/catalog",
+        params={
+            "search": "Mouse"
+        }
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert "total" in data
+    assert "items" in data
+
+    product_ids = [item["id"] for item in data["items"]]
+
+    assert product["id"] in product_ids
+
+
+def test_products_catalog_search_by_description():
+    category = create_test_category()
+    admin_headers = get_auth_headers(role="admin")
+
+    product_response = client.post(
+        "/products",
+        json={
+            "name": f"Regular Product {time.time()}",
+            "price": 100,
+            "description": "Wireless keyboard for search test",
+            "image_url": None,
+            "stock": 10,
+            "category_id": category["id"]
+        },
+        headers=admin_headers
+    )
+
+    assert product_response.status_code == 200
+
+    product = product_response.json()
+
+    response = client.get(
+        "/products/catalog",
+        params={
+            "search": "Wireless"
+        }
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    product_ids = [item["id"] for item in data["items"]]
+
+    assert product["id"] in product_ids
+
+
+def test_products_catalog_search_with_in_stock_filter():
+    category = create_test_category()
+    admin_headers = get_auth_headers(role="admin")
+
+    in_stock_response = client.post(
+        "/products",
+        json={
+            "name": f"Search Filter Product In Stock {time.time()}",
+            "price": 100,
+            "description": "Product for search and stock filter",
+            "image_url": None,
+            "stock": 5,
+            "category_id": category["id"]
+        },
+        headers=admin_headers
+    )
+
+    assert in_stock_response.status_code == 200
+
+    out_of_stock_response = client.post(
+        "/products",
+        json={
+            "name": f"Search Filter Product Out Of Stock {time.time()}",
+            "price": 100,
+            "description": "Product for search and stock filter",
+            "image_url": None,
+            "stock": 0,
+            "category_id": category["id"]
+        },
+        headers=admin_headers
+    )
+
+    assert out_of_stock_response.status_code == 200
+
+    in_stock_product = in_stock_response.json()
+    out_of_stock_product = out_of_stock_response.json()
+
+    response = client.get(
+        "/products/catalog",
+        params={
+            "search": "Search Filter Product",
+            "in_stock": True
+        }
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+    product_ids = [item["id"] for item in data["items"]]
+
+    assert in_stock_product["id"] in product_ids
+    assert out_of_stock_product["id"] not in product_ids
+
+    for item in data["items"]:
+        assert item["stock"] > 0
+
+
 
 
 
