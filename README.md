@@ -19,6 +19,7 @@ The project demonstrates core backend functionality for an online store: product
 - Product catalog with pagination, filtering, sorting and metadata response
 - Product catalog search by name and description
 - Product catalog sort validation
+- Product catalog price range validation
 - Product image URL support
 - Product update validation for name, price, stock and category
 - Admin-only low stock products endpoint
@@ -812,6 +813,30 @@ Invalid sorting parameters return `400 Bad Request`.
 ```json
 {
   "detail": "Invalid sort_order value"
+}
+```
+
+#### Product Catalog Price Range Validation
+
+`GET /products/catalog` validates price range filters.
+
+Validation rule:
+
+```text
+min_price cannot be greater than max_price
+```
+
+Example invalid request:
+
+```text
+GET /products/catalog?min_price=500&max_price=100
+```
+
+Invalid price range returns `400 Bad Request`.
+
+```json
+{
+  "detail": "min_price cannot be greater than max_price"
 }
 ```
 
