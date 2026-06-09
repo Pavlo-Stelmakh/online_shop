@@ -24,6 +24,12 @@ def admin_dashboard(
     customers_count = db.query(Customer).count()
     orders_count = db.query(Order).count()
 
+    low_stock_count = db.query(Product).filter(Product.stock <= 5).count()
+    new_orders_count = db.query(Order).filter(Order.status == "new").count()
+    paid_orders_count = db.query(Order).filter(Order.status == "paid").count()
+    cancelled_orders_count = db.query(Order).filter(Order.status == "cancelled").count()
+
+
     return templates.TemplateResponse(
         request=request,
         name="admin_dashboard.html",
@@ -31,7 +37,11 @@ def admin_dashboard(
             "products_count": products_count,
             "categories_count": categories_count,
             "customers_count": customers_count,
-            "orders_count": orders_count
+            "orders_count": orders_count,
+            "low_stock_count": low_stock_count,
+            "new_orders_count": new_orders_count,
+            "paid_orders_count": paid_orders_count,
+            "cancelled_orders_count": cancelled_orders_count
         }
     )
 
