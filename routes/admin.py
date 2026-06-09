@@ -114,3 +114,23 @@ def admin_customers(
     )
 
 
+@router.get("/low-stock")
+def admin_low_stock(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    threshold = 5
+
+    products = db.query(Product).filter(
+        Product.stock <= threshold
+    ).order_by(Product.stock.asc()).all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_low_stock.html",
+        context={
+            "products": products,
+            "threshold": threshold
+        }
+    )
+

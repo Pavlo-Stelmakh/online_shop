@@ -2899,3 +2899,40 @@ def test_admin_dashboard_contains_admin_customers_link():
     assert "/admin/customers" in response.text
 
 
+def test_admin_low_stock_page_returns_200():
+    response = client.get("/admin/low-stock")
+
+    assert response.status_code == 200
+    assert "Admin Low Stock" in response.text
+
+
+def test_admin_low_stock_page_contains_table_headers():
+    create_test_product(stock=2, price=100)
+
+    response = client.get("/admin/low-stock")
+
+    assert response.status_code == 200
+    assert "ID" in response.text
+    assert "Name" in response.text
+    assert "Price" in response.text
+    assert "Stock" in response.text
+    assert "Category ID" in response.text
+
+
+def test_admin_low_stock_page_shows_only_low_stock_products():
+    low_stock_product = create_test_product(stock=2, price=100)
+    normal_stock_product = create_test_product(stock=10, price=200)
+
+    response = client.get("/admin/low-stock")
+
+    assert response.status_code == 200
+    assert low_stock_product["name"] in response.text
+    assert normal_stock_product["name"] not in response.text
+
+
+def test_admin_dashboard_contains_admin_low_stock_link():
+    response = client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Admin Low Stock" in response.text
+    assert "/admin/low-stock" in response.text
