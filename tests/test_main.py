@@ -2965,3 +2965,22 @@ def test_admin_orders_page_contains_status_badge_class():
 
     assert response.status_code == 200
     assert "status status-new" in response.text
+
+
+def test_admin_dashboard_contains_extended_stats_cards():
+    response = client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Low Stock Products" in response.text
+    assert "New Orders" in response.text
+    assert "Paid Orders" in response.text
+    assert "Cancelled Orders" in response.text
+
+
+def test_admin_dashboard_low_stock_count_is_displayed():
+    create_test_product(stock=2, price=100)
+
+    response = client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Low Stock Products" in response.text
