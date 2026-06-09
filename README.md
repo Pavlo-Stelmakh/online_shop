@@ -158,6 +158,7 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 - Admin categories page
 - Admin customers page
 - Admin low stock page
+- Admin dashboard navigation polish
 - Docker support
 - GitHub Actions CI
 - Render production deployment
@@ -300,19 +301,21 @@ category id
 ```
 
 
-
-The dashboard provides a visual overview of the backend project.
-
-Current dashboard features:
+Admin navigation:
 
 ```text
-products count
-categories count
-customers count
-orders count
-production status
-quick links to Swagger and main API sections
+Dashboard
+Products
+Orders
+Categories
+Customers
+Low Stock
+Swagger UI
 ```
+
+All admin pages use a consistent navigation structure.
+
+The dashboard provides a visual overview of the backend project.
 
 Production dashboard:
 
@@ -2325,6 +2328,7 @@ v3.3.0 — admin orders page
 v3.4.0 — admin categories page
 v3.5.0 — admin customers page
 v3.6.0 — admin low stock page
+v3.7.0 — admin dashboard navigation polish
 ```
 ## Project Status
 
