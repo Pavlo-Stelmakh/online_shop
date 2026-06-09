@@ -3049,3 +3049,32 @@ def test_admin_orders_page_can_filter_by_status():
     assert "Filtered by status" in response.text
     assert "new" in response.text
 
+
+def test_admin_orders_page_contains_status_filter_links():
+    response = client.get("/admin/orders")
+
+    assert response.status_code == 200
+    assert "Filter by status" in response.text
+
+    assert "/admin/orders" in response.text
+    assert "/admin/orders?status=new" in response.text
+    assert "/admin/orders?status=paid" in response.text
+    assert "/admin/orders?status=shipped" in response.text
+    assert "/admin/orders?status=cancelled" in response.text
+
+    assert "All" in response.text
+    assert "New" in response.text
+    assert "Paid" in response.text
+    assert "Shipped" in response.text
+    assert "Cancelled" in response.text
+
+
+def test_admin_orders_status_filter_marks_active_status():
+    response = client.get("/admin/orders?status=paid")
+
+    assert response.status_code == 200
+    assert 'class="active"' in response.text
+    assert "Filtered by status" in response.text
+    assert "paid" in response.text
+
+
