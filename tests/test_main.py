@@ -2984,3 +2984,30 @@ def test_admin_dashboard_low_stock_count_is_displayed():
 
     assert response.status_code == 200
     assert "Low Stock Products" in response.text
+
+
+def test_admin_dashboard_final_polish_content():
+    response = client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Version: <strong>v4.0.0</strong>" in response.text
+    assert "This dashboard provides a visual overview" in response.text
+    assert "Admin pages:" in response.text
+
+
+def test_admin_pages_have_final_footer():
+    urls = [
+        "/admin/products",
+        "/admin/orders",
+        "/admin/categories",
+        "/admin/customers",
+        "/admin/low-stock"
+    ]
+
+    for url in urls:
+        response = client.get(url)
+
+        assert response.status_code == 200
+        assert "Online Shop Admin Dashboard — v4.0.0" in response.text
+
+

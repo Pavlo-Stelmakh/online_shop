@@ -58,6 +58,11 @@
             border: 1px solid #e5e7eb;
         }
 
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+        }
+
         .card h2 {
             margin: 0;
             font-size: 14px;
@@ -128,7 +133,11 @@
     <main>
         <section class="status">
             <p>Status: <strong>Production API is running</strong></p>
-            <p>Version: <strong>v3.7.0</strong></p>
+            <p>Version: <strong>v4.0.0</strong></p>
+            <p>
+                This dashboard provides a visual overview of products, categories,
+                customers, orders, stock status and order analytics.
+            </p>
         </section>
 
         <section class="cards">
@@ -174,6 +183,14 @@
 
         </section>
 
+        <section class="status">
+            <p><strong>Admin pages:</strong></p>
+            <p>
+                Use Products, Orders, Categories, Customers and Low Stock pages
+                to inspect the main e-commerce entities.
+            </p>
+        </section>
+        
         <section class="links">
             <h2>Quick Links</h2>
             <a href="/admin">Dashboard</a>
