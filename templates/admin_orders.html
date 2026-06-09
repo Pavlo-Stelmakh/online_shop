@@ -140,6 +140,12 @@
             <a href="/docs">Swagger UI</a>
         </section>
 
+        {% if status %}
+            <section class="empty">
+                <p>Filtered by status: <strong>{{ status }}</strong></p>
+            </section>
+        {% endif %}
+
         {% if orders %}
             <section class="table-wrapper">
                 <table>
