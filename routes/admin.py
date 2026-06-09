@@ -27,6 +27,7 @@ def admin_dashboard(
     low_stock_count = db.query(Product).filter(Product.stock <= 5).count()
     new_orders_count = db.query(Order).filter(Order.status == "new").count()
     paid_orders_count = db.query(Order).filter(Order.status == "paid").count()
+    shipped_orders_count = db.query(Order).filter(Order.status == "shipped").count()
     cancelled_orders_count = db.query(Order).filter(Order.status == "cancelled").count()
 
 
@@ -41,6 +42,7 @@ def admin_dashboard(
             "low_stock_count": low_stock_count,
             "new_orders_count": new_orders_count,
             "paid_orders_count": paid_orders_count,
+            "shipped_orders_count": shipped_orders_count,
             "cancelled_orders_count": cancelled_orders_count
         }
     )
@@ -65,15 +67,22 @@ def admin_products(
 @router.get("/orders")
 def admin_orders(
     request: Request,
+    status: str | None = None,
     db: Session = Depends(get_db)
 ):
-    orders = db.query(Order).order_by(Order.id.desc()).all()
+    query = db.query(Order)
+
+    if status is not None:
+        query = query.filter(Order.status == status)
+
+    orders = query.order_by(Order.id.desc()).all()
 
     return templates.TemplateResponse(
         request=request,
         name="admin_orders.html",
         context={
-            "orders": orders
+            "orders": orders,
+            "status": status
         }
     )
 

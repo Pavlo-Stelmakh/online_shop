@@ -58,6 +58,13 @@
             border: 1px solid #e5e7eb;
         }
 
+        .card-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+
         .card:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
@@ -141,45 +148,51 @@
         </section>
 
         <section class="cards">
-            <div class="card">
+
+            <a class="card card-link" href="/admin/products">
                 <h2>Products</h2>
                 <p>{{ products_count }}</p>
-            </div>
+            </a>
 
-            <div class="card">
+            <a class="card card-link" href="/admin/categories">
                 <h2>Categories</h2>
                 <p>{{ categories_count }}</p>
-            </div>
+            </a>
 
-            <div class="card">
+            <a class="card card-link" href="/admin/customers">
                 <h2>Customers</h2>
                 <p>{{ customers_count }}</p>
-            </div>
+            </a>
 
-            <div class="card">
+            <a class="card card-link" href="/admin/orders">
                 <h2>Orders</h2>
                 <p>{{ orders_count }}</p>
-            </div>
+            </a>
 
-            <div class="card">
+            <a class="card card-link" href="/admin/low-stock">
                 <h2>Low Stock Products</h2>
                 <p>{{ low_stock_count }}</p>
-            </div>
+            </a>
 
-            <div class="card">
+            <a class="card card-link" href="/admin/orders?status=new">
                 <h2>New Orders</h2>
                 <p>{{ new_orders_count }}</p>
-            </div>
+            </a>
 
-            <div class="card">
+            <a class="card card-link" href="/admin/orders?status=paid">
                 <h2>Paid Orders</h2>
                 <p>{{ paid_orders_count }}</p>
-            </div>
+            </a>
 
-            <div class="card">
+            <a class="card card-link" href="/admin/orders?status=shipped">
+                <h2>Shipped Orders</h2>
+                <p>{{ shipped_orders_count }}</p>
+            </a>
+
+            <a class="card card-link" href="/admin/orders?status=cancelled">
                 <h2>Cancelled Orders</h2>
                 <p>{{ cancelled_orders_count }}</p>
-            </div>
+            </a>
 
         </section>
 

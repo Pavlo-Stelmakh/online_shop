@@ -3011,3 +3011,41 @@ def test_admin_pages_have_final_footer():
         assert "Online Shop Admin Dashboard — v4.0.0" in response.text
 
 
+def test_admin_dashboard_order_status_cards_have_filtered_links():
+    response = client.get("/admin")
+
+    assert response.status_code == 200
+
+    assert "New Orders" in response.text
+    assert "Paid Orders" in response.text
+    assert "Shipped Orders" in response.text
+    assert "Cancelled Orders" in response.text
+
+    assert "/admin/orders?status=new" in response.text
+    assert "/admin/orders?status=paid" in response.text
+    assert "/admin/orders?status=shipped" in response.text
+    assert "/admin/orders?status=cancelled" in response.text
+
+
+
+
+def test_admin_orders_page_can_filter_by_status():
+
+    product = create_test_product(stock=10, price=100)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    create_test_order(
+
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+
+    )
+
+    response = client.get("/admin/orders?status=new")
+
+    assert response.status_code == 200
+    assert "Filtered by status" in response.text
+    assert "new" in response.text
+
