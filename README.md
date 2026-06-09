@@ -161,10 +161,11 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 - Admin dashboard navigation polish
 - Admin order status badges
 - Admin dashboard extended stats cards
+- Admin dashboard UI final polish
 - Docker support
 - GitHub Actions CI
 - Render production deployment
-- Automated test suite with `130 passed`
+- Automated test suite with `132 passed`
 
 
 ## API Overview
@@ -342,6 +343,20 @@ Cancelled Orders
 ```
 
 The main admin dashboard provides overview cards for core entities, stock monitoring and order status analytics.
+
+Admin dashboard UI final polish:
+
+```text
+version label v4.0.0
+dashboard overview description
+admin pages description block
+card hover effect
+unified admin page footers
+improved admin page descriptions
+```
+
+The admin dashboard UI was polished for a cleaner portfolio presentation.
+
 
 The dashboard provides a visual overview of the backend project.
 
@@ -2359,6 +2374,7 @@ v3.6.0 — admin low stock page
 v3.7.0 — admin dashboard navigation polish
 v3.8.0 — admin order status badges
 v3.9.0 — admin dashboard stats cards polish
+v4.0.0 — admin dashboard UI final polish
 ```
 ## Project Status
 
