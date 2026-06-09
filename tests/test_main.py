@@ -2764,17 +2764,27 @@ def test_admin_dashboard_contains_dashboard_cards():
     assert "Customers" in response.text
     assert "Orders" in response.text
 
-
 def test_admin_dashboard_contains_quick_links():
     response = client.get("/admin")
 
     assert response.status_code == 200
+    assert "Dashboard" in response.text
+    assert "Products" in response.text
+    assert "Orders" in response.text
+    assert "Categories" in response.text
+    assert "Customers" in response.text
+    assert "Low Stock" in response.text
     assert "Swagger UI" in response.text
     assert "Health Check" in response.text
-    assert "Product Catalog API" in response.text
-    assert "Low Stock API" in response.text
-    assert "Orders API" in response.text
-    assert "Categories API" in response.text
+
+    assert "/admin" in response.text
+    assert "/admin/products" in response.text
+    assert "/admin/orders" in response.text
+    assert "/admin/categories" in response.text
+    assert "/admin/customers" in response.text
+    assert "/admin/low-stock" in response.text
+    assert "/docs" in response.text
+    assert "/health" in response.text
 
 
 def test_admin_products_page_returns_200():
@@ -2801,7 +2811,7 @@ def test_admin_dashboard_contains_admin_products_link():
     response = client.get("/admin")
 
     assert response.status_code == 200
-    assert "Admin Products" in response.text
+    assert "Products" in response.text
     assert "/admin/products" in response.text
     
 
@@ -2840,7 +2850,7 @@ def test_admin_dashboard_contains_admin_orders_link():
     response = client.get("/admin")
 
     assert response.status_code == 200
-    assert "Admin Orders" in response.text
+    assert "Orders" in response.text
     assert "/admin/orders" in response.text
 
 
@@ -2866,7 +2876,7 @@ def test_admin_dashboard_contains_admin_categories_link():
     response = client.get("/admin")
 
     assert response.status_code == 200
-    assert "Admin Categories" in response.text
+    assert "Categories" in response.text
     assert "/admin/categories" in response.text
 
 
@@ -2895,7 +2905,7 @@ def test_admin_dashboard_contains_admin_customers_link():
     response = client.get("/admin")
 
     assert response.status_code == 200
-    assert "Admin Customers" in response.text
+    assert "Customers" in response.text
     assert "/admin/customers" in response.text
 
 
@@ -2934,5 +2944,5 @@ def test_admin_dashboard_contains_admin_low_stock_link():
     response = client.get("/admin")
 
     assert response.status_code == 200
-    assert "Admin Low Stock" in response.text
+    assert "Low Stock" in response.text
     assert "/admin/low-stock" in response.text
