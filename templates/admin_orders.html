@@ -96,6 +96,26 @@
             color: #374151;
         }
 
+        .status-new {
+             background: #e5e7eb;
+             color: #374151;
+        }
+
+        .status-paid {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-shipped {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .status-cancelled {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
         footer {
             padding: 20px 40px;
             color: #6b7280;
@@ -138,7 +158,11 @@
                             <tr>
                                 <td>{{ order.id }}</td>
                                 <td>{{ order.customer_id }}</td>
-                                <td><span class="status">{{ order.status }}</span></td>
+                                <td>
+                                    <span class="status status-{{ order.status }}">
+                                        {{ order.status }}
+                                    </span>
+                                </td>
                                 <td>{{ order.total_price }}</td>
                                 <td>{{ order.created_at }}</td>
                                 <td>{{ order.items | length }}</td>
