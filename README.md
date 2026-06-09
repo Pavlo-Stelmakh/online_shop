@@ -61,6 +61,14 @@ Admin Customers Page:
 https://online-shop-api-z9y4.onrender.com/admin/customers
 ```
 
+Admin low stock page:
+
+```text
+https://online-shop-api-z9y4.onrender.com/admin/low-stock
+```
+
+The admin low stock page displays products with low stock:
+
 Health check:
 
 ```text
@@ -149,10 +157,11 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 - Admin orders page
 - Admin categories page
 - Admin customers page
+- Admin low stock page
 - Docker support
 - GitHub Actions CI
 - Render production deployment
-- Automated test suite with `123 passed`
+- Automated test suite with `127 passed`
 
 
 ## API Overview
@@ -273,6 +282,24 @@ name
 email
 phone
 ```
+
+Admin low stock page:
+
+```text
+/admin/low-stock
+```
+
+The admin low stock page displays products with low stock:
+
+```text
+product id
+name
+price
+stock
+category id
+```
+
+
 
 The dashboard provides a visual overview of the backend project.
 
@@ -2297,6 +2324,7 @@ v3.3.0 — admin orders page
 v3.3.0 — admin orders page
 v3.4.0 — admin categories page
 v3.5.0 — admin customers page
+v3.6.0 — admin low stock page
 ```
 ## Project Status
 
