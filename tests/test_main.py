@@ -2946,3 +2946,22 @@ def test_admin_dashboard_contains_admin_low_stock_link():
     assert response.status_code == 200
     assert "Low Stock" in response.text
     assert "/admin/low-stock" in response.text
+
+
+def test_admin_orders_page_contains_status_badge_class():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    response = client.get("/admin/orders")
+
+    assert response.status_code == 200
+    assert "status status-new" in response.text
