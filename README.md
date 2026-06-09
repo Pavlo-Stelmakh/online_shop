@@ -159,10 +159,11 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 - Admin customers page
 - Admin low stock page
 - Admin dashboard navigation polish
+- Admin order status badges
 - Docker support
 - GitHub Actions CI
 - Render production deployment
-- Automated test suite with `127 passed`
+- Automated test suite with `128 passed`
 
 
 ## API Overview
@@ -253,6 +254,17 @@ total price
 created at
 items count
 ```
+
+Admin order status badges:
+
+```text
+new
+paid
+shipped
+cancelled
+```
+
+The admin orders page displays order statuses as visual badges.
 
 Admin categories page:
 
@@ -2329,6 +2341,7 @@ v3.4.0 — admin categories page
 v3.5.0 — admin customers page
 v3.6.0 — admin low stock page
 v3.7.0 — admin dashboard navigation polish
+v3.8.0 — admin order status badges
 ```
 ## Project Status
 
