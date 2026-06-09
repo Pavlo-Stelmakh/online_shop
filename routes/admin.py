@@ -96,3 +96,21 @@ def admin_categories(
             "categories": categories_with_counts
         }
     )
+
+
+@router.get("/customers")
+def admin_customers(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    customers = db.query(Customer).order_by(Customer.id.desc()).all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_customers.html",
+        context={
+            "customers": customers
+        }
+    )
+
+

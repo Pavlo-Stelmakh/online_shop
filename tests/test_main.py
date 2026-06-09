@@ -2868,3 +2868,34 @@ def test_admin_dashboard_contains_admin_categories_link():
     assert response.status_code == 200
     assert "Admin Categories" in response.text
     assert "/admin/categories" in response.text
+
+
+def test_admin_customers_page_returns_200():
+    response = client.get("/admin/customers")
+
+    assert response.status_code == 200
+    assert "Admin Customers" in response.text
+
+
+def test_admin_customers_page_contains_customers_table_headers():
+    customer_headers = get_auth_headers(role="customer")
+    create_test_customer(headers=customer_headers)
+
+    response = client.get("/admin/customers")
+
+    assert response.status_code == 200
+    assert "ID" in response.text
+    assert "User ID" in response.text
+    assert "Name" in response.text
+    assert "Email" in response.text
+    assert "Phone" in response.text
+
+
+def test_admin_dashboard_contains_admin_customers_link():
+    response = client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Admin Customers" in response.text
+    assert "/admin/customers" in response.text
+
+
