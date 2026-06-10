@@ -3078,3 +3078,68 @@ def test_admin_orders_status_filter_marks_active_status():
     assert "paid" in response.text
 
 
+def test_admin_products_page_contains_filter_ui():
+    response = client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "Product filters" in response.text
+    assert "Search by name or description" in response.text
+    assert "/admin/products?in_stock=true" in response.text
+    assert "/admin/products?in_stock=false" in response.text
+
+def test_admin_products_page_can_filter_by_search():
+    searchable_product = create_test_product(
+        stock=10,
+        price=100
+    )
+    other_product = create_test_product(
+        stock=10,
+        price=200
+    )
+
+    response = client.get(
+        "/admin/products",
+        params={
+            "search": searchable_product["name"]
+        }
+    )
+
+    assert response.status_code == 200
+    assert searchable_product["name"] in response.text
+    assert other_product["name"] not in response.text
+
+
+def test_admin_products_page_can_filter_in_stock_products():
+    in_stock_product = create_test_product(stock=5, price=100)
+    out_of_stock_product = create_test_product(stock=0, price=200)
+
+    response = client.get(
+        "/admin/products",
+        params={
+            "in_stock": True
+        }
+    )
+
+    assert response.status_code == 200
+    assert in_stock_product["name"] in response.text
+    assert out_of_stock_product["name"] not in response.text
+
+
+def test_admin_products_page_can_filter_out_of_stock_products():
+    in_stock_product = create_test_product(stock=5, price=100)
+    out_of_stock_product = create_test_product(stock=0, price=200)
+
+    response = client.get(
+        "/admin/products",
+        params={
+            "in_stock": False
+        }
+    )
+
+    assert response.status_code == 200
+    assert out_of_stock_product["name"] in response.text
+    assert in_stock_product["name"] not in response.text
+
+
+
+
