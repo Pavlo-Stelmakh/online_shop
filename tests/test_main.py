@@ -3141,5 +3141,33 @@ def test_admin_products_page_can_filter_out_of_stock_products():
     assert in_stock_product["name"] not in response.text
 
 
+def test_admin_categories_page_contains_search_ui():
+    response = client.get("/admin/categories")
+
+    assert response.status_code == 200
+    assert "Category search" in response.text
+    assert "Search by category name" in response.text
+    assert "Reset" in response.text
+
+
+def test_admin_categories_page_can_filter_by_search():
+    searchable_category = create_test_category()
+    other_category = create_test_category()
+
+    response = client.get(
+        "/admin/categories",
+        params={
+            "search": searchable_category["name"]
+        }
+    )
+
+    assert response.status_code == 200
+    assert searchable_category["name"] in response.text
+    assert other_category["name"] not in response.text
+
+
+
+
+
 
 

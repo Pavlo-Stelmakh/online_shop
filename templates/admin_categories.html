@@ -49,6 +49,55 @@
             background: #1d4ed8;
         }
 
+        .filters {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+
+        .filters h2 {
+            margin: 0 0 12px;
+            font-size: 16px;
+        }
+
+        .filters form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .filters input {
+            padding: 9px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            min-width: 220px;
+        }
+
+        .filters button,
+        .filters a {
+            display: inline-block;
+            padding: 9px 12px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .filters a.secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .filters a:hover,
+        .filters button:hover {
+            opacity: 0.9;
+        }
+
         .table-wrapper {
             background: white;
             border: 1px solid #e5e7eb;
@@ -118,6 +167,21 @@
             <a href="/admin/customers">Customers</a>
             <a href="/admin/low-stock">Low Stock</a>
             <a href="/docs">Swagger UI</a>
+        </section>
+
+        <section class="filters">
+            <h2>Category search</h2>
+
+            <form method="get" action="/admin/categories">
+                <input
+                    type="text"
+                    name="search"
+                    placeholder="Search by category name"
+                    value="{{ search }}"
+                >
+                <button type="submit">Search</button>
+                <a class="secondary" href="/admin/categories">Reset</a>
+            </form>
         </section>
 
         {% if categories %}
