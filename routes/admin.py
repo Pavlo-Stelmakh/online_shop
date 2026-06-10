@@ -148,18 +148,34 @@ def admin_categories(
         }
     )
 
+
 @router.get("/customers")
 def admin_customers(
     request: Request,
+    search: str | None = None,
     db: Session = Depends(get_db)
 ):
-    customers = db.query(Customer).order_by(Customer.id.desc()).all()
+    query = db.query(Customer)
+
+    if search is not None:
+        search_value = search.strip()
+
+        if search_value:
+            search_pattern = f"%{search_value}%"
+            query = query.filter(
+                (Customer.name.ilike(search_pattern)) |
+                (Customer.email.ilike(search_pattern)) |
+                (Customer.phone.ilike(search_pattern))
+            )
+
+    customers = query.order_by(Customer.id.desc()).all()
 
     return templates.TemplateResponse(
         request=request,
         name="admin_customers.html",
         context={
-            "customers": customers
+            "customers": customers,
+            "search": search or ""
         }
     )
 

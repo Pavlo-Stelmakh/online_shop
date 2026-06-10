@@ -3166,6 +3166,32 @@ def test_admin_categories_page_can_filter_by_search():
     assert other_category["name"] not in response.text
 
 
+def test_admin_customers_page_contains_search_ui():
+    response = client.get("/admin/customers")
+
+    assert response.status_code == 200
+    assert "Customer search" in response.text
+    assert "Search by name, email or phone" in response.text
+    assert "Reset" in response.text
+
+
+def test_admin_customers_page_can_filter_by_search():
+    customer_headers = get_auth_headers(role="customer")
+
+    searchable_customer = create_test_customer(headers=customer_headers)
+
+    response = client.get(
+        "/admin/customers",
+        params={
+            "search": searchable_customer["email"]
+        }
+    )
+
+    assert response.status_code == 200
+    assert searchable_customer["email"] in response.text
+
+
+
 
 
 
