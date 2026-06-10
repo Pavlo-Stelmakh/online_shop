@@ -79,15 +79,16 @@ def create_product(
 
     if category is None:
         raise HTTPException(status_code=404, detail="Category not found")
-
     product = Product(
         name=product_data.name,
         price=product_data.price,
         description=product_data.description,
         image_url=product_data.image_url,
         stock=product_data.stock,
+        low_stock_threshold=product_data.low_stock_threshold,
         category_id=product_data.category_id
     )
+
 
     db.add(product)
     db.commit()

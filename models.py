@@ -23,6 +23,7 @@ class Product(Base):
     description = Column(String)
     image_url = Column(String, nullable=True)
     stock = Column(Integer, default=0)
+    low_stock_threshold = Column(Integer, default=5, nullable=False)
 
     category_id = Column(Integer, ForeignKey("categories.id"))
 
