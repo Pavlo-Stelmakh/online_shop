@@ -130,7 +130,7 @@
         </section>
 
         <section class="warning">
-            Showing products with stock less than or equal to {{ threshold }}.
+            Showing products where stock is less than or equal to each product low stock threshold.
         </section>
 
         {% if products %}
@@ -142,6 +142,7 @@
                             <th>Name</th>
                             <th>Price</th>
                             <th>Stock</th>
+                            <th>Low Stock Threshold</th>
                             <th>Category ID</th>
                         </tr>
                     </thead>
@@ -158,6 +159,7 @@
                                         <span class="stock-low">{{ product.stock }}</span>
                                     {% endif %}
                                 </td>
+                                <td>{{ product.low_stock_threshold }}</td>
                                 <td>{{ product.category_id }}</td>
                             </tr>
                         {% endfor %}

@@ -17,6 +17,7 @@ class ProductCreate(BaseModel):
     description: str
     image_url: str | None = None
     stock: int = Field(..., ge=0)
+    low_stock_threshold: int = Field(5, ge=1, le=100)
     category_id: int
 
 
@@ -27,6 +28,7 @@ class ProductResponse(BaseModel):
     description: str
     image_url: str | None = None
     stock: int
+    low_stock_threshold: int
     category_id: int
     category: CategoryResponse
 

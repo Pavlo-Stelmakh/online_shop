@@ -198,6 +198,7 @@
                             <th>Name</th>
                             <th>Price</th>
                             <th>Stock</th>
+                            <th>Low Stock Threshold</th>
                             <th>Category ID</th>
                             <th>Image URL</th>
                         </tr>
@@ -215,6 +216,7 @@
                                         <span class="stock-ok">{{ product.stock }}</span>
                                     {% endif %}
                                 </td>
+                                <td>{{ product.low_stock_threshold }}</td>
                                 <td>{{ product.category_id }}</td>
                                 <td>
                                     {% if product.image_url %}

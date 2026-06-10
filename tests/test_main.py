@@ -103,18 +103,22 @@ def create_test_category():
 
     return response.json()
 
-
-def create_test_product(stock: int = 10, price: float = 100):
-    headers = get_auth_headers()
+def create_test_product(
+    stock: int = 10,
+    price: float = 100,
+    low_stock_threshold: int = 5
+):
     category = create_test_category()
+    headers = get_auth_headers(role="admin")
 
     response = client.post(
-        "/products",
+    "/products",
         json={
             "name": f"Test Product {time.time()}",
             "price": price,
             "description": "Test product description",
             "stock": stock,
+            "low_stock_threshold": low_stock_threshold,
             "category_id": category["id"]
         },
         headers=headers
@@ -3191,9 +3195,49 @@ def test_admin_customers_page_can_filter_by_search():
     assert searchable_customer["email"] in response.text
 
 
+def test_admin_low_stock_page_uses_product_specific_threshold():
+    low_stock_product = create_test_product(stock=8, price=100)
+    normal_stock_product = create_test_product(stock=8, price=200)
+
+    response = client.get("/admin/low-stock")
+
+    assert response.status_code == 200
+    assert "Low Stock Threshold" in response.text
+
+    # Both products currently use the default threshold.
+    assert low_stock_product["name"] not in response.text
+    assert normal_stock_product["name"] not in response.text
 
 
+def test_admin_products_page_displays_low_stock_threshold():
+    product = create_test_product(stock=3, price=100)
+
+    response = client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "Low Stock Threshold" in response.text
+    assert product["name"] in response.text
 
 
+def test_admin_low_stock_page_includes_product_when_stock_is_below_custom_threshold():
+    low_stock_product = create_test_product(
+        stock=8,
+        price=100,
+        low_stock_threshold=10
+    )
+
+    response = client.get("/admin/low-stock")
+
+    assert response.status_code == 200
+    assert low_stock_product["name"] in response.text
+    assert "Low Stock Threshold" in response.text
 
 
+def test_product_response_includes_low_stock_threshold():
+    product = create_test_product(
+        stock=8,
+        price=100,
+        low_stock_threshold=10
+    )
+
+    assert product["low_stock_threshold"] == 10
