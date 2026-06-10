@@ -108,13 +108,22 @@ def admin_orders(
         }
     )
 
-
 @router.get("/categories")
 def admin_categories(
     request: Request,
+    search: str | None = None,
     db: Session = Depends(get_db)
 ):
-    categories = db.query(Category).order_by(Category.id.desc()).all()
+    query = db.query(Category)
+
+    if search is not None:
+        search_value = search.strip()
+
+        if search_value:
+            search_pattern = f"%{search_value}%"
+            query = query.filter(Category.name.ilike(search_pattern))
+
+    categories = query.order_by(Category.id.desc()).all()
 
     categories_with_counts = []
 
@@ -134,10 +143,10 @@ def admin_categories(
         request=request,
         name="admin_categories.html",
         context={
-            "categories": categories_with_counts
+            "categories": categories_with_counts,
+            "search": search or ""
         }
     )
-
 
 @router.get("/customers")
 def admin_customers(
