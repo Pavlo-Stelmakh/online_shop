@@ -167,10 +167,11 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 - Admin orders filter UI
 - Admin products search/filter UI
 - Admin categories search UI
+- Admin customers search UI
 - Docker support
 - GitHub Actions CI
 - Render production deployment
-- Automated test suite with `142 passed`
+- Automated test suite with `144 passed`
 
 
 ## API Overview
@@ -438,6 +439,32 @@ Examples:
 /admin/categories
 /admin/categories?search=electronics
 /admin/categories?search=phone
+```
+
+Admin customers search UI:
+
+```text
+Search
+Reset
+```
+
+The admin customers page includes search controls for easier customer profile inspection.
+
+Search works by:
+
+```text
+name
+email
+phone
+```
+
+Examples:
+
+```text
+/admin/customers
+/admin/customers?search=John
+/admin/customers?search=example.com
+/admin/customers?search=+380
 ```
 
 The dashboard provides a visual overview of the backend project.
@@ -2461,6 +2488,7 @@ v4.1.0 — clickable dashboard cards
 v4.2.0 — admin orders filter UI
 v4.3.0 — admin products search/filter UI
 v4.4.0 — admin categories search UI
+v4.5.0 — admin customers search UI
 ```
 ## Project Status
 
