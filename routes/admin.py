@@ -51,15 +51,37 @@ def admin_dashboard(
 @router.get("/products")
 def admin_products(
     request: Request,
+    search: str | None = None,
+    in_stock: bool | None = None,
     db: Session = Depends(get_db)
 ):
-    products = db.query(Product).order_by(Product.id.desc()).all()
+    query = db.query(Product)
+
+    if search is not None:
+        search_value = search.strip()
+
+        if search_value:
+            search_pattern = f"%{search_value}%"
+            query = query.filter(
+                (Product.name.ilike(search_pattern)) |
+                (Product.description.ilike(search_pattern))
+            )
+
+    if in_stock is not None:
+        if in_stock:
+            query = query.filter(Product.stock > 0)
+        else:
+            query = query.filter(Product.stock == 0)
+
+    products = query.order_by(Product.id.desc()).all()
 
     return templates.TemplateResponse(
         request=request,
         name="admin_products.html",
         context={
-            "products": products
+            "products": products,
+            "search": search or "",
+            "in_stock": in_stock
         }
     )
 
