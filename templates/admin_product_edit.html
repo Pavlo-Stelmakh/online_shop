@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Product</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            color: #222;
+        }
+
+        header {
+            background: #111827;
+            color: white;
+            padding: 24px 40px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        header p {
+            margin: 8px 0 0;
+            color: #d1d5db;
+        }
+
+        main {
+            padding: 40px;
+            max-width: 700px;
+        }
+
+        .nav {
+            margin-bottom: 24px;
+        }
+
+        .nav a {
+            display: inline-block;
+            margin-right: 12px;
+            padding: 10px 14px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+
+        .nav a:hover {
+            background: #1d4ed8;
+        }
+
+        .form-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 24px;
+        }
+
+        label {
+            display: block;
+            margin: 14px 0 6px;
+            font-weight: bold;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            min-height: 100px;
+        }
+
+        button {
+            margin-top: 18px;
+            padding: 10px 14px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+        }
+
+        footer {
+            padding: 20px 40px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Edit Product</h1>
+        <p>Update product data from the admin dashboard.</p>
+    </header>
+
+    <main>
+        <section class="nav">
+            <a href="/admin">Dashboard</a>
+            <a href="/admin/products">Products</a>
+            <a href="/admin/products/create">Create Product</a>
+            <a href="/admin/orders">Orders</a>
+            <a href="/admin/categories">Categories</a>
+            <a href="/admin/customers">Customers</a>
+            <a href="/admin/low-stock">Low Stock</a>
+            <a href="/docs">Swagger UI</a>
+            <a href="/admin/logout">Logout</a>
+        </section>
+
+        <section class="form-card">
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+
+            <form method="post" action="/admin/products/{{ product.id }}/edit">
+                <label for="name">Name</label>
+                <input id="name" type="text" name="name" value="{{ product.name }}" required>
+
+                <label for="price">Price</label>
+                <input id="price" type="number" step="0.01" name="price" value="{{ product.price }}" required>
+
+                <label for="description">Description</label>
+                <textarea id="description" name="description" required>{{ product.description }}</textarea>
+
+                <label for="image_url">Image URL</label>
+                <input id="image_url" type="url" name="image_url" value="{{ product.image_url or '' }}">
+
+                <label for="stock">Stock</label>
+                <input id="stock" type="number" name="stock" min="0" value="{{ product.stock }}" required>
+
+                <label for="low_stock_threshold">Low Stock Threshold</label>
+                <input id="low_stock_threshold" type="number" name="low_stock_threshold" min="1" max="100" value="{{ product.low_stock_threshold }}" required>
+
+                <label for="category_id">Category ID</label>
+                <input id="category_id" type="number" name="category_id" min="1" value="{{ product.category_id }}" required>
+
+                <button type="submit">Update Product</button>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        Online Shop Admin Dashboard — v4.0.0
+    </footer>
+</body>
+</html>

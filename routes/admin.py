@@ -300,6 +300,123 @@ def admin_product_create(
     )
 
 
+@router.get("/products/{product_id}/edit")
+def admin_product_edit_page(
+    product_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    admin_user = require_admin_ui(request, db)
+
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
+    product = db.query(Product).filter(Product.id == product_id).first()
+
+    if product is None:
+        return RedirectResponse(
+            url="/admin/products",
+            status_code=303
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_product_edit.html",
+        context={
+            "product": product,
+            "error": None
+        }
+    )
+
+
+@router.post("/products/{product_id}/edit")
+def admin_product_edit(
+    product_id: int,
+    request: Request,
+    name: str = Form(...),
+    price: float = Form(...),
+    description: str = Form(...),
+    image_url: str | None = Form(None),
+    stock: int = Form(...),
+    low_stock_threshold: int = Form(...),
+    category_id: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    admin_user = require_admin_ui(request, db)
+
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
+    product = db.query(Product).filter(Product.id == product_id).first()
+
+    if product is None:
+        return RedirectResponse(
+            url="/admin/products",
+            status_code=303
+        )
+
+    if price <= 0:
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_product_edit.html",
+            context={
+                "product": product,
+                "error": "price must be greater than 0"
+            },
+            status_code=400
+        )
+
+    if stock < 0:
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_product_edit.html",
+            context={
+                "product": product,
+                "error": "stock must be greater than or equal to 0"
+            },
+            status_code=400
+        )
+
+    if low_stock_threshold < 1 or low_stock_threshold > 100:
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_product_edit.html",
+            context={
+                "product": product,
+                "error": "low_stock_threshold must be between 1 and 100"
+            },
+            status_code=400
+        )
+
+    category = db.query(Category).filter(Category.id == category_id).first()
+
+    if category is None:
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_product_edit.html",
+            context={
+                "product": product,
+                "error": "Category not found"
+            },
+            status_code=404
+        )
+
+    product.name = name
+    product.price = price
+    product.description = description
+    product.image_url = image_url
+    product.stock = stock
+    product.low_stock_threshold = low_stock_threshold
+    product.category_id = category_id
+
+    db.commit()
+
+    return RedirectResponse(
+        url="/admin/products",
+        status_code=303
+    )
+
+
 @router.get("/orders")
 def admin_orders(
     request: Request,

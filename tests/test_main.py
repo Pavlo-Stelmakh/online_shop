@@ -3432,3 +3432,92 @@ def test_admin_products_page_contains_create_product_link():
     assert "/admin/products/create" in response.text
 
 
+def test_admin_product_edit_page_returns_200_for_admin():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.get(f"/admin/products/{product['id']}/edit")
+
+    assert response.status_code == 200
+    assert "Edit Product" in response.text
+    assert product["name"] in response.text
+    assert "Low Stock Threshold" in response.text
+    assert "Update Product" in response.text
+
+
+def test_admin_product_edit_page_redirects_without_login():
+    product = create_test_product(stock=5, price=100)
+    anonymous_client = TestClient(app)
+
+    response = anonymous_client.get(
+        f"/admin/products/{product['id']}/edit",
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+
+def test_admin_can_update_product_from_ui():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+    category = create_test_category()
+
+    updated_name = f"Updated Admin Product {time.time()}"
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/edit",
+        data={
+            "name": updated_name,
+            "price": 250,
+            "description": "Updated from admin UI",
+            "image_url": "https://example.com/updated-product.jpg",
+            "stock": 12,
+            "low_stock_threshold": 20,
+            "category_id": category["id"]
+        },
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/products"
+
+    products_response = admin_client.get("/admin/products")
+
+    assert products_response.status_code == 200
+    assert updated_name in products_response.text
+    assert "20" in products_response.text
+
+
+def test_admin_product_edit_rejects_invalid_category():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/edit",
+        data={
+            "name": product["name"],
+            "price": 250,
+            "description": "Invalid category update",
+            "image_url": "https://example.com/updated-product.jpg",
+            "stock": 12,
+            "low_stock_threshold": 20,
+            "category_id": 999999
+        }
+    )
+
+    assert response.status_code == 404
+    assert "Category not found" in response.text
+
+
+def test_admin_products_page_contains_edit_product_link():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "Edit" in response.text
+    assert f"/admin/products/{product['id']}/edit" in response.text
+
+

@@ -203,6 +203,7 @@
                             <th>Low Stock Threshold</th>
                             <th>Category ID</th>
                             <th>Image URL</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -226,6 +227,9 @@
                                     {% else %}
                                         —
                                     {% endif %}
+                                </td>
+                                <td>
+                                    <a href="/admin/products/{{ product.id }}/edit">Edit</a>
                                 </td>
                             </tr>
                         {% endfor %}
