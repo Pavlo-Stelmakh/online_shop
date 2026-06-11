@@ -3348,3 +3348,87 @@ def test_admin_ui_client_can_access_dashboard():
 
     assert response.status_code == 200
     assert "Online Shop Admin Dashboard" in response.text
+
+
+def test_admin_product_create_page_returns_200_for_admin():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/products/create")
+
+    assert response.status_code == 200
+    assert "Create Product" in response.text
+    assert "Low Stock Threshold" in response.text
+    assert "Category ID" in response.text
+
+
+def test_admin_product_create_page_redirects_without_login():
+    anonymous_client = TestClient(app)
+
+    response = anonymous_client.get(
+        "/admin/products/create",
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+
+def test_admin_can_create_product_from_ui():
+    admin_client = get_admin_ui_client()
+    category = create_test_category()
+
+    product_name = f"Admin UI Product {time.time()}"
+
+    response = admin_client.post(
+        "/admin/products/create",
+        data={
+            "name": product_name,
+            "price": 150,
+            "description": "Created from admin UI",
+            "image_url": "https://example.com/admin-product.jpg",
+            "stock": 7,
+            "low_stock_threshold": 10,
+            "category_id": category["id"]
+        },
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/products"
+
+    products_response = admin_client.get("/admin/products")
+
+    assert products_response.status_code == 200
+    assert product_name in products_response.text
+
+
+def test_admin_product_create_rejects_invalid_category():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.post(
+        "/admin/products/create",
+        data={
+            "name": f"Invalid Category Product {time.time()}",
+            "price": 150,
+            "description": "Invalid category test",
+            "image_url": "https://example.com/admin-product.jpg",
+            "stock": 7,
+            "low_stock_threshold": 10,
+            "category_id": 999999
+        }
+    )
+
+    assert response.status_code == 404
+    assert "Category not found" in response.text
+
+
+def test_admin_products_page_contains_create_product_link():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "Create Product" in response.text
+    assert "/admin/products/create" in response.text
+
+
