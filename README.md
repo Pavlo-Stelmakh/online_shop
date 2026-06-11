@@ -169,10 +169,11 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 - Admin categories search UI
 - Admin customers search UI
 - Product-specific low stock threshold
+- Admin dashboard login authentication
 - Docker support
 - GitHub Actions CI
 - Render production deployment
-- Automated test suite with `148 passed`
+- Automated test suite with `152 passed`
 
 
 ## API Overview
@@ -491,6 +492,38 @@ result: low stock
 ```
 
 The admin low stock page displays products based on each product's individual threshold.
+
+Admin dashboard login authentication:
+
+```text
+/admin/login
+/admin/logout
+```
+
+The admin dashboard UI is protected by login authentication.
+
+Admin pages require an authenticated admin session:
+
+```text
+/admin
+/admin/products
+/admin/orders
+/admin/categories
+/admin/customers
+/admin/low-stock
+```
+
+Authentication uses existing users and requires:
+
+```text
+role = admin
+```
+
+Unauthenticated users are redirected to:
+
+```text
+/admin/login
+```
 
 The dashboard provides a visual overview of the backend project.
 
@@ -2520,6 +2553,7 @@ v4.3.0 — admin products search/filter UI
 v4.4.0 — admin categories search UI
 v4.5.0 — admin customers search UI
 v4.6.0 — product-specific low stock threshold
+v4.7.0 — admin dashboard login authentication
 ```
 ## Project Status
 
