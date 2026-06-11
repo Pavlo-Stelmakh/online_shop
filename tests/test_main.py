@@ -88,6 +88,30 @@ def get_auth_headers(role: str = "admin"):
         "Authorization": f"Bearer {token}"
     }
 
+
+def get_admin_ui_cookies():
+
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.get(
+
+        "/auth/me",
+
+        headers=admin_headers
+
+    )
+
+    assert response.status_code == 200
+
+    admin_user = response.json()
+
+    return {
+
+        "admin_username": admin_user["username"]
+
+    }
+
+
 def create_test_category():
     headers = get_auth_headers()
 
@@ -2753,14 +2777,20 @@ def test_delete_category_requires_auth():
 
 
 def test_admin_dashboard_returns_200():
-    response = client.get("/admin")
+    response = client.get(
+        "/admin",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Online Shop Admin Dashboard" in response.text
 
 
 def test_admin_dashboard_contains_dashboard_cards():
-    response = client.get("/admin")
+    response = client.get(
+        "/admin",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Products" in response.text
@@ -2769,7 +2799,10 @@ def test_admin_dashboard_contains_dashboard_cards():
     assert "Orders" in response.text
 
 def test_admin_dashboard_contains_quick_links():
-    response = client.get("/admin")
+    response = client.get(
+        "/admin",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Dashboard" in response.text
@@ -2792,7 +2825,10 @@ def test_admin_dashboard_contains_quick_links():
 
 
 def test_admin_products_page_returns_200():
-    response = client.get("/admin/products")
+    response = client.get(
+        "/admin/products",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Admin Products" in response.text
@@ -2801,7 +2837,10 @@ def test_admin_products_page_returns_200():
 def test_admin_products_page_contains_product_table():
     create_test_product(stock=10, price=100)
 
-    response = client.get("/admin/products")
+    response = client.get(
+        "/admin/products",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "ID" in response.text
@@ -2812,7 +2851,10 @@ def test_admin_products_page_contains_product_table():
 
 
 def test_admin_dashboard_contains_admin_products_link():
-    response = client.get("/admin")
+    response = client.get(
+        "/admin",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Products" in response.text
@@ -2820,7 +2862,10 @@ def test_admin_dashboard_contains_admin_products_link():
     
 
 def test_admin_orders_page_returns_200():
-    response = client.get("/admin/orders")
+    response = client.get(
+        "/admin/orders",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Admin Orders" in response.text
@@ -2839,7 +2884,10 @@ def test_admin_orders_page_contains_orders_table_headers():
         headers=customer_headers
     )
 
-    response = client.get("/admin/orders")
+    response = client.get(
+        "/admin/orders",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "ID" in response.text
@@ -2851,7 +2899,10 @@ def test_admin_orders_page_contains_orders_table_headers():
 
 
 def test_admin_dashboard_contains_admin_orders_link():
-    response = client.get("/admin")
+    response = client.get(
+        "/admin",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Orders" in response.text
@@ -2859,7 +2910,10 @@ def test_admin_dashboard_contains_admin_orders_link():
 
 
 def test_admin_categories_page_returns_200():
-    response = client.get("/admin/categories")
+    response = client.get(
+        "/admin/categories",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Admin Categories" in response.text
@@ -2868,7 +2922,10 @@ def test_admin_categories_page_returns_200():
 def test_admin_categories_page_contains_categories_table_headers():
     create_test_category()
 
-    response = client.get("/admin/categories")
+    response = client.get(
+        "/admin/categories",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "ID" in response.text
@@ -2877,7 +2934,10 @@ def test_admin_categories_page_contains_categories_table_headers():
 
 
 def test_admin_dashboard_contains_admin_categories_link():
-    response = client.get("/admin")
+    response = client.get(
+        "/admin",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Categories" in response.text
@@ -2885,7 +2945,10 @@ def test_admin_dashboard_contains_admin_categories_link():
 
 
 def test_admin_customers_page_returns_200():
-    response = client.get("/admin/customers")
+    response = client.get(
+        "/admin/customers",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Admin Customers" in response.text
@@ -2895,7 +2958,10 @@ def test_admin_customers_page_contains_customers_table_headers():
     customer_headers = get_auth_headers(role="customer")
     create_test_customer(headers=customer_headers)
 
-    response = client.get("/admin/customers")
+    response = client.get(
+        "/admin/customers",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "ID" in response.text
@@ -2906,7 +2972,10 @@ def test_admin_customers_page_contains_customers_table_headers():
 
 
 def test_admin_dashboard_contains_admin_customers_link():
-    response = client.get("/admin")
+    response = client.get(
+        "/admin",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Customers" in response.text
@@ -2914,7 +2983,10 @@ def test_admin_dashboard_contains_admin_customers_link():
 
 
 def test_admin_low_stock_page_returns_200():
-    response = client.get("/admin/low-stock")
+    response = client.get(
+        "/admin/low-stock",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Admin Low Stock" in response.text
@@ -2923,7 +2995,10 @@ def test_admin_low_stock_page_returns_200():
 def test_admin_low_stock_page_contains_table_headers():
     create_test_product(stock=2, price=100)
 
-    response = client.get("/admin/low-stock")
+    response = client.get(
+        "/admin/low-stock",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "ID" in response.text
@@ -2937,7 +3012,10 @@ def test_admin_low_stock_page_shows_only_low_stock_products():
     low_stock_product = create_test_product(stock=2, price=100)
     normal_stock_product = create_test_product(stock=10, price=200)
 
-    response = client.get("/admin/low-stock")
+    response = client.get(
+        "/admin/low-stock",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert low_stock_product["name"] in response.text
@@ -2945,7 +3023,10 @@ def test_admin_low_stock_page_shows_only_low_stock_products():
 
 
 def test_admin_dashboard_contains_admin_low_stock_link():
-    response = client.get("/admin")
+    response = client.get(
+        "/admin",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Low Stock" in response.text
@@ -2965,14 +3046,20 @@ def test_admin_orders_page_contains_status_badge_class():
         headers=customer_headers
     )
 
-    response = client.get("/admin/orders")
+    response = client.get(
+        "/admin/orders",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "status status-new" in response.text
 
 
 def test_admin_dashboard_contains_extended_stats_cards():
-    response = client.get("/admin")
+    response = client.get(
+        "/admin",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Low Stock Products" in response.text
@@ -2984,20 +3071,25 @@ def test_admin_dashboard_contains_extended_stats_cards():
 def test_admin_dashboard_low_stock_count_is_displayed():
     create_test_product(stock=2, price=100)
 
-    response = client.get("/admin")
+    response = client.get(
+        "/admin",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Low Stock Products" in response.text
 
 
 def test_admin_dashboard_final_polish_content():
-    response = client.get("/admin")
+    response = client.get(
+        "/admin",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Version: <strong>v4.0.0</strong>" in response.text
     assert "This dashboard provides a visual overview" in response.text
     assert "Admin pages:" in response.text
-
 
 def test_admin_pages_have_final_footer():
     urls = [
@@ -3009,14 +3101,19 @@ def test_admin_pages_have_final_footer():
     ]
 
     for url in urls:
-        response = client.get(url)
+        response = client.get(
+            url,
+            cookies=get_admin_ui_cookies()
+        )
 
         assert response.status_code == 200
         assert "Online Shop Admin Dashboard — v4.0.0" in response.text
 
-
 def test_admin_dashboard_order_status_cards_have_filtered_links():
-    response = client.get("/admin")
+    response = client.get(
+        "/admin",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
 
@@ -3047,7 +3144,10 @@ def test_admin_orders_page_can_filter_by_status():
 
     )
 
-    response = client.get("/admin/orders?status=new")
+    response = client.get(
+        "/admin/orders?status=new",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Filtered by status" in response.text
@@ -3055,7 +3155,10 @@ def test_admin_orders_page_can_filter_by_status():
 
 
 def test_admin_orders_page_contains_status_filter_links():
-    response = client.get("/admin/orders")
+    response = client.get(
+        "/admin/orders",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Filter by status" in response.text
@@ -3074,7 +3177,13 @@ def test_admin_orders_page_contains_status_filter_links():
 
 
 def test_admin_orders_status_filter_marks_active_status():
-    response = client.get("/admin/orders?status=paid")
+    response = client.get(
+        "/admin/orders",
+        params={
+            "status": "paid"
+        },
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert 'class="active"' in response.text
@@ -3083,7 +3192,10 @@ def test_admin_orders_status_filter_marks_active_status():
 
 
 def test_admin_products_page_contains_filter_ui():
-    response = client.get("/admin/products")
+    response = client.get(
+        "/admin/products",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Product filters" in response.text
@@ -3105,7 +3217,8 @@ def test_admin_products_page_can_filter_by_search():
         "/admin/products",
         params={
             "search": searchable_product["name"]
-        }
+        },
+        cookies=get_admin_ui_cookies()
     )
 
     assert response.status_code == 200
@@ -3117,11 +3230,13 @@ def test_admin_products_page_can_filter_in_stock_products():
     in_stock_product = create_test_product(stock=5, price=100)
     out_of_stock_product = create_test_product(stock=0, price=200)
 
+
     response = client.get(
         "/admin/products",
         params={
             "in_stock": True
-        }
+        },
+        cookies=get_admin_ui_cookies()
     )
 
     assert response.status_code == 200
@@ -3137,7 +3252,8 @@ def test_admin_products_page_can_filter_out_of_stock_products():
         "/admin/products",
         params={
             "in_stock": False
-        }
+        },
+        cookies=get_admin_ui_cookies()
     )
 
     assert response.status_code == 200
@@ -3146,7 +3262,10 @@ def test_admin_products_page_can_filter_out_of_stock_products():
 
 
 def test_admin_categories_page_contains_search_ui():
-    response = client.get("/admin/categories")
+    response = client.get(
+        "/admin/categories",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Category search" in response.text
@@ -3162,8 +3281,10 @@ def test_admin_categories_page_can_filter_by_search():
         "/admin/categories",
         params={
             "search": searchable_category["name"]
-        }
+        },
+        cookies=get_admin_ui_cookies()
     )
+
 
     assert response.status_code == 200
     assert searchable_category["name"] in response.text
@@ -3171,7 +3292,10 @@ def test_admin_categories_page_can_filter_by_search():
 
 
 def test_admin_customers_page_contains_search_ui():
-    response = client.get("/admin/customers")
+    response = client.get(
+        "/admin/customers",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Customer search" in response.text
@@ -3188,7 +3312,8 @@ def test_admin_customers_page_can_filter_by_search():
         "/admin/customers",
         params={
             "search": searchable_customer["email"]
-        }
+        },
+        cookies=get_admin_ui_cookies()
     )
 
     assert response.status_code == 200
@@ -3199,7 +3324,10 @@ def test_admin_low_stock_page_uses_product_specific_threshold():
     low_stock_product = create_test_product(stock=8, price=100)
     normal_stock_product = create_test_product(stock=8, price=200)
 
-    response = client.get("/admin/low-stock")
+    response = client.get(
+        "/admin/low-stock",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Low Stock Threshold" in response.text
@@ -3212,7 +3340,10 @@ def test_admin_low_stock_page_uses_product_specific_threshold():
 def test_admin_products_page_displays_low_stock_threshold():
     product = create_test_product(stock=3, price=100)
 
-    response = client.get("/admin/products")
+    response = client.get(
+        "/admin/products",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert "Low Stock Threshold" in response.text
@@ -3226,7 +3357,10 @@ def test_admin_low_stock_page_includes_product_when_stock_is_below_custom_thresh
         low_stock_threshold=10
     )
 
-    response = client.get("/admin/low-stock")
+    response = client.get(
+        "/admin/low-stock",
+        cookies=get_admin_ui_cookies()
+    )
 
     assert response.status_code == 200
     assert low_stock_product["name"] in response.text
@@ -3241,3 +3375,53 @@ def test_product_response_includes_low_stock_threshold():
     )
 
     assert product["low_stock_threshold"] == 10
+
+def test_admin_login_page_returns_200():
+    anonymous_client = TestClient(app)
+
+    response = anonymous_client.get("/admin/login")
+
+    assert response.status_code == 200
+    assert "Admin Login" in response.text
+    assert "Username" in response.text
+    assert "Password" in response.text
+
+def test_admin_pages_redirect_to_login_without_cookie():
+    anonymous_client = TestClient(app)
+
+    protected_urls = [
+        "/admin",
+        "/admin/products",
+        "/admin/orders",
+        "/admin/categories",
+        "/admin/customers",
+        "/admin/low-stock"
+    ]
+
+    for url in protected_urls:
+        response = anonymous_client.get(
+            url,
+            follow_redirects=False
+        )
+
+        assert response.status_code == 303, f"{url} returned {response.status_code}"
+        assert response.headers["location"] == "/admin/login"
+
+def test_admin_login_rejects_invalid_credentials():
+    response = client.post(
+        "/admin/login",
+        data={
+            "username": "wrong-admin",
+            "password": "wrong-password"
+        }
+    )
+
+    assert response.status_code == 401
+    assert "Invalid username or password" in response.text
+
+
+def test_admin_logout_redirects_to_login():
+    response = client.get("/admin/logout", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"

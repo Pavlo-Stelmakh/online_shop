@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Form, Response
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
+from auth import verify_password
 from database import get_db
-from models import Product, Category, Customer, Order
-
+from models import Product, Category, Customer, Order, User
 
 router = APIRouter(
     prefix="/admin",
@@ -13,12 +14,123 @@ router = APIRouter(
 
 templates = Jinja2Templates(directory="templates")
 
+def get_admin_from_cookie(
+    request: Request,
+    db: Session
+):
+    username = request.cookies.get("admin_username")
+
+    if username is None:
+        return None
+
+    user = db.query(User).filter(User.username == username).first()
+
+    if user is None:
+        return None
+
+    if user.role != "admin":
+        return None
+
+    return user
+
+
+def require_admin_ui(
+    request: Request,
+    db: Session
+):
+    user = get_admin_from_cookie(request, db)
+
+    if user is None:
+        return RedirectResponse(
+            url="/admin/login",
+            status_code=303
+        )
+
+    return user
+
+@router.get("/login")
+def admin_login_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_login.html",
+        context={
+            "error": None
+        }
+    )
+
+
+@router.post("/login")
+def admin_login(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.username == username).first()
+
+    if user is None or not verify_password(password, user.hashed_password):
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_login.html",
+            context={
+                "error": "Invalid username or password"
+            },
+            status_code=401
+        )
+
+    if user.role != "admin":
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_login.html",
+            context={
+                "error": "Admin access required"
+            },
+            status_code=403
+        )
+
+    response = RedirectResponse(
+        url="/admin",
+        status_code=303
+    )
+
+    response.set_cookie(
+        key="admin_username",
+        value=user.username,
+        httponly=True,
+        samesite="lax"
+    )
+
+    return response
+
+
+@router.get("/logout")
+def admin_logout():
+    response = RedirectResponse(
+        url="/admin/login",
+        status_code=303
+    )
+
+    response.delete_cookie("admin_username")
+
+    return response
+
 
 @router.get("")
 def admin_dashboard(
     request: Request,
     db: Session = Depends(get_db)
 ):
+
+    admin_user = require_admin_ui(request, db)
+
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
+    admin_user = require_admin_ui(request, db)
+
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
     products_count = db.query(Product).count()
     categories_count = db.query(Category).count()
     customers_count = db.query(Customer).count()
@@ -55,6 +167,11 @@ def admin_products(
     in_stock: bool | None = None,
     db: Session = Depends(get_db)
 ):
+    admin_user = require_admin_ui(request, db)
+
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
     query = db.query(Product)
 
     if search is not None:
@@ -92,6 +209,11 @@ def admin_orders(
     status: str | None = None,
     db: Session = Depends(get_db)
 ):
+    admin_user = require_admin_ui(request, db)
+
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
     query = db.query(Order)
 
     if status is not None:
@@ -114,6 +236,12 @@ def admin_categories(
     search: str | None = None,
     db: Session = Depends(get_db)
 ):
+
+    admin_user = require_admin_ui(request, db)
+
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
     query = db.query(Category)
 
     if search is not None:
@@ -155,6 +283,12 @@ def admin_customers(
     search: str | None = None,
     db: Session = Depends(get_db)
 ):
+
+    admin_user = require_admin_ui(request, db)
+
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
     query = db.query(Customer)
 
     if search is not None:
@@ -184,6 +318,11 @@ def admin_low_stock(
     request: Request,
     db: Session = Depends(get_db)
 ):
+    admin_user = require_admin_ui(request, db)
+
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
     products = db.query(Product).filter(
         Product.stock <= Product.low_stock_threshold
     ).order_by(Product.stock.asc()).all()
