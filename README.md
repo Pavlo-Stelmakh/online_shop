@@ -168,10 +168,11 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 - Admin products search/filter UI
 - Admin categories search UI
 - Admin customers search UI
+- Product-specific low stock threshold
 - Docker support
 - GitHub Actions CI
 - Render production deployment
-- Automated test suite with `144 passed`
+- Automated test suite with `148 passed`
 
 
 ## API Overview
@@ -466,6 +467,30 @@ Examples:
 /admin/customers?search=example.com
 /admin/customers?search=+380
 ```
+
+Product-specific low stock threshold:
+
+```text
+low_stock_threshold
+```
+
+Each product has its own low stock threshold.
+
+Low stock logic:
+
+```text
+product.stock <= product.low_stock_threshold
+```
+
+Example:
+
+```text
+stock = 8
+low_stock_threshold = 10
+result: low stock
+```
+
+The admin low stock page displays products based on each product's individual threshold.
 
 The dashboard provides a visual overview of the backend project.
 
@@ -866,6 +891,11 @@ Example:
 ```bash
 alembic revision --autogenerate -m "add product stock"
 ```
+
+### Database / Migrations
+
+- Alembic is used for database migrations.
+- Added `low_stock_threshold` column to `products` table.
 
 ### Apply Migrations
 
@@ -2489,6 +2519,7 @@ v4.2.0 — admin orders filter UI
 v4.3.0 — admin products search/filter UI
 v4.4.0 — admin categories search UI
 v4.5.0 — admin customers search UI
+v4.6.0 — product-specific low stock threshold
 ```
 ## Project Status
 
