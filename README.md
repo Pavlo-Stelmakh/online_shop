@@ -171,11 +171,12 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 - Product-specific low stock threshold
 - Admin dashboard login authentication
 - Admin test cookie warnings cleanup
-- Admin test cookie warnings cleanup
+- Admin product create form
+- Admin product update form
 - Docker support
 - GitHub Actions CI
 - Render production deployment
-- Automated test suite with `157 passed`
+- Automated test suite with `162 passed`
 
 
 ## API Overview
@@ -535,6 +536,64 @@ Admin test cookie warnings cleanup:
 ```
 
 Admin UI tests use an authenticated admin test client instead of deprecated per-request cookie passing.
+
+
+Admin product create form:
+
+```text
+/admin/products/create
+```
+
+The admin dashboard supports product creation from the web UI.
+
+The create product form includes:
+
+```text
+name
+price
+description
+image_url
+stock
+low_stock_threshold
+category_id
+```
+
+After successful creation, the user is redirected back to:
+
+```text
+/admin/products
+```
+
+The form is protected by admin login authentication.
+
+
+Admin product update form:
+
+```text
+/admin/products/{product_id}/edit
+```
+
+The admin dashboard supports product editing from the web UI.
+
+The edit product form includes:
+
+```text
+name
+price
+description
+image_url
+stock
+low_stock_threshold
+category_id
+```
+
+After successful update, the user is redirected back to:
+
+```text
+/admin/products
+```
+
+The form is protected by admin login authentication.
 
 This keeps protected admin page tests clean and warning-free.
 
@@ -2569,6 +2628,7 @@ v4.6.0 — product-specific low stock threshold
 v4.7.0 — admin dashboard login authentication
 v4.8.0 — admin test cookie warnings cleanup
 v4.9.0 — admin product create form
+v5.0.0 — admin product update form
 ```
 ## Project Status
 
