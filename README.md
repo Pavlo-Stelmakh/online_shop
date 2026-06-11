@@ -170,6 +170,7 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 - Admin customers search UI
 - Product-specific low stock threshold
 - Admin dashboard login authentication
+- - Admin test cookie warnings cleanup
 - Docker support
 - GitHub Actions CI
 - Render production deployment
@@ -524,6 +525,17 @@ Unauthenticated users are redirected to:
 ```text
 /admin/login
 ```
+
+Admin test cookie warnings cleanup:
+
+```text
+152 passed
+0 warnings
+```
+
+Admin UI tests use an authenticated admin test client instead of deprecated per-request cookie passing.
+
+This keeps protected admin page tests clean and warning-free.
 
 The dashboard provides a visual overview of the backend project.
 
@@ -2554,6 +2566,7 @@ v4.4.0 — admin categories search UI
 v4.5.0 — admin customers search UI
 v4.6.0 — product-specific low stock threshold
 v4.7.0 — admin dashboard login authentication
+v4.8.0 — admin test cookie warnings cleanup
 ```
 ## Project Status
 
