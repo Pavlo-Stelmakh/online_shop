@@ -80,8 +80,9 @@ https://online-shop-api-z9y4.onrender.com/health
 Current automated test coverage:
 
 ```text
-108 passed
+185 passed
 ```
+
 Tests are run with:
 
 ```bash
@@ -178,7 +179,7 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 - Docker support
 - GitHub Actions CI
 - Render production deployment
-- Automated test suite with `167 passed`
+- Automated test suite runnable with `python -m pytest`
 
 
 ## API Overview
@@ -187,8 +188,11 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 
 ```text
 POST /auth/register
-POST /auth/token
+POST /auth/login
+GET /auth/me
 ```
+
+`POST /auth/login` returns a bearer JWT `access_token` for API and Swagger authorization. Public registration always creates `customer` users; admin users are managed separately with `seed_admin.py`.
 
 ### Customers
 
@@ -224,7 +228,7 @@ POST /orders
 GET /orders
 GET /orders/my
 GET /orders/{order_id}
-PATCH /orders/{order_id}/status
+PUT /orders/{order_id}/status
 ```
 
 ## Admin Dashboard
@@ -505,7 +509,7 @@ Admin dashboard login authentication:
 /admin/logout
 ```
 
-The admin dashboard UI is protected by login authentication.
+The admin dashboard UI is protected by `/admin/login` HTML form authentication. Successful admin login stores a signed, JWT-backed `admin_session` cookie with `HttpOnly`, `SameSite=Lax`, and production `Secure` settings.
 
 Admin pages require an authenticated admin session:
 
@@ -523,6 +527,13 @@ Authentication uses existing users and requires:
 ```text
 role = admin
 ```
+
+API and admin UI authentication are separate flows:
+
+| Flow | Endpoint | Credential storage | Usage |
+|---|---|---|---|
+| API / Swagger | `POST /auth/login` | Bearer JWT `access_token` | Authorize Swagger and API requests |
+| HTML admin UI | `POST /admin/login` | Signed JWT-backed `admin_session` cookie | Access `/admin` HTML pages |
 
 Unauthenticated users are redirected to:
 
@@ -1043,8 +1054,9 @@ alembic revision --autogenerate -m "add product stock"
 
 ### Database / Migrations
 
-- Alembic is used for database migrations.
-- Added `low_stock_threshold` column to `products` table.
+- Alembic is used for database schema management and migrations.
+- The application does not create tables with `Base.metadata.create_all()` at startup.
+- Apply schema changes with `alembic upgrade head` before starting the app in production; `scripts/start.sh` does this automatically on Render.
 
 ### Apply Migrations
 
@@ -1574,6 +1586,15 @@ GET /customers/{customer_id}/orders
 
 Customers are linked to orders.
 
+Access rules for customer endpoints:
+
+| Method | Endpoint | Access |
+|---|---|---|
+| GET | `/customers/{customer_id}` | Owner or admin |
+| PUT | `/customers/{customer_id}` | Owner or admin |
+| DELETE | `/customers/{customer_id}` | Admin only |
+| GET | `/customers/{customer_id}/orders` | Admin only |
+
 Example customer:
 
 ```json
@@ -1604,6 +1625,8 @@ GET /orders/by-status
 ```
 
 #### Order Status Filtering
+
+`GET /orders/by-status` and `GET /orders` status filters are admin-only.
 
 ```text
 GET /orders?status=new
@@ -1862,7 +1885,7 @@ Example order:
 GET /stats/summary
 ```
 
-Returns basic shop statistics.
+Returns basic shop statistics. This endpoint is admin-only.
 
 Example response:
 
@@ -1886,8 +1909,8 @@ The project includes JWT-based authentication and role-based access control.
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/auth/register` | Register a new user |
-| POST | `/auth/login` | Login and receive JWT access token |
+| POST | `/auth/register` | Register a new user with the `customer` role |
+| POST | `/auth/login` | Login and receive a JWT `access_token` |
 | GET | `/auth/me` | Get current authenticated user |
 
 ### User Roles
@@ -1896,21 +1919,12 @@ The project supports two user roles:
 
 | Role | Description |
 |---|---|
-| `admin` | Can manage categories and products |
-| `customer` | Can view data and create orders |
+| `admin` | Can manage protected catalog, customer, order and statistics endpoints |
+| `customer` | Can create and view their own customer profile and orders |
 
-### Register Admin User
+### Register Users
 
-Example request:
-
-```json
-{
-  "username": "admin_user",
-  "email": "admin@example.com",
-  "password": "123456",
-  "role": "admin"
-}
-```
+Public registration creates only `customer` users, even if a client sends a role-like field. Admin users are not created through `/auth/register`; use `seed_admin.py` with admin environment variables instead.
 
 If the user is not authenticated, the API returns:
 
@@ -1938,9 +1952,12 @@ The following routes require an authenticated user with the `admin` role:
 | PUT | `/products/{product_id}` | Update product |
 | DELETE | `/products/{product_id}` | Delete product |
 | GET | `/orders` | Get all orders |
-| GET | `/orders/{order_id}` | Get order by ID |
+| GET | `/orders/by-status` | Get orders by status |
 | PUT | `/orders/{order_id}/status` | Update order status |
 | DELETE | `/orders/{order_id}` | Delete order |
+| GET | `/stats/summary` | Get shop statistics summary |
+| DELETE | `/customers/{customer_id}` | Delete customer |
+| GET | `/customers/{customer_id}/orders` | Get a customer's orders |
 
 
 ## Roles and Permissions Summary
@@ -1960,7 +1977,7 @@ The project uses role-based access control for protected API endpoints.
 | Create order for own customer profile | Yes | Yes | No |
 | Create order for another customer profile | Yes | No | No |
 | View all orders | Yes | No | No |
-| View single order | Yes | No | No |
+| View single order | Yes | Own orders only | No |
 | Update order status | Yes | No | No |
 | Delete order | Yes | No | No |
 | View own profile `/auth/me` | Yes | Yes | No |
@@ -2298,7 +2315,7 @@ Expected result:
 ```text
 All tests passed
 ```
-Current test suite includes more than 40 automated API tests covering authentication, roles, products, categories, customers, orders, stock logic, order status rules, deployment endpoints and security behavior.
+Current test suite includes 185 automated tests covering authentication, roles, products, categories, customers, orders, stock logic, order status rules, deployment endpoints, admin UI authentication and security behavior.
 
 The tests use a separate SQLite database:
 
