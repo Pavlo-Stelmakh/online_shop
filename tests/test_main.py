@@ -1,12 +1,16 @@
 import time
+from datetime import datetime, timedelta, UTC
 
 from fastapi.testclient import TestClient
+from jose import jwt
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from database import Base, get_db
 from main import app
+from auth import SECRET_KEY, ALGORITHM
 from models import User
+from routes.admin import ADMIN_SESSION_COOKIE_NAME, ADMIN_SESSION_TOKEN_TYPE
 
 
 
@@ -43,7 +47,8 @@ app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
 
-def get_auth_headers(role: str = "admin"):
+
+def create_registered_user(role: str = "admin"):
     username = f"{role}_user_{time.time()}"
     email = f"{username}@example.com"
     password = "123456"
@@ -59,24 +64,40 @@ def get_auth_headers(role: str = "admin"):
 
     assert register_response.status_code == 200
 
-    if role == "admin":
-        db = TestingSessionLocal()
+    db = TestingSessionLocal()
 
-        try:
-            user = db.query(User).filter(
-                User.username == username
-            ).first()
+    try:
+        user = db.query(User).filter(
+            User.username == username
+        ).first()
 
+        if role == "admin":
             user.role = "admin"
             db.commit()
-        finally:
-            db.close()
+            db.refresh(user)
+
+        user_id = user.id
+        user_role = user.role
+    finally:
+        db.close()
+
+    return {
+        "id": user_id,
+        "username": username,
+        "email": email,
+        "password": password,
+        "role": user_role
+    }
+
+
+def get_auth_headers(role: str = "admin"):
+    user = create_registered_user(role=role)
 
     login_response = client.post(
         "/auth/login",
         data={
-            "username": username,
-            "password": password
+            "username": user["username"],
+            "password": user["password"]
         }
     )
 
@@ -88,23 +109,23 @@ def get_auth_headers(role: str = "admin"):
         "Authorization": f"Bearer {token}"
     }
 
+
 def get_admin_ui_client():
-    admin_headers = get_auth_headers(role="admin")
-
-    response = client.get(
-        "/auth/me",
-        headers=admin_headers
-    )
-
-    assert response.status_code == 200
-
-    admin_user = response.json()
-
+    admin_user = create_registered_user(role="admin")
     admin_client = TestClient(app)
-    admin_client.cookies.set(
-        "admin_username",
-        admin_user["username"]
+
+    response = admin_client.post(
+        "/admin/login",
+        data={
+            "username": admin_user["username"],
+            "password": admin_user["password"]
+        },
+        follow_redirects=False
     )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin"
+    assert ADMIN_SESSION_COOKIE_NAME in admin_client.cookies
 
     return admin_client
 
@@ -3332,6 +3353,97 @@ def test_admin_login_rejects_invalid_credentials():
 
     assert response.status_code == 401
     assert "Invalid username or password" in response.text
+
+
+def test_admin_can_login_through_admin_ui():
+    admin_user = create_registered_user(role="admin")
+    admin_client = TestClient(app)
+
+    response = admin_client.post(
+        "/admin/login",
+        data={
+            "username": admin_user["username"],
+            "password": admin_user["password"]
+        },
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin"
+    assert ADMIN_SESSION_COOKIE_NAME in admin_client.cookies
+    assert "admin_username" not in admin_client.cookies
+    assert "httponly" in response.headers["set-cookie"].lower()
+    assert "samesite=lax" in response.headers["set-cookie"].lower()
+    assert "max-age=" in response.headers["set-cookie"].lower()
+
+
+def test_forged_plain_admin_username_cookie_cannot_access_admin_ui():
+    admin_user = create_registered_user(role="admin")
+    forged_client = TestClient(app)
+    forged_client.cookies.set("admin_username", admin_user["username"])
+
+    response = forged_client.get("/admin", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+
+def test_customer_cannot_login_to_admin_ui():
+    customer_user = create_registered_user(role="customer")
+
+    response = client.post(
+        "/admin/login",
+        data={
+            "username": customer_user["username"],
+            "password": customer_user["password"]
+        }
+    )
+
+    assert response.status_code == 403
+    assert "Admin access required" in response.text
+
+
+def test_admin_logout_deletes_admin_session_cookie():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/logout", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+    assert ADMIN_SESSION_COOKIE_NAME not in admin_client.cookies
+    assert f"{ADMIN_SESSION_COOKIE_NAME}=" in response.headers["set-cookie"]
+
+
+def test_invalid_admin_session_token_cannot_access_admin_ui():
+    invalid_client = TestClient(app)
+    invalid_client.cookies.set(ADMIN_SESSION_COOKIE_NAME, "not-a-valid-token")
+
+    response = invalid_client.get("/admin", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+
+def test_expired_admin_session_token_cannot_access_admin_ui():
+    admin_user = create_registered_user(role="admin")
+    expired_token = jwt.encode(
+        {
+            "sub": admin_user["username"],
+            "user_id": admin_user["id"],
+            "role": "admin",
+            "typ": ADMIN_SESSION_TOKEN_TYPE,
+            "exp": datetime.now(UTC) - timedelta(seconds=1)
+        },
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+    expired_client = TestClient(app)
+    expired_client.cookies.set(ADMIN_SESSION_COOKIE_NAME, expired_token)
+
+    response = expired_client.get("/admin", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
 
 
 def test_admin_logout_redirects_to_login():
