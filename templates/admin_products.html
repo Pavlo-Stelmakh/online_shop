@@ -151,6 +151,64 @@
             color: #6b7280;
             font-size: 14px;
         }
+
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(17, 24, 39, 0.55);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 10px;
+            padding: 24px;
+            width: 420px;
+            max-width: calc(100% - 40px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal h2 {
+            margin: 0 0 10px;
+            font-size: 20px;
+        }
+
+        .modal p {
+            margin: 0 0 20px;
+            color: #4b5563;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-actions button {
+            padding: 9px 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .cancel-delete-button {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .confirm-delete-button {
+            background: #dc2626;
+            color: white;
+        }
+
     </style>
 </head>
 <body>
@@ -171,7 +229,13 @@
             <a href="/docs">Swagger UI</a>
             <a href="/admin/logout">Logout</a>
         </section>
-        
+
+        {% if error %}
+            <section class="empty">
+                <p>{{ error }}</p>
+            </section>
+        {% endif %}
+
         <section class="filters">
             <h2>Product filters</h2>
 
@@ -228,8 +292,17 @@
                                         —
                                     {% endif %}
                                 </td>
+
                                 <td>
                                     <a href="/admin/products/{{ product.id }}/edit">Edit</a>
+                                    <form
+                                        method="post"
+                                        action="/admin/products/{{ product.id }}/delete"
+                                        style="display:inline;"
+                                        class="delete-form"
+                                    >
+                                        <button type="button" class="delete-button">Delete</button>
+                                    </form>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -245,5 +318,53 @@
     <footer>
         Online Shop Admin Dashboard — v4.0.0
     </footer>
+    <div id="deleteModal" class="modal-backdrop">
+        <div class="modal">
+            <h2>Delete product?</h2>
+            <p>Are you sure you want to delete this product? This action cannot be undone.</p>
+
+            <div class="modal-actions">
+                <button type="button" class="cancel-delete-button" id="cancelDeleteButton">
+                    Cancel
+                </button>
+                <button type="button" class="confirm-delete-button" id="confirmDeleteButton">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedDeleteForm = null;
+
+        const deleteModal = document.getElementById("deleteModal");
+        const cancelDeleteButton = document.getElementById("cancelDeleteButton");
+        const confirmDeleteButton = document.getElementById("confirmDeleteButton");
+
+        document.querySelectorAll(".delete-button").forEach((button) => {
+            button.addEventListener("click", () => {
+                selectedDeleteForm = button.closest("form");
+                deleteModal.classList.add("active");
+            });
+        });
+
+        cancelDeleteButton.addEventListener("click", () => {
+            selectedDeleteForm = null;
+            deleteModal.classList.remove("active");
+        });
+
+        confirmDeleteButton.addEventListener("click", () => {
+            if (selectedDeleteForm) {
+                selectedDeleteForm.submit();
+            }
+        });
+
+        deleteModal.addEventListener("click", (event) => {
+            if (event.target === deleteModal) {
+                selectedDeleteForm = null;
+                deleteModal.classList.remove("active");
+            }
+        });
+    </script>
 </body>
 </html>

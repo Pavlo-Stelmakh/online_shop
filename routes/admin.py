@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from auth import verify_password
 from database import get_db
-from models import Product, Category, Customer, Order, User
+from models import Product, Category, Customer, Order, User, OrderItem
 
 router = APIRouter(
     prefix="/admin",
@@ -198,7 +198,8 @@ def admin_products(
         context={
             "products": products,
             "search": search or "",
-            "in_stock": in_stock
+            "in_stock": in_stock,
+            "error": None
         }
     )
 
@@ -409,6 +410,50 @@ def admin_product_edit(
     product.low_stock_threshold = low_stock_threshold
     product.category_id = category_id
 
+    db.commit()
+
+    return RedirectResponse(
+        url="/admin/products",
+        status_code=303
+    )
+
+@router.post("/products/{product_id}/delete")
+def admin_product_delete(
+    product_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    admin_user = require_admin_ui(request, db)
+
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
+    product = db.query(Product).filter(Product.id == product_id).first()
+
+    if product is None:
+        return RedirectResponse(
+            url="/admin/products",
+            status_code=303
+        )
+
+    related_order_items_count = db.query(OrderItem).filter(
+        OrderItem.product_id == product_id
+    ).count()
+
+    if related_order_items_count > 0:
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_products.html",
+            context={
+                "products": db.query(Product).order_by(Product.id.desc()).all(),
+                "search": "",
+                "in_stock": None,
+                "error": "Product cannot be deleted because it is used in orders."
+            },
+            status_code=400
+        )
+
+    db.delete(product)
     db.commit()
 
     return RedirectResponse(

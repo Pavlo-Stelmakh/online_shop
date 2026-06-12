@@ -3521,3 +3521,82 @@ def test_admin_products_page_contains_edit_product_link():
     assert f"/admin/products/{product['id']}/edit" in response.text
 
 
+def test_admin_products_page_contains_delete_button_and_modal():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "Delete" in response.text
+    assert f"/admin/products/{product['id']}/delete" in response.text
+    assert "Delete product?" in response.text
+    assert "Are you sure you want to delete this product?" in response.text
+    assert "Cancel" in response.text
+
+
+def test_admin_product_edit_page_contains_update_confirmation_modal():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.get(f"/admin/products/{product['id']}/edit")
+
+    assert response.status_code == 200
+    assert "Update product?" in response.text
+    assert "Are you sure you want to save these product changes?" in response.text
+    assert "Cancel" in response.text
+    assert "Update" in response.text
+
+
+def test_admin_product_delete_redirects_without_login():
+    product = create_test_product(stock=5, price=100)
+    anonymous_client = TestClient(app)
+
+    response = anonymous_client.post(
+        f"/admin/products/{product['id']}/delete",
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+
+def test_admin_can_delete_product_without_orders():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/delete",
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/products"
+
+    products_response = admin_client.get("/admin/products")
+
+    assert products_response.status_code == 200
+    assert product["name"] not in products_response.text
+
+
+def test_admin_product_delete_blocked_when_product_is_used_in_orders():
+    admin_client = get_admin_ui_client()
+
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/delete"
+    )
+
+    assert response.status_code == 400
+    assert "Product cannot be deleted because it is used in orders." in response.text
