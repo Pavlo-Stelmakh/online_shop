@@ -161,7 +161,8 @@ def get_orders(
 @router.get("/by-status", response_model=list[OrderResponse])
 def get_orders_by_status(
     status: str = Query(..., pattern="^(new|paid|shipped|cancelled)$"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
 ):
     orders = db.query(Order).filter(Order.status == status).all()
 

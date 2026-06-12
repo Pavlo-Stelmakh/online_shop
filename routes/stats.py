@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Product, Customer, Order
+from models import Product, Customer, Order, User
 from schemas import StatsSummaryResponse
+from routes.auth import get_admin_user
 
 
 router = APIRouter(
@@ -13,7 +14,10 @@ router = APIRouter(
 
 
 @router.get("/summary", response_model=StatsSummaryResponse)
-def get_stats_summary(db: Session = Depends(get_db)):
+def get_stats_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
     products_count = db.query(Product).count()
     customers_count = db.query(Customer).count()
     orders_count = db.query(Order).count()
