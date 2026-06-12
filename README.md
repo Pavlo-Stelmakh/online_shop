@@ -674,8 +674,20 @@ Deployment stack:
 | API hosting | Render Web Service |
 | Database | Render PostgreSQL |
 | Runtime | Python 3 |
-| Start command | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
-| Build command | `pip install -r requirements.txt && alembic upgrade head` |
+| Start command | `./scripts/start.sh` |
+| Build command | `pip install -r requirements.txt` |
+
+Production startup flow:
+
+1. Render starts `./scripts/start.sh`.
+2. The script runs `alembic upgrade head` against the configured `DATABASE_URL`.
+3. After migrations complete successfully, it starts FastAPI with `uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}`.
+
+If you configure Render manually, use this exact Start Command:
+
+```bash
+./scripts/start.sh
+```
 
 
 ### Deployment Status
