@@ -1,20 +1,26 @@
+import importlib
+import os
+from pathlib import Path
+import tempfile
 import time
 from datetime import datetime, timedelta, UTC
 
+import pytest
 from fastapi.testclient import TestClient
 from jose import jwt
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from database import Base, get_db
-from main import app
+import main as main_module
 from auth import SECRET_KEY, ALGORITHM
 from models import User
 from routes.admin import ADMIN_SESSION_COOKIE_NAME, ADMIN_SESSION_TOKEN_TYPE
 
 
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_shop.db"
+TEST_DB_PATH = Path(tempfile.gettempdir()) / f"online_shop_test_{os.getpid()}.db"
+SQLALCHEMY_DATABASE_URL = f"sqlite:///{TEST_DB_PATH}"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -30,8 +36,18 @@ TestingSessionLocal = sessionmaker(
 )
 
 
-Base.metadata.drop_all(bind=engine)
-Base.metadata.create_all(bind=engine)
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_database():
+    TEST_DB_PATH.unlink(missing_ok=True)
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+    yield
+
+    Base.metadata.drop_all(bind=engine)
+    engine.dispose()
+    TEST_DB_PATH.unlink(missing_ok=True)
 
 
 def override_get_db():
@@ -43,9 +59,21 @@ def override_get_db():
         db.close()
 
 
+app = main_module.app
 app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
+
+
+def test_importing_app_does_not_create_database_tables(monkeypatch):
+    def fail_create_all(*args, **kwargs):
+        raise AssertionError("Application import must not create database tables")
+
+    monkeypatch.setattr(Base.metadata, "create_all", fail_create_all)
+
+    reloaded_main = importlib.reload(main_module)
+
+    assert reloaded_main.app is not None
 
 
 def create_registered_user(role: str = "admin"):

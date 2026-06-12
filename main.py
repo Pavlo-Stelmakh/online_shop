@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from database import Base, engine, SessionLocal
+from database import SessionLocal
 from models import Product, Category
 from schemas import ProductCreate, ProductResponse, CategoryCreate, CategoryResponse, ProductCatalogResponse
 from routes.categories import router as categories_router
@@ -12,8 +12,6 @@ from routes.stats import router as stats_router
 from routes.auth import router as auth_router
 from routes import admin
 
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
