@@ -173,10 +173,12 @@ GitHub Actions is used for CI checks on pull requests and main branch updates.
 - Admin test cookie warnings cleanup
 - Admin product create form
 - Admin product update form
+- Admin product delete action
+- Admin product update/delete confirmation modals
 - Docker support
 - GitHub Actions CI
 - Render production deployment
-- Automated test suite with `162 passed`
+- Automated test suite with `167 passed`
 
 
 ## API Overview
@@ -595,7 +597,37 @@ After successful update, the user is redirected back to:
 
 The form is protected by admin login authentication.
 
-This keeps protected admin page tests clean and warning-free.
+Admin product delete action:
+
+```text
+POST /admin/products/{product_id}/delete
+```
+
+The admin dashboard supports safe product deletion from the web UI.
+
+Delete behavior:
+
+```text
+products without order history can be deleted
+products used in orders cannot be deleted
+delete action requires confirmation
+```
+
+The delete confirmation uses a custom modal with:
+
+```text
+Cancel
+Delete
+```
+
+The product edit form also uses a custom confirmation modal with:
+
+```text
+Cancel
+Update
+```
+
+This helps prevent accidental product deletion or unintended product updates.
 
 The dashboard provides a visual overview of the backend project.
 
@@ -2629,6 +2661,7 @@ v4.7.0 — admin dashboard login authentication
 v4.8.0 — admin test cookie warnings cleanup
 v4.9.0 — admin product create form
 v5.0.0 — admin product update form
+v5.1.0 — admin product delete action
 ```
 ## Project Status
 
