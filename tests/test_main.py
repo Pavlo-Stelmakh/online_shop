@@ -3600,3 +3600,175 @@ def test_admin_product_delete_blocked_when_product_is_used_in_orders():
 
     assert response.status_code == 400
     assert "Product cannot be deleted because it is used in orders." in response.text
+
+def test_anonymous_cannot_read_customer_profile():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.get(f"/customers/{customer['id']}")
+
+    assert response.status_code == 401
+
+
+def test_anonymous_cannot_update_customer_profile():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.put(
+        f"/customers/{customer['id']}",
+        json={
+            "name": "Anonymous Update",
+            "email": f"anonymous_update_{time.time()}@example.com",
+            "phone": "+380501112244"
+        }
+    )
+
+    assert response.status_code == 401
+
+
+def test_anonymous_cannot_delete_customer():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.delete(f"/customers/{customer['id']}")
+
+    assert response.status_code == 401
+
+
+def test_customer_cannot_read_other_customer_profile():
+    customer_1_headers = get_auth_headers(role="customer")
+    create_test_customer(headers=customer_1_headers)
+
+    customer_2_headers = get_auth_headers(role="customer")
+    customer_2 = create_test_customer(headers=customer_2_headers)
+
+    response = client.get(
+        f"/customers/{customer_2['id']}",
+        headers=customer_1_headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Access denied"
+
+
+def test_customer_cannot_update_other_customer_profile():
+    customer_1_headers = get_auth_headers(role="customer")
+    create_test_customer(headers=customer_1_headers)
+
+    customer_2_headers = get_auth_headers(role="customer")
+    customer_2 = create_test_customer(headers=customer_2_headers)
+
+    response = client.put(
+        f"/customers/{customer_2['id']}",
+        json={
+            "name": "Unauthorized Update",
+            "email": f"unauthorized_update_{time.time()}@example.com",
+            "phone": "+380501112255"
+        },
+        headers=customer_1_headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Access denied"
+
+
+def test_admin_can_read_customer_profiles_by_id():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        f"/customers/{customer['id']}",
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["id"] == customer["id"]
+
+
+def test_admin_can_update_customer_profiles_by_id():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    admin_headers = get_auth_headers(role="admin")
+    updated_email = f"admin_update_{time.time()}@example.com"
+
+    response = client.put(
+        f"/customers/{customer['id']}",
+        json={
+            "name": "Admin Updated Customer",
+            "email": updated_email,
+            "phone": "+380501112266"
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Admin Updated Customer"
+    assert response.json()["email"] == updated_email
+
+
+def test_non_admin_cannot_get_orders_by_status():
+    customer_headers = get_auth_headers(role="customer")
+
+    response = client.get(
+        "/orders/by-status",
+        params={"status": "new"},
+        headers=customer_headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin access required"
+
+
+def test_non_admin_cannot_get_stats_summary():
+    customer_headers = get_auth_headers(role="customer")
+
+    response = client.get(
+        "/stats/summary",
+        headers=customer_headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Admin access required"
+
+
+def test_customer_orders_route_is_registered_and_admin_only():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    anonymous_response = client.get(f"/customers/{customer['id']}/orders")
+
+    assert anonymous_response.status_code == 401
+
+    customer_response = client.get(
+        f"/customers/{customer['id']}/orders",
+        headers=customer_headers
+    )
+
+    assert customer_response.status_code == 403
+    assert customer_response.json()["detail"] == "Admin access required"
+
+    admin_headers = get_auth_headers(role="admin")
+
+    admin_response = client.get(
+        f"/customers/{customer['id']}/orders",
+        headers=admin_headers
+    )
+
+    assert admin_response.status_code == 200
+
+    data = admin_response.json()
+    order_ids = [item["id"] for item in data]
+
+    assert order["id"] in order_ids
