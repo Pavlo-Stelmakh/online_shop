@@ -1,9 +1,14 @@
+import os
+from datetime import datetime, timedelta, UTC
+
 from fastapi import APIRouter, Depends, Request, Form, Response
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from auth import verify_password
+from jose import jwt, JWTError
+
+from auth import verify_password, SECRET_KEY, ALGORITHM
 from database import get_db
 from models import Product, Category, Customer, Order, User, OrderItem
 
@@ -14,16 +19,81 @@ router = APIRouter(
 
 templates = Jinja2Templates(directory="templates")
 
+ADMIN_SESSION_COOKIE_NAME = "admin_session"
+ADMIN_SESSION_EXPIRE_SECONDS = int(
+    os.getenv("ADMIN_SESSION_EXPIRE_SECONDS", "1800")
+)
+ADMIN_SESSION_TOKEN_TYPE = "admin_ui_session"
+
+
+def is_admin_cookie_secure() -> bool:
+    environment = os.getenv("ENVIRONMENT", os.getenv("ENV", "")).lower()
+
+    return environment in {"production", "prod"} or os.getenv("RENDER") == "true"
+
+
+def create_admin_session_token(user: User) -> str:
+    expire = datetime.now(UTC) + timedelta(
+        seconds=ADMIN_SESSION_EXPIRE_SECONDS
+    )
+
+    payload = {
+        "sub": user.username,
+        "user_id": user.id,
+        "role": user.role,
+        "typ": ADMIN_SESSION_TOKEN_TYPE,
+        "exp": expire
+    }
+
+    return jwt.encode(
+        payload,
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+
+
+def decode_admin_session_token(token: str):
+    try:
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+    except JWTError:
+        return None
+
+    if payload.get("typ") != ADMIN_SESSION_TOKEN_TYPE:
+        return None
+
+    if payload.get("role") != "admin":
+        return None
+
+    username = payload.get("sub")
+    user_id = payload.get("user_id")
+
+    if username is None or user_id is None:
+        return None
+
+    return payload
+
 def get_admin_from_cookie(
     request: Request,
     db: Session
 ):
-    username = request.cookies.get("admin_username")
+    token = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)
 
-    if username is None:
+    if token is None:
         return None
 
-    user = db.query(User).filter(User.username == username).first()
+    payload = decode_admin_session_token(token)
+
+    if payload is None:
+        return None
+
+    user = db.query(User).filter(
+        User.id == payload["user_id"],
+        User.username == payload["sub"]
+    ).first()
 
     if user is None:
         return None
@@ -94,10 +164,12 @@ def admin_login(
     )
 
     response.set_cookie(
-        key="admin_username",
-        value=user.username,
+        key=ADMIN_SESSION_COOKIE_NAME,
+        value=create_admin_session_token(user),
         httponly=True,
-        samesite="lax"
+        samesite="lax",
+        secure=is_admin_cookie_secure(),
+        max_age=ADMIN_SESSION_EXPIRE_SECONDS
     )
 
     return response
@@ -110,6 +182,7 @@ def admin_logout():
         status_code=303
     )
 
+    response.delete_cookie(ADMIN_SESSION_COOKIE_NAME)
     response.delete_cookie("admin_username")
 
     return response
