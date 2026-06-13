@@ -275,7 +275,7 @@
                             <tr>
                                 <td>{{ product.id }}</td>
                                 <td>{{ product.name }}</td>
-                                <td>{{ product.price }}</td>
+                                <td>{{ product.price|money }}</td>
                                 <td>
                                     {% if product.stock <= 5 %}
                                         <span class="stock-low">{{ product.stock }}</span>

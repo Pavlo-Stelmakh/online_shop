@@ -4094,3 +4094,163 @@ def test_start_script_runs_migrations_before_uvicorn():
     assert "uvicorn main:app --host 0.0.0.0 --port" in script
     assert "${PORT:-8000}" in script
     assert script.index("alembic upgrade head") < script.index("uvicorn main:app")
+
+
+def build_product_payload(category_id: int, price):
+    return {
+        "name": f"Money Test Product {time.time()}",
+        "price": price,
+        "description": "Money validation test product",
+        "stock": 10,
+        "low_stock_threshold": 5,
+        "category_id": category_id,
+    }
+
+
+def test_api_create_product_accepts_money_with_two_decimal_places():
+    category = create_test_category()
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json=build_product_payload(category["id"], 19.99),
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["price"] == 19.99
+
+
+def test_api_create_product_rejects_more_than_two_decimal_places():
+    category = create_test_category()
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json=build_product_payload(category["id"], 19.999),
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+    assert "more than 2 decimal places" in response.text
+
+
+def test_api_create_product_rejects_negative_price():
+    category = create_test_category()
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json=build_product_payload(category["id"], -1),
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+    assert "greater than or equal to 0" in response.text
+
+
+def test_api_create_product_rejects_zero_price():
+    category = create_test_category()
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json=build_product_payload(category["id"], 0),
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+    assert "greater than 0" in response.text
+
+
+def test_api_update_product_rejects_more_than_two_decimal_places():
+    product = create_test_product(stock=10, price=100)
+    headers = get_auth_headers(role="admin")
+
+    response = client.put(
+        f"/products/{product['id']}",
+        json=build_product_payload(product["category_id"], 19.999),
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+    assert "more than 2 decimal places" in response.text
+
+
+def test_admin_product_create_rejects_more_than_two_decimal_places():
+    category = create_test_category()
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.post(
+        "/admin/products/create",
+        data={
+            "name": f"Admin Money Product {time.time()}",
+            "price": "19.999",
+            "description": "Created from admin UI",
+            "image_url": "https://example.com/admin-product.jpg",
+            "stock": "5",
+            "low_stock_threshold": "5",
+            "category_id": str(category["id"]),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 400
+    assert "more than 2 decimal places" in response.text
+
+
+def test_admin_product_edit_rejects_more_than_two_decimal_places():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/edit",
+        data={
+            "name": product["name"],
+            "price": "19.999",
+            "description": product["description"],
+            "image_url": "https://example.com/updated-product.jpg",
+            "stock": "5",
+            "low_stock_threshold": "5",
+            "category_id": str(product["category_id"]),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 400
+    assert "more than 2 decimal places" in response.text
+
+
+def test_admin_products_page_displays_money_with_two_decimal_places():
+    create_test_product(stock=10, price=19.9)
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "19.90" in response.text
+
+
+def test_product_filters_continue_working_with_money_validation():
+    create_test_product(stock=10, price=100)
+    create_test_product(stock=10, price=300)
+    create_test_product(stock=10, price=700)
+
+    response = client.get(
+        "/products",
+        params={
+            "min_price": 100,
+            "max_price": 500,
+            "sort_by": "price",
+            "sort_order": "asc",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data
+    prices = [product["price"] for product in data]
+    assert prices == sorted(prices)
+    for product in data:
+        assert product["price"] >= 100
+        assert product["price"] <= 500

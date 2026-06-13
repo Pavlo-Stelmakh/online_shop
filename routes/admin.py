@@ -11,6 +11,7 @@ from jose import jwt, JWTError
 from auth import verify_password, SECRET_KEY, ALGORITHM
 from database import get_db
 from models import Product, Category, Customer, Order, User, OrderItem
+from utils.money import MoneyValidationError, format_money, money_to_float, parse_positive_money
 
 router = APIRouter(
     prefix="/admin",
@@ -18,6 +19,7 @@ router = APIRouter(
 )
 
 templates = Jinja2Templates(directory="templates")
+templates.env.filters["money"] = format_money
 
 ADMIN_SESSION_COOKIE_NAME = "admin_session"
 ADMIN_SESSION_EXPIRE_SECONDS = int(
@@ -300,7 +302,7 @@ def admin_product_create_page(
 def admin_product_create(
     request: Request,
     name: str = Form(...),
-    price: float = Form(...),
+    price: str = Form(...),
     description: str = Form(...),
     image_url: str | None = Form(None),
     stock: int = Form(...),
@@ -313,12 +315,14 @@ def admin_product_create(
     if isinstance(admin_user, RedirectResponse):
         return admin_user
 
-    if price <= 0:
+    try:
+        price_amount = parse_positive_money(price)
+    except MoneyValidationError as exc:
         return templates.TemplateResponse(
             request=request,
             name="admin_product_create.html",
             context={
-                "error": "price must be greater than 0"
+                "error": str(exc)
             },
             status_code=400
         )
@@ -357,7 +361,7 @@ def admin_product_create(
 
     product = Product(
         name=name,
-        price=price,
+        price=money_to_float(price_amount),
         description=description,
         image_url=image_url,
         stock=stock,
@@ -408,7 +412,7 @@ def admin_product_edit(
     product_id: int,
     request: Request,
     name: str = Form(...),
-    price: float = Form(...),
+    price: str = Form(...),
     description: str = Form(...),
     image_url: str | None = Form(None),
     stock: int = Form(...),
@@ -429,13 +433,15 @@ def admin_product_edit(
             status_code=303
         )
 
-    if price <= 0:
+    try:
+        price_amount = parse_positive_money(price)
+    except MoneyValidationError as exc:
         return templates.TemplateResponse(
             request=request,
             name="admin_product_edit.html",
             context={
                 "product": product,
-                "error": "price must be greater than 0"
+                "error": str(exc)
             },
             status_code=400
         )
@@ -476,7 +482,7 @@ def admin_product_edit(
         )
 
     product.name = name
-    product.price = price
+    product.price = money_to_float(price_amount)
     product.description = description
     product.image_url = image_url
     product.stock = stock

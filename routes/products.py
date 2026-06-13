@@ -5,6 +5,7 @@ from database import get_db
 from routes.auth import get_admin_user
 from models import Product, Category, OrderItem, User
 from schemas import ProductCreate, ProductResponse, ProductCatalogResponse
+from utils.money import money_to_float
 
 
 router = APIRouter(
@@ -81,7 +82,7 @@ def create_product(
         raise HTTPException(status_code=404, detail="Category not found")
     product = Product(
         name=product_data.name,
-        price=product_data.price,
+        price=money_to_float(product_data.price),
         description=product_data.description,
         image_url=product_data.image_url,
         stock=product_data.stock,
@@ -323,7 +324,7 @@ def update_product(
         raise HTTPException(status_code=404, detail="Category not found")
 
     product.name = product_data.name
-    product.price = product_data.price
+    product.price = money_to_float(product_data.price)
     product.description = product_data.description
     product.image_url = product_data.image_url
     product.stock = product_data.stock
