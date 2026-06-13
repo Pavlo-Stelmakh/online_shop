@@ -72,7 +72,7 @@ def seed_clean_database(database_path: Path):
         session.add(order)
         session.flush()
 
-        session.add(OrderItem(order_id=order.id, product_id=product.id, quantity=2))
+        session.add(OrderItem(order_id=order.id, product_id=product.id, quantity=2, unit_price=10.0))
         session.commit()
     finally:
         session.close()
@@ -150,11 +150,13 @@ def seed_bad_database(database_path: Path):
                 INSERT INTO order_items (
                     order_id,
                     product_id,
-                    quantity
+                    quantity,
+                    unit_price
                 ) VALUES (
                     :bad_order_id,
                     1,
-                    0
+                    0,
+                    -1
                 )
                 """
             ),
@@ -204,3 +206,46 @@ def test_audit_script_fails_for_bad_database(tmp_path):
     assert "orders_status_invalid" in result.stdout
     assert "orders_total_price_invalid" in result.stdout
     assert "order_items_quantity_invalid" in result.stdout
+    assert "order_items_unit_price_negative" in result.stdout
+
+
+def test_audit_script_fails_for_null_order_item_unit_price(tmp_path):
+    database_path = tmp_path / "null_unit_price.db"
+    seed_clean_database(database_path)
+    engine = create_engine_for(database_path)
+
+    with engine.begin() as connection:
+        connection.execute(text("PRAGMA foreign_keys = OFF"))
+        connection.execute(text("ALTER TABLE order_items RENAME TO order_items_old"))
+        connection.execute(
+            text(
+                """
+                CREATE TABLE order_items (
+                    id INTEGER PRIMARY KEY,
+                    order_id INTEGER NOT NULL,
+                    product_id INTEGER NOT NULL,
+                    quantity INTEGER NOT NULL,
+                    unit_price FLOAT NULL
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO order_items (id, order_id, product_id, quantity, unit_price)
+                SELECT id, order_id, product_id, quantity, NULL
+                FROM order_items_old
+                """
+            )
+        )
+        connection.execute(text("DROP TABLE order_items_old"))
+        connection.execute(text("PRAGMA foreign_keys = ON"))
+
+    engine.dispose()
+
+    result = run_audit(database_path)
+
+    assert result.returncode == 1
+    assert "Result: FAIL" in result.stdout
+    assert "order_items_unit_price_missing" in result.stdout

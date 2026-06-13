@@ -362,6 +362,7 @@ def test_create_order_and_reduce_stock():
     assert "id" in order
     assert order["customer_id"] == customer["id"]
     assert order["total_price"] == 200
+    assert order["items"][0]["unit_price"] == 100
 
     product_response = client.get(f"/products/{product['id']}")
 
@@ -370,6 +371,47 @@ def test_create_order_and_reduce_stock():
     updated_product = product_response.json()
 
     assert updated_product["stock"] == 8
+
+
+def test_order_item_unit_price_is_snapshot_when_product_price_changes():
+    product = create_test_product(stock=10, price=12.5)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=3,
+        headers=customer_headers,
+    )
+
+    assert order["total_price"] == 37.5
+    assert order["items"][0]["unit_price"] == 12.5
+
+    admin_headers = get_auth_headers(role="admin")
+    update_response = client.put(
+        f"/products/{product['id']}",
+        json={
+            "name": product["name"],
+            "price": 99.99,
+            "description": product["description"],
+            "stock": 7,
+            "low_stock_threshold": product["low_stock_threshold"],
+            "category_id": product["category_id"],
+        },
+        headers=admin_headers,
+    )
+
+    assert update_response.status_code == 200
+
+    order_response = client.get(f"/orders/{order['id']}", headers=customer_headers)
+
+    assert order_response.status_code == 200
+    persisted_order = order_response.json()
+    assert persisted_order["total_price"] == 37.5
+    assert persisted_order["items"][0]["unit_price"] == 12.5
+    assert persisted_order["items"][0]["product"]["price"] == 99.99
 
 def test_cancel_order_returns_stock():
     product = create_test_product(stock=10, price=100)
