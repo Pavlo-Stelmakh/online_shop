@@ -281,6 +281,18 @@ CHECKS: Sequence[AuditCheck] = (
         sample_sql="SELECT id FROM order_items WHERE quantity IS NULL OR quantity <= 0 ORDER BY id LIMIT 5",
     ),
     AuditCheck(
+        code="order_items_unit_price_missing",
+        description="order_items.unit_price is NULL",
+        count_sql="SELECT COUNT(*) FROM order_items WHERE unit_price IS NULL",
+        sample_sql="SELECT id FROM order_items WHERE unit_price IS NULL ORDER BY id LIMIT 5",
+    ),
+    AuditCheck(
+        code="order_items_unit_price_negative",
+        description="order_items.unit_price is negative",
+        count_sql="SELECT COUNT(*) FROM order_items WHERE unit_price < 0",
+        sample_sql="SELECT id FROM order_items WHERE unit_price < 0 ORDER BY id LIMIT 5",
+    ),
+    AuditCheck(
         code="users_required_fields_missing",
         description="users.username, email, or hashed_password is NULL",
         count_sql="""

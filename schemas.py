@@ -84,6 +84,7 @@ class OrderItemResponse(BaseModel):
     id: int
     product_id: int
     quantity: int
+    unit_price: float
     product: ProductResponse
 
     model_config = ConfigDict(from_attributes=True)

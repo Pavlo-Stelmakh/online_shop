@@ -14,12 +14,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 ORDERS_TOTAL_PRICE_CONSTRAINT_NAME = "ck_orders_total_price_non_negative"
 ORDERS_STATUS_CONSTRAINT_NAME = "ck_orders_status_allowed"
 ORDER_ITEMS_QUANTITY_CONSTRAINT_NAME = "ck_order_items_quantity_positive"
+ORDER_ITEMS_UNIT_PRICE_CONSTRAINT_NAME = "ck_order_items_unit_price_non_negative"
 ORDER_CHECK_CONSTRAINTS = {
     ORDERS_TOTAL_PRICE_CONSTRAINT_NAME: "total_price >= 0",
     ORDERS_STATUS_CONSTRAINT_NAME: "status IN ('new', 'paid', 'shipped', 'cancelled')",
 }
 ORDER_ITEM_CHECK_CONSTRAINTS = {
     ORDER_ITEMS_QUANTITY_CONSTRAINT_NAME: "quantity > 0",
+    ORDER_ITEMS_UNIT_PRICE_CONSTRAINT_NAME: "unit_price >= 0",
 }
 
 
@@ -34,6 +36,7 @@ def test_order_item_required_fields_are_not_nullable_in_model_metadata():
     assert OrderItem.__table__.c.order_id.nullable is False
     assert OrderItem.__table__.c.product_id.nullable is False
     assert OrderItem.__table__.c.quantity.nullable is False
+    assert OrderItem.__table__.c.unit_price.nullable is False
 
 
 def test_order_check_constraints_exist_in_model_metadata():
@@ -144,6 +147,7 @@ def test_alembic_upgrade_head_enforces_orders_required_fields_on_sqlite(tmp_path
         assert order_item_columns["order_id"]["nullable"] is False
         assert order_item_columns["product_id"]["nullable"] is False
         assert order_item_columns["quantity"]["nullable"] is False
+        assert order_item_columns["unit_price"]["nullable"] is False
 
         order_check_constraints = {
             constraint["name"]: constraint["sqltext"]
@@ -184,8 +188,8 @@ def test_database_constraints_reject_null_and_invalid_order_values(tmp_path):
             connection.execute(
                 text(
                     """
-                    INSERT INTO order_items (order_id, product_id, quantity)
-                    VALUES (:order_id, :product_id, 1)
+                    INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+                    VALUES (:order_id, :product_id, 1, 10.0)
                     """
                 ),
                 {"order_id": order_id, "product_id": product_id},
@@ -250,15 +254,29 @@ def test_database_constraints_reject_null_and_invalid_order_values(tmp_path):
             ),
             (
                 """
-                INSERT INTO order_items (order_id, product_id, quantity)
-                VALUES (:order_id, :product_id, NULL)
+                INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+                VALUES (:order_id, :product_id, NULL, 10.0)
                 """,
                 {"order_id": order_id, "product_id": product_id},
             ),
             (
                 """
-                INSERT INTO order_items (order_id, product_id, quantity)
-                VALUES (:order_id, :product_id, 0)
+                INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+                VALUES (:order_id, :product_id, 0, 10.0)
+                """,
+                {"order_id": order_id, "product_id": product_id},
+            ),
+            (
+                """
+                INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+                VALUES (:order_id, :product_id, 1, NULL)
+                """,
+                {"order_id": order_id, "product_id": product_id},
+            ),
+            (
+                """
+                INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+                VALUES (:order_id, :product_id, 1, -0.01)
                 """,
                 {"order_id": order_id, "product_id": product_id},
             ),
@@ -268,5 +286,67 @@ def test_database_constraints_reject_null_and_invalid_order_values(tmp_path):
             with pytest.raises(IntegrityError):
                 with engine.begin() as connection:
                     connection.execute(text(statement), params)
+    finally:
+        engine.dispose()
+
+
+def test_order_item_unit_price_migration_backfills_existing_rows(tmp_path):
+    database_path = tmp_path / "order_item_unit_price_backfill.db"
+    env = os.environ.copy()
+    env["DATABASE_URL"] = f"sqlite:///{database_path}"
+
+    base_result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "f2a8c9d4e6b7"],
+        cwd=REPO_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert base_result.returncode == 0, base_result.stdout + base_result.stderr
+
+    engine = create_engine(f"sqlite:///{database_path}")
+    try:
+        with engine.begin() as connection:
+            customer_id, product_id = seed_required_parent_rows(connection)
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO orders (customer_id, status, total_price, created_at)
+                    VALUES (:customer_id, 'new', 25.5, '2026-06-13 00:00:00')
+                    """
+                ),
+                {"customer_id": customer_id},
+            )
+            order_id = connection.execute(text("SELECT id FROM orders")).scalar_one()
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO order_items (order_id, product_id, quantity)
+                    VALUES (:order_id, :product_id, 2)
+                    """
+                ),
+                {"order_id": order_id, "product_id": product_id},
+            )
+    finally:
+        engine.dispose()
+
+    head_result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=REPO_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert head_result.returncode == 0, head_result.stdout + head_result.stderr
+
+    engine = create_engine(f"sqlite:///{database_path}")
+    try:
+        with engine.connect() as connection:
+            unit_price = connection.execute(
+                text("SELECT unit_price FROM order_items")
+            ).scalar_one()
+        assert unit_price == 10.0
     finally:
         engine.dispose()
