@@ -51,6 +51,36 @@ CHECKS: Sequence[AuditCheck] = (
         """,
     ),
     AuditCheck(
+        code="orders_status_missing",
+        description="orders.status is NULL",
+        count_sql="SELECT COUNT(*) FROM orders WHERE status IS NULL",
+        sample_sql="SELECT id FROM orders WHERE status IS NULL ORDER BY id LIMIT 5",
+    ),
+    AuditCheck(
+        code="orders_status_invalid",
+        description="orders.status is not an allowed status",
+        count_sql="""
+            SELECT COUNT(*)
+            FROM orders
+            WHERE status IS NOT NULL
+              AND status NOT IN ('new', 'paid', 'shipped', 'cancelled')
+        """,
+        sample_sql="""
+            SELECT id
+            FROM orders
+            WHERE status IS NOT NULL
+              AND status NOT IN ('new', 'paid', 'shipped', 'cancelled')
+            ORDER BY id
+            LIMIT 5
+        """,
+    ),
+    AuditCheck(
+        code="orders_created_at_missing",
+        description="orders.created_at is NULL",
+        count_sql="SELECT COUNT(*) FROM orders WHERE created_at IS NULL",
+        sample_sql="SELECT id FROM orders WHERE created_at IS NULL ORDER BY id LIMIT 5",
+    ),
+    AuditCheck(
         code="order_items_order_missing",
         description="order_items.order_id is NULL",
         count_sql="SELECT COUNT(*) FROM order_items WHERE order_id IS NULL",

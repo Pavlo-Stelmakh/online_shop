@@ -124,6 +124,42 @@ def seed_bad_database(database_path: Path):
                 """
             )
         )
+        connection.execute(
+            text(
+                """
+                INSERT INTO orders (
+                    customer_id,
+                    status,
+                    total_price,
+                    created_at
+                ) VALUES (
+                    1,
+                    'returned',
+                    -1,
+                    '2026-06-13 00:00:00'
+                )
+                """
+            )
+        )
+        bad_order_id = connection.execute(
+            text("SELECT id FROM orders WHERE status = 'returned'")
+        ).scalar_one()
+        connection.execute(
+            text(
+                """
+                INSERT INTO order_items (
+                    order_id,
+                    product_id,
+                    quantity
+                ) VALUES (
+                    :bad_order_id,
+                    1,
+                    0
+                )
+                """
+            ),
+            {"bad_order_id": bad_order_id},
+        )
         connection.execute(text("PRAGMA ignore_check_constraints = OFF"))
 
     engine.dispose()
@@ -165,3 +201,6 @@ def test_audit_script_fails_for_bad_database(tmp_path):
     assert "customers_name_empty" in result.stdout
     assert "customers_email_empty" in result.stdout
     assert "customers_phone_empty" in result.stdout
+    assert "orders_status_invalid" in result.stdout
+    assert "orders_total_price_invalid" in result.stdout
+    assert "order_items_quantity_invalid" in result.stdout
