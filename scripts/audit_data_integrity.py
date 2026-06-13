@@ -147,6 +147,42 @@ CHECKS: Sequence[AuditCheck] = (
         """,
     ),
     AuditCheck(
+        code="customers_name_missing",
+        description="customers.name is NULL",
+        count_sql="SELECT COUNT(*) FROM customers WHERE name IS NULL",
+        sample_sql="SELECT id FROM customers WHERE name IS NULL ORDER BY id LIMIT 5",
+    ),
+    AuditCheck(
+        code="customers_name_empty",
+        description="customers.name is empty after trim",
+        count_sql="SELECT COUNT(*) FROM customers WHERE trim(name) = ''",
+        sample_sql="SELECT id FROM customers WHERE trim(name) = '' ORDER BY id LIMIT 5",
+    ),
+    AuditCheck(
+        code="customers_email_missing",
+        description="customers.email is NULL",
+        count_sql="SELECT COUNT(*) FROM customers WHERE email IS NULL",
+        sample_sql="SELECT id FROM customers WHERE email IS NULL ORDER BY id LIMIT 5",
+    ),
+    AuditCheck(
+        code="customers_email_empty",
+        description="customers.email is empty after trim",
+        count_sql="SELECT COUNT(*) FROM customers WHERE trim(email) = ''",
+        sample_sql="SELECT id FROM customers WHERE trim(email) = '' ORDER BY id LIMIT 5",
+    ),
+    AuditCheck(
+        code="customers_phone_missing",
+        description="customers.phone is NULL",
+        count_sql="SELECT COUNT(*) FROM customers WHERE phone IS NULL",
+        sample_sql="SELECT id FROM customers WHERE phone IS NULL ORDER BY id LIMIT 5",
+    ),
+    AuditCheck(
+        code="customers_phone_empty",
+        description="customers.phone is empty after trim",
+        count_sql="SELECT COUNT(*) FROM customers WHERE trim(phone) = ''",
+        sample_sql="SELECT id FROM customers WHERE trim(phone) = '' ORDER BY id LIMIT 5",
+    ),
+    AuditCheck(
         code="categories_name_missing",
         description="categories.name is NULL",
         count_sql="SELECT COUNT(*) FROM categories WHERE name IS NULL",
