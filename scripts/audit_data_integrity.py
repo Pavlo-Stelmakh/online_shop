@@ -147,6 +147,22 @@ CHECKS: Sequence[AuditCheck] = (
         """,
     ),
     AuditCheck(
+        code="products_required_fields_missing",
+        description="products.name or description is NULL",
+        count_sql="""
+            SELECT COUNT(*)
+            FROM products
+            WHERE name IS NULL OR description IS NULL
+        """,
+        sample_sql="""
+            SELECT id
+            FROM products
+            WHERE name IS NULL OR description IS NULL
+            ORDER BY id
+            LIMIT 5
+        """,
+    ),
+    AuditCheck(
         code="products_price_invalid",
         description="products.price is NULL or negative",
         count_sql="SELECT COUNT(*) FROM products WHERE price IS NULL OR price < 0",

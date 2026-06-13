@@ -84,6 +84,7 @@ def seed_bad_database(database_path: Path):
     engine = create_engine_for(database_path)
 
     with engine.begin() as connection:
+        connection.execute(text("PRAGMA ignore_check_constraints = ON"))
         connection.execute(
             text(
                 """
@@ -105,6 +106,7 @@ def seed_bad_database(database_path: Path):
                 """
             )
         )
+        connection.execute(text("PRAGMA ignore_check_constraints = OFF"))
 
     engine.dispose()
 

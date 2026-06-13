@@ -16,16 +16,24 @@ class Category(Base):
 
 class Product(Base):
     __tablename__ = "products"
+    __table_args__ = (
+        CheckConstraint("price >= 0", name="ck_products_price_non_negative"),
+        CheckConstraint("stock >= 0", name="ck_products_stock_non_negative"),
+        CheckConstraint(
+            "low_stock_threshold >= 0",
+            name="ck_products_low_stock_threshold_non_negative",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    price = Column(Float)
-    description = Column(String)
+    name = Column(String, index=True, nullable=False)
+    price = Column(Float, nullable=False)
+    description = Column(String, nullable=False)
     image_url = Column(String, nullable=True)
-    stock = Column(Integer, default=0)
+    stock = Column(Integer, default=0, nullable=False)
     low_stock_threshold = Column(Integer, default=5, nullable=False)
 
-    category_id = Column(Integer, ForeignKey("categories.id"))
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
 
     category = relationship("Category", back_populates="products")
 
