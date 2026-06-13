@@ -90,6 +90,16 @@ python -m pytest
 ```
 GitHub Actions is used for CI checks on pull requests and main branch updates.
 
+## Data integrity audit
+
+Run the read-only data integrity audit before adding stricter database constraints:
+
+```bash
+python scripts/audit_data_integrity.py
+```
+
+The audit uses `DATABASE_URL`, prints a report, exits with code `0` when no problems are found, and exits with code `1` when integrity problems are detected.
+
 
 ## Tech Stack
 
