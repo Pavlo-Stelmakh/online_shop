@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker
 from database import Base, get_db
 import main as main_module
 from auth import SECRET_KEY, ALGORITHM
-from models import User
+from models import Customer, Order, OrderItem, Product, User
 from routes.admin import ADMIN_SESSION_COOKIE_NAME, ADMIN_SESSION_TOKEN_TYPE
 
 
@@ -682,6 +682,176 @@ def test_customer_cannot_delete_product():
 
     assert response.status_code == 403
     assert response.json()["detail"] == "Admin access required"
+
+
+def test_admin_api_cannot_delete_product_used_in_order_items():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.delete(
+        f"/products/{product['id']}",
+        headers=admin_headers
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == (
+        "Product cannot be deleted because it is used in orders"
+    )
+
+    db = TestingSessionLocal()
+
+    try:
+        product_exists = db.query(Product).filter(
+            Product.id == product["id"]
+        ).first() is not None
+        order_item_exists = db.query(OrderItem).filter(
+            OrderItem.order_id == order["id"],
+            OrderItem.product_id == product["id"]
+        ).first() is not None
+    finally:
+        db.close()
+
+    assert product_exists
+    assert order_item_exists
+
+
+def test_admin_api_can_delete_product_with_no_order_items():
+    product = create_test_product(stock=10, price=100)
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.delete(
+        f"/products/{product['id']}",
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["message"] == "Product deleted successfully"
+
+    db = TestingSessionLocal()
+
+    try:
+        product_exists = db.query(Product).filter(
+            Product.id == product["id"]
+        ).first() is not None
+    finally:
+        db.close()
+
+    assert not product_exists
+
+
+def test_admin_cannot_delete_customer_who_has_orders():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.delete(
+        f"/customers/{customer['id']}",
+        headers=admin_headers
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == (
+        "Customer cannot be deleted because they have orders"
+    )
+
+    db = TestingSessionLocal()
+
+    try:
+        customer_exists = db.query(Customer).filter(
+            Customer.id == customer["id"]
+        ).first() is not None
+        order_exists = db.query(Order).filter(
+            Order.id == order["id"]
+        ).first() is not None
+    finally:
+        db.close()
+
+    assert customer_exists
+    assert order_exists
+
+
+def test_admin_can_delete_customer_with_no_orders():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.delete(
+        f"/customers/{customer['id']}",
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["message"] == "Customer deleted successfully"
+
+    db = TestingSessionLocal()
+
+    try:
+        customer_exists = db.query(Customer).filter(
+            Customer.id == customer["id"]
+        ).first() is not None
+    finally:
+        db.close()
+
+    assert not customer_exists
+
+
+def test_admin_cannot_physically_delete_order_with_order_items():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.delete(
+        f"/orders/{order['id']}",
+        headers=admin_headers
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == (
+        "Order cannot be deleted because it has order items"
+    )
+
+    db = TestingSessionLocal()
+
+    try:
+        order_exists = db.query(Order).filter(
+            Order.id == order["id"]
+        ).first() is not None
+        order_item_exists = db.query(OrderItem).filter(
+            OrderItem.order_id == order["id"]
+        ).first() is not None
+    finally:
+        db.close()
+
+    assert order_exists
+    assert order_item_exists
 
 def test_create_order_requires_auth():
     product = create_test_product()

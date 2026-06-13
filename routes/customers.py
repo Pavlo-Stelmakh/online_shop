@@ -128,6 +128,16 @@ def delete_customer(
     if customer is None:
         raise HTTPException(status_code=404, detail="Customer not found")
 
+    existing_order = db.query(Order).filter(
+        Order.customer_id == customer_id
+    ).first()
+
+    if existing_order is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Customer cannot be deleted because they have orders"
+        )
+
     db.delete(customer)
     db.commit()
 

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from routes.auth import get_admin_user
-from models import Product, Category, User
+from models import Product, Category, OrderItem, User
 from schemas import ProductCreate, ProductResponse, ProductCatalogResponse
 
 
@@ -345,6 +345,16 @@ def delete_product(
 
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
+
+    related_order_item = db.query(OrderItem).filter(
+        OrderItem.product_id == product_id
+    ).first()
+
+    if related_order_item is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Product cannot be deleted because it is used in orders"
+        )
 
     db.delete(product)
     db.commit()
