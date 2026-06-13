@@ -285,6 +285,16 @@ def delete_order(
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
 
+    existing_item = db.query(OrderItem).filter(
+        OrderItem.order_id == order_id
+    ).first()
+
+    if existing_item is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Order cannot be deleted because it has order items"
+        )
+
     db.delete(order)
     db.commit()
 
