@@ -147,6 +147,18 @@ CHECKS: Sequence[AuditCheck] = (
         """,
     ),
     AuditCheck(
+        code="categories_name_missing",
+        description="categories.name is NULL",
+        count_sql="SELECT COUNT(*) FROM categories WHERE name IS NULL",
+        sample_sql="SELECT id FROM categories WHERE name IS NULL ORDER BY id LIMIT 5",
+    ),
+    AuditCheck(
+        code="categories_name_empty",
+        description="categories.name is empty after trim",
+        count_sql="SELECT COUNT(*) FROM categories WHERE trim(name) = ''",
+        sample_sql="SELECT id FROM categories WHERE trim(name) = '' ORDER BY id LIMIT 5",
+    ),
+    AuditCheck(
         code="products_required_fields_missing",
         description="products.name or description is NULL",
         count_sql="""
