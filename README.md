@@ -100,6 +100,8 @@ python scripts/audit_data_integrity.py
 
 The audit uses `DATABASE_URL`, prints a report, exits with code `0` when no problems are found, and exits with code `1` when integrity problems are detected.
 
+Production precondition for the `customers.user_id -> users.id` foreign key: the audit script must return `Result: PASS` before deploy, and the `customers_user_orphan` check must be `0`.
+
 
 ## Tech Stack
 
