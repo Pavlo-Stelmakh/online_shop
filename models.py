@@ -69,12 +69,22 @@ class Customer(Base):
 
 class Order(Base):
     __tablename__ = "orders"
+    __table_args__ = (
+        CheckConstraint(
+            "total_price >= 0",
+            name="ck_orders_total_price_non_negative",
+        ),
+        CheckConstraint(
+            "status IN ('new', 'paid', 'shipped', 'cancelled')",
+            name="ck_orders_status_allowed",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
-    customer_id = Column(Integer, ForeignKey("customers.id"))
-    status = Column(String, default="new")
-    total_price = Column(Float, default=0)
-    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
+    status = Column(String, default="new", nullable=False)
+    total_price = Column(Float, default=0, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     customer = relationship("Customer", back_populates="orders")
     items = relationship("OrderItem", back_populates="order")
@@ -82,11 +92,17 @@ class Order(Base):
 
 class OrderItem(Base):
     __tablename__ = "order_items"
+    __table_args__ = (
+        CheckConstraint(
+            "quantity > 0",
+            name="ck_order_items_quantity_positive",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
-    order_id = Column(Integer, ForeignKey("orders.id"))
-    product_id = Column(Integer, ForeignKey("products.id"))
-    quantity = Column(Integer)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)
 
     order = relationship("Order", back_populates="items")
     product = relationship("Product")
