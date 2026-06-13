@@ -1,4 +1,8 @@
-from pydantic import BaseModel, ConfigDict, Field
+from decimal import Decimal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from utils.money import MoneyValidationError, parse_positive_money
 
 
 class CategoryCreate(BaseModel):
@@ -13,7 +17,15 @@ class CategoryResponse(BaseModel):
 
 class ProductCreate(BaseModel):
     name: str = Field(..., min_length=1)
-    price: float = Field(..., gt=0)
+    price: Decimal
+
+    @field_validator("price", mode="before")
+    @classmethod
+    def validate_price(cls, value):
+        try:
+            return parse_positive_money(value)
+        except MoneyValidationError as exc:
+            raise ValueError(str(exc)) from exc
     description: str
     image_url: str | None = None
     stock: int = Field(..., ge=0)
