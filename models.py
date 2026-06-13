@@ -43,6 +43,11 @@ class Product(Base):
 
 class Customer(Base):
     __tablename__ = "customers"
+    __table_args__ = (
+        CheckConstraint("trim(name) <> ''", name="ck_customers_name_not_empty"),
+        CheckConstraint("trim(email) <> ''", name="ck_customers_email_not_empty"),
+        CheckConstraint("trim(phone) <> ''", name="ck_customers_phone_not_empty"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(
@@ -52,11 +57,11 @@ class Customer(Base):
             name="fk_customers_user_id_users",
             ondelete="RESTRICT",
         ),
-        nullable=True,
+        nullable=False,
     )
-    name = Column(String, index=True)
-    email = Column(String, unique=True, index=True)
-    phone = Column(String)
+    name = Column(String, index=True, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    phone = Column(String, nullable=False)
 
     user = relationship("User")
     orders = relationship("Order", back_populates="customer")

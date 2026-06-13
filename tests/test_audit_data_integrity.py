@@ -106,8 +106,23 @@ def seed_bad_database(database_path: Path):
                 """
             )
         )
+        connection.execute(text("INSERT INTO categories (name) VALUES ('   ')"))
         connection.execute(
-            text("INSERT INTO categories (name) VALUES ('   ')")
+            text(
+                """
+                INSERT INTO customers (
+                    user_id,
+                    name,
+                    email,
+                    phone
+                ) VALUES (
+                    1,
+                    '   ',
+                    '',
+                    '   '
+                )
+                """
+            )
         )
         connection.execute(text("PRAGMA ignore_check_constraints = OFF"))
 
@@ -147,3 +162,6 @@ def test_audit_script_fails_for_bad_database(tmp_path):
     assert "Result: FAIL" in result.stdout
     assert "products_price_invalid" in result.stdout
     assert "categories_name_empty" in result.stdout
+    assert "customers_name_empty" in result.stdout
+    assert "customers_email_empty" in result.stdout
+    assert "customers_phone_empty" in result.stdout
