@@ -7,9 +7,12 @@ from database import Base
 
 class Category(Base):
     __tablename__ = "categories"
+    __table_args__ = (
+        CheckConstraint("trim(name) <> ''", name="ck_categories_name_not_empty"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
+    name = Column(String, unique=True, index=True, nullable=False)
 
     products = relationship("Product", back_populates="category")
 
