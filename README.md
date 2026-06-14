@@ -77,10 +77,11 @@ https://online-shop-api-z9y4.onrender.com/health
 
 ## Test Status
 
-Current automated test coverage:
+Current automated test status:
 
 ```text
-185 passed
+python -m pytest
+245 passed
 ```
 
 Tests are run with:
@@ -897,7 +898,23 @@ online_shop/
 │   ├── orders.py
 │   └── stats.py
 └── tests/
-    └── test_main.py
+    ├── conftest.py
+    ├── helpers.py
+    ├── test_auth.py
+    ├── test_admin_ui.py
+    ├── test_categories.py
+    ├── test_products.py
+    ├── test_customers.py
+    ├── test_orders.py
+    ├── test_stats.py
+    ├── test_smoke.py
+    ├── test_startup_scripts.py
+    ├── test_audit_data_integrity.py
+    ├── test_categories_integrity.py
+    ├── test_customer_user_fk_integrity.py
+    ├── test_orders_integrity.py
+    ├── test_products_integrity.py
+    └── test_users_integrity.py
 ```
 
 ## Installation
@@ -2325,9 +2342,9 @@ python -m pytest
 Expected result:
 
 ```text
-All tests passed
+245 passed
 ```
-Current test suite includes 185 automated tests covering authentication, roles, products, categories, customers, orders, stock logic, order status rules, deployment endpoints, admin UI authentication and security behavior.
+Current test suite includes 245 automated tests covering authentication, roles, products, categories, customers, orders, stock logic, order status rules, deployment endpoints, admin UI authentication, security behavior, startup scripts, and data integrity checks.
 
 The tests use a separate SQLite database:
 
