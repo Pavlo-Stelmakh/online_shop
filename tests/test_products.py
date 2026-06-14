@@ -461,6 +461,83 @@ def test_get_products_catalog_response():
     assert prices == sorted(prices)
 
 
+def test_products_catalog_offset_shape_excludes_page_fields():
+    create_test_product(stock=10, price=100)
+
+    response = client.get(
+        "/products/catalog",
+        params={"skip": 0, "limit": 1}
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert set(["total", "skip", "limit", "items"]).issubset(data)
+    assert "page" not in data
+    assert "pages" not in data
+    assert data["skip"] == 0
+    assert data["limit"] == 1
+    assert isinstance(data["items"], list)
+
+
+def test_products_catalog_pages_shape_excludes_skip():
+    create_test_product(stock=10, price=100)
+
+    response = client.get(
+        "/products/catalog/pages",
+        params={"page": 1, "limit": 1}
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert set(["items", "total", "page", "limit", "pages"]).issubset(data)
+    assert "skip" not in data
+    assert data["page"] == 1
+    assert data["limit"] == 1
+    assert isinstance(data["items"], list)
+
+
+def test_openapi_catalog_response_schemas_match_payload_shapes():
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 200
+
+    openapi = response.json()
+    catalog_response = openapi["paths"]["/products/catalog"]["get"]["responses"]["200"]
+    pages_response = openapi["paths"]["/products/catalog/pages"]["get"]["responses"]["200"]
+    catalog_schema = catalog_response["content"]["application/json"]["schema"]
+    pages_schema = pages_response["content"]["application/json"]["schema"]
+
+    assert (
+        catalog_schema.get("$ref", "").endswith("/ProductCatalogOffsetResponse")
+        or "skip" in catalog_schema.get("properties", {})
+    )
+    assert (
+        pages_schema.get("$ref", "").endswith("/ProductCatalogPageResponse")
+        or {"page", "pages"}.issubset(pages_schema.get("properties", {}))
+    )
+
+
+def test_legacy_product_endpoints_return_plain_lists():
+    create_test_product(stock=10, price=100)
+
+    endpoints = [
+        ("/products/search", {"query": "Product"}),
+        ("/products/filter", {"min_price": 0}),
+        ("/products/sort", {"order": "asc"}),
+        ("/products/limited", {"limit": 1}),
+    ]
+
+    for path, params in endpoints:
+        response = client.get(path, params=params)
+
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+
+
 def test_get_products_invalid_negative_skip():
     response = client.get(
         "/products",

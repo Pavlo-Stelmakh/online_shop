@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from database import SessionLocal
 from models import Product, Category
-from schemas import ProductCreate, ProductResponse, CategoryCreate, CategoryResponse, ProductCatalogResponse
+from schemas import ProductCreate, ProductResponse, CategoryCreate, CategoryResponse
 from routes.categories import router as categories_router
 from routes.products import router as products_router
 from routes.customers import router as customers_router
