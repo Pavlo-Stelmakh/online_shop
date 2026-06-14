@@ -306,14 +306,15 @@ def update_order_status(
 
             return cancelled_order
     else:
-        expected_status = {
+        expected_current_status_by_target = {
             "paid": "new",
             "shipped": "paid",
-        }[status]
+        }
+        expected_current_status = expected_current_status_by_target[status]
 
         rows_updated = db.query(Order).filter(
             Order.id == order_id,
-            Order.status == expected_status,
+            Order.status == expected_current_status,
         ).update(
             {Order.status: status},
             synchronize_session=False,
