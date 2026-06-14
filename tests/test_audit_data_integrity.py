@@ -249,3 +249,26 @@ def test_audit_script_fails_for_null_order_item_unit_price(tmp_path):
     assert result.returncode == 1
     assert "Result: FAIL" in result.stdout
     assert "order_items_unit_price_missing" in result.stdout
+
+
+def test_audit_script_fails_for_money_values_with_more_than_two_decimal_places(tmp_path):
+    database_path = tmp_path / "money_scale.db"
+    seed_clean_database(database_path)
+    engine = create_engine_for(database_path)
+
+    with engine.begin() as connection:
+        connection.execute(text("PRAGMA ignore_check_constraints = ON"))
+        connection.execute(text("UPDATE products SET price = 10.123 WHERE id = 1"))
+        connection.execute(text("UPDATE orders SET total_price = 20.123 WHERE id = 1"))
+        connection.execute(text("UPDATE order_items SET unit_price = 10.123 WHERE id = 1"))
+        connection.execute(text("PRAGMA ignore_check_constraints = OFF"))
+
+    engine.dispose()
+
+    result = run_audit(database_path)
+
+    assert result.returncode == 1
+    assert "Result: FAIL" in result.stdout
+    assert "products_price_scale_invalid" in result.stdout
+    assert "orders_total_price_scale_invalid" in result.stdout
+    assert "order_items_unit_price_scale_invalid" in result.stdout

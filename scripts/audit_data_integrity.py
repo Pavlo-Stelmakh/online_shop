@@ -246,6 +246,13 @@ CHECKS: Sequence[AuditCheck] = (
         count_sql="SELECT COUNT(*) FROM products WHERE price IS NULL OR price < 0",
         sample_sql="SELECT id FROM products WHERE price IS NULL OR price < 0 ORDER BY id LIMIT 5",
     ),
+
+    AuditCheck(
+        code="products_price_scale_invalid",
+        description="products.price has more than 2 decimal places",
+        count_sql="SELECT COUNT(*) FROM products WHERE price IS NOT NULL AND ABS(price * 100 - ROUND(price * 100)) > 0.000001",
+        sample_sql="SELECT id FROM products WHERE price IS NOT NULL AND ABS(price * 100 - ROUND(price * 100)) > 0.000001 ORDER BY id LIMIT 5",
+    ),
     AuditCheck(
         code="products_stock_invalid",
         description="products.stock is NULL or negative",
@@ -274,6 +281,13 @@ CHECKS: Sequence[AuditCheck] = (
         count_sql="SELECT COUNT(*) FROM orders WHERE total_price IS NULL OR total_price < 0",
         sample_sql="SELECT id FROM orders WHERE total_price IS NULL OR total_price < 0 ORDER BY id LIMIT 5",
     ),
+
+    AuditCheck(
+        code="orders_total_price_scale_invalid",
+        description="orders.total_price has more than 2 decimal places",
+        count_sql="SELECT COUNT(*) FROM orders WHERE total_price IS NOT NULL AND ABS(total_price * 100 - ROUND(total_price * 100)) > 0.000001",
+        sample_sql="SELECT id FROM orders WHERE total_price IS NOT NULL AND ABS(total_price * 100 - ROUND(total_price * 100)) > 0.000001 ORDER BY id LIMIT 5",
+    ),
     AuditCheck(
         code="order_items_quantity_invalid",
         description="order_items.quantity is NULL or not positive",
@@ -291,6 +305,13 @@ CHECKS: Sequence[AuditCheck] = (
         description="order_items.unit_price is negative",
         count_sql="SELECT COUNT(*) FROM order_items WHERE unit_price < 0",
         sample_sql="SELECT id FROM order_items WHERE unit_price < 0 ORDER BY id LIMIT 5",
+    ),
+
+    AuditCheck(
+        code="order_items_unit_price_scale_invalid",
+        description="order_items.unit_price has more than 2 decimal places",
+        count_sql="SELECT COUNT(*) FROM order_items WHERE unit_price IS NOT NULL AND ABS(unit_price * 100 - ROUND(unit_price * 100)) > 0.000001",
+        sample_sql="SELECT id FROM order_items WHERE unit_price IS NOT NULL AND ABS(unit_price * 100 - ROUND(unit_price * 100)) > 0.000001 ORDER BY id LIMIT 5",
     ),
     AuditCheck(
         code="users_required_fields_missing",

@@ -41,6 +41,10 @@ def parse_positive_money(value: Any, *, field_name: str = "price") -> Decimal:
     return amount
 
 
+def quantize_money(value: Any) -> Decimal:
+    return parse_money(value)
+
+
 def money_to_float(value: Decimal) -> float:
     return float(value)
 

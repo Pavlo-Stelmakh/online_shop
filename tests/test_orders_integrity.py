@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from sqlalchemy import CheckConstraint, create_engine, inspect, text
+from sqlalchemy import CheckConstraint, Numeric, create_engine, inspect, text
 from sqlalchemy.exc import IntegrityError
 
 from models import Order, OrderItem
@@ -23,6 +23,18 @@ ORDER_ITEM_CHECK_CONSTRAINTS = {
     ORDER_ITEMS_QUANTITY_CONSTRAINT_NAME: "quantity > 0",
     ORDER_ITEMS_UNIT_PRICE_CONSTRAINT_NAME: "unit_price >= 0",
 }
+
+
+def test_order_money_columns_use_numeric_money_type_in_model_metadata():
+    total_price_type = Order.__table__.c.total_price.type
+    unit_price_type = OrderItem.__table__.c.unit_price.type
+
+    assert isinstance(total_price_type, Numeric)
+    assert total_price_type.precision == 12
+    assert total_price_type.scale == 2
+    assert isinstance(unit_price_type, Numeric)
+    assert unit_price_type.precision == 12
+    assert unit_price_type.scale == 2
 
 
 def test_order_required_fields_are_not_nullable_in_model_metadata():
@@ -143,11 +155,17 @@ def test_alembic_upgrade_head_enforces_orders_required_fields_on_sqlite(tmp_path
         assert order_columns["customer_id"]["nullable"] is False
         assert order_columns["status"]["nullable"] is False
         assert order_columns["total_price"]["nullable"] is False
+        assert isinstance(order_columns["total_price"]["type"], Numeric)
+        assert order_columns["total_price"]["type"].precision == 12
+        assert order_columns["total_price"]["type"].scale == 2
         assert order_columns["created_at"]["nullable"] is False
         assert order_item_columns["order_id"]["nullable"] is False
         assert order_item_columns["product_id"]["nullable"] is False
         assert order_item_columns["quantity"]["nullable"] is False
         assert order_item_columns["unit_price"]["nullable"] is False
+        assert isinstance(order_item_columns["unit_price"]["type"], Numeric)
+        assert order_item_columns["unit_price"]["type"].precision == 12
+        assert order_item_columns["unit_price"]["type"].scale == 2
 
         order_check_constraints = {
             constraint["name"]: constraint["sqltext"]

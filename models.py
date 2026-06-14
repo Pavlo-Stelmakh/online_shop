@@ -1,6 +1,7 @@
-from sqlalchemy import CheckConstraint, Column, Integer, String, Float, ForeignKey, DateTime
+from sqlalchemy import CheckConstraint, Column, Integer, String, Numeric, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
+from decimal import Decimal
 
 from database import Base
 
@@ -30,7 +31,7 @@ class Product(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
-    price = Column(Float, nullable=False)
+    price = Column(Numeric(12, 2), nullable=False)
     description = Column(String, nullable=False)
     image_url = Column(String, nullable=True)
     stock = Column(Integer, default=0, nullable=False)
@@ -83,7 +84,7 @@ class Order(Base):
     id = Column(Integer, primary_key=True, index=True)
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
     status = Column(String, default="new", nullable=False)
-    total_price = Column(Float, default=0, nullable=False)
+    total_price = Column(Numeric(12, 2), default=Decimal("0.00"), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     customer = relationship("Customer", back_populates="orders")
@@ -107,7 +108,7 @@ class OrderItem(Base):
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
-    unit_price = Column(Float, nullable=False)
+    unit_price = Column(Numeric(12, 2), nullable=False)
 
     order = relationship("Order", back_populates="items")
     product = relationship("Product")
