@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from jose import jwt, JWTError
 
-from auth import verify_password, SECRET_KEY, ALGORITHM
+from auth import verify_password, SECRET_KEY, ALGORITHM, is_production_environment
 from database import get_db
 from models import Product, Category, Customer, Order, User, OrderItem
 from routes.stats import calculate_total_revenue
@@ -30,9 +30,7 @@ ADMIN_SESSION_TOKEN_TYPE = "admin_ui_session"
 
 
 def is_admin_cookie_secure() -> bool:
-    environment = os.getenv("ENVIRONMENT", os.getenv("ENV", "")).lower()
-
-    return environment in {"production", "prod"} or os.getenv("RENDER") == "true"
+    return is_production_environment()
 
 
 def create_admin_session_token(user: User) -> str:
