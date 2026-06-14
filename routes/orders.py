@@ -280,11 +280,52 @@ def update_order_status(
         )
 
     if status == "cancelled":
-        for item in order.items:
-            product = db.query(Product).filter(Product.id == item.product_id).first()
+        rows_updated = db.query(Order).filter(
+            Order.id == order_id,
+            Order.status.in_(["new", "paid"]),
+        ).update(
+            {Order.status: "cancelled"},
+            synchronize_session=False,
+        )
 
-            if product is not None:
-                product.stock += item.quantity
+        if rows_updated == 0:
+            db.rollback()
+
+            current_order = db.query(Order).filter(Order.id == order_id).first()
+
+            if current_order is None:
+                raise HTTPException(status_code=404, detail="Order not found")
+
+            if current_order.status == status:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Order already has status '{status}'"
+                )
+
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Cannot change order status from '{current_order.status}' "
+                    f"to '{status}'"
+                )
+            )
+
+        items = db.query(OrderItem).filter(OrderItem.order_id == order_id).all()
+
+        for item in items:
+            db.query(Product).filter(Product.id == item.product_id).update(
+                {Product.stock: Product.stock + item.quantity},
+                synchronize_session=False,
+            )
+
+        db.commit()
+
+        cancelled_order = db.query(Order).filter(Order.id == order_id).first()
+
+        if cancelled_order is None:
+            raise HTTPException(status_code=404, detail="Order not found")
+
+        return cancelled_order
 
     order.status = status
 

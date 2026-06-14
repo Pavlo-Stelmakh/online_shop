@@ -109,6 +109,137 @@ def test_cancel_order_returns_stock():
     assert product_after_cancel_response.json()["stock"] == 10
 
 
+def _get_product_stock(product_id: int) -> int:
+    response = client.get(f"/products/{product_id}")
+
+    assert response.status_code == 200
+
+    return response.json()["stock"]
+
+
+def _create_order_for_stock_restore(initial_stock: int = 10, quantity: int = 3):
+    product = create_test_product(stock=initial_stock, price=100)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=quantity,
+        headers=customer_headers,
+    )
+
+    return product, order
+
+
+def _update_order_status(order_id: int, status: str):
+    return client.put(
+        f"/orders/{order_id}/status",
+        params={"status": status},
+        headers=get_auth_headers(role="admin"),
+    )
+
+
+def test_cancelling_new_order_restores_stock_once():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=3)
+
+    assert _get_product_stock(product["id"]) == 7
+
+    response = _update_order_status(order["id"], "cancelled")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "cancelled"
+    assert _get_product_stock(product["id"]) == 10
+
+
+def test_cancelling_paid_order_restores_stock_once():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=3)
+
+    paid_response = _update_order_status(order["id"], "paid")
+
+    assert paid_response.status_code == 200
+    assert paid_response.json()["status"] == "paid"
+    assert _get_product_stock(product["id"]) == 7
+
+    cancelled_response = _update_order_status(order["id"], "cancelled")
+
+    assert cancelled_response.status_code == 200
+    assert cancelled_response.json()["status"] == "cancelled"
+    assert _get_product_stock(product["id"]) == 10
+
+
+def test_cancelling_already_cancelled_order_returns_error_and_does_not_restore_stock_twice():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=3)
+
+    first_cancel_response = _update_order_status(order["id"], "cancelled")
+
+    assert first_cancel_response.status_code == 200
+    assert _get_product_stock(product["id"]) == 10
+
+    second_cancel_response = _update_order_status(order["id"], "cancelled")
+
+    assert second_cancel_response.status_code == 400
+    assert second_cancel_response.json()["detail"] == (
+        "Order already has status 'cancelled'"
+    )
+    assert _get_product_stock(product["id"]) == 10
+
+
+def test_cancelling_shipped_order_returns_error_and_does_not_restore_stock():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=3)
+
+    paid_response = _update_order_status(order["id"], "paid")
+    shipped_response = _update_order_status(order["id"], "shipped")
+
+    assert paid_response.status_code == 200
+    assert shipped_response.status_code == 200
+    assert shipped_response.json()["status"] == "shipped"
+    assert _get_product_stock(product["id"]) == 7
+
+    cancelled_response = _update_order_status(order["id"], "cancelled")
+
+    assert cancelled_response.status_code == 400
+    assert cancelled_response.json()["detail"] == (
+        "Cannot change order status from 'shipped' to 'cancelled'"
+    )
+    assert _get_product_stock(product["id"]) == 7
+
+
+def test_invalid_transitions_from_cancelled_remain_blocked_and_stock_does_not_change():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=3)
+
+    cancelled_response = _update_order_status(order["id"], "cancelled")
+
+    assert cancelled_response.status_code == 200
+    assert _get_product_stock(product["id"]) == 10
+
+    paid_response = _update_order_status(order["id"], "paid")
+
+    assert paid_response.status_code == 400
+    assert paid_response.json()["detail"] == (
+        "Cannot change order status from 'cancelled' to 'paid'"
+    )
+    assert _get_product_stock(product["id"]) == 10
+
+
+def test_stock_restore_uses_successful_status_transition_only():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=3)
+
+    with TestingSessionLocal() as db:
+        db.query(Order).filter(Order.id == order["id"]).update(
+            {Order.status: "cancelled"},
+            synchronize_session=False,
+        )
+        db.commit()
+
+    assert _get_product_stock(product["id"]) == 7
+
+    response = _update_order_status(order["id"], "cancelled")
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Order already has status 'cancelled'"
+    assert _get_product_stock(product["id"]) == 7
+
+
 def test_admin_cannot_physically_delete_order_with_order_items():
     product = create_test_product(stock=10, price=100)
 
