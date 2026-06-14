@@ -8,7 +8,30 @@ from passlib.context import CryptContext
 load_dotenv()
 
 
-SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret_key")
+DEFAULT_SECRET_KEY = "fallback_secret_key"
+PRODUCTION_SECRET_KEY_ERROR = (
+    "SECRET_KEY must be set to a strong non-default value in production"
+)
+
+
+def is_production_environment(environ=None) -> bool:
+    environ = environ or os.environ
+    environment = environ.get("ENVIRONMENT", environ.get("ENV", "")).lower()
+
+    return environment in {"production", "prod"} or environ.get("RENDER") == "true"
+
+
+def get_secret_key(environ=None) -> str:
+    environ = environ or os.environ
+    secret_key = environ.get("SECRET_KEY", DEFAULT_SECRET_KEY)
+
+    if is_production_environment(environ) and secret_key == DEFAULT_SECRET_KEY:
+        raise RuntimeError(PRODUCTION_SECRET_KEY_ERROR)
+
+    return secret_key
+
+
+SECRET_KEY = get_secret_key()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(
     os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
@@ -46,6 +69,7 @@ def create_access_token(data: dict) -> str:
     )
 
     return encoded_jwt
+
 
 def decode_access_token(token: str):
     try:

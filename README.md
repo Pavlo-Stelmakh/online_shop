@@ -957,6 +957,11 @@ pip install -r requirements.txt
 
 The project uses environment variables for JWT authentication settings.
 
+For local development only, the app can fall back to a development
+`SECRET_KEY` if the variable is not set. In production or Render
+environments, `SECRET_KEY` is required and must not use the default fallback
+value. Do not commit or document real secret values.
+
 Create a `.env` file in the project root:
 
 ```env
@@ -975,7 +980,7 @@ Required environment variables:
 
 | Variable | Description |
 |---|---|
-| `SECRET_KEY` | Secret key used to sign JWT access tokens |
+| `SECRET_KEY` | Secret key used to sign JWT access tokens and admin UI session cookies. Required in production/Render; local fallback is only for development. |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT access token expiration time in minutes |
 
 
