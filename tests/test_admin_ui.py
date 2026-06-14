@@ -1,0 +1,1020 @@
+import time
+from datetime import datetime, timedelta, UTC
+from decimal import Decimal
+
+from fastapi.testclient import TestClient
+from jose import jwt
+
+from auth import SECRET_KEY, ALGORITHM
+from routes.admin import (
+    ADMIN_SESSION_COOKIE_NAME,
+    ADMIN_SESSION_TOKEN_TYPE,
+)
+from tests.helpers import (
+    app,
+    build_isolated_admin_dashboard_response,
+    client,
+    create_registered_user,
+    create_test_category,
+    create_test_customer,
+    create_test_order,
+    create_test_product,
+    get_admin_ui_client,
+    get_auth_headers,
+)
+
+
+def test_admin_dashboard_returns_200():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Online Shop Admin Dashboard" in response.text
+
+def test_admin_dashboard_contains_dashboard_cards():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Products" in response.text
+    assert "Categories" in response.text
+    assert "Customers" in response.text
+    assert "Orders" in response.text
+
+def test_admin_dashboard_displays_total_revenue():
+    response = build_isolated_admin_dashboard_response({"paid": ["200.00"]})
+
+    assert response.status_code == 200
+    assert "Total Revenue" in response.text
+    assert "200.00" in response.text
+
+def test_admin_dashboard_revenue_includes_paid_and_shipped_orders():
+    response = build_isolated_admin_dashboard_response(
+        {
+            "paid": ["200.00"],
+            "shipped": ["19.90"],
+        }
+    )
+
+    assert response.status_code == 200
+    assert "219.90" in response.text
+
+def test_admin_dashboard_revenue_excludes_new_and_cancelled_orders():
+    response = build_isolated_admin_dashboard_response(
+        {
+            "paid": ["0.30"],
+            "new": ["200.00"],
+            "cancelled": ["19.90"],
+        }
+    )
+
+    assert response.status_code == 200
+    assert "0.30" in response.text
+    assert "219.90" not in response.text
+
+def test_admin_dashboard_revenue_is_displayed_with_two_decimal_places():
+    response = build_isolated_admin_dashboard_response(
+        {
+            "paid": ["19.90"],
+            "shipped": ["0.30"],
+        }
+    )
+
+    assert response.status_code == 200
+    assert "<p>20.20</p>" in response.text
+
+def test_admin_dashboard_continues_to_show_basic_counts():
+    response = build_isolated_admin_dashboard_response(
+        {
+            "new": ["1.00"],
+            "paid": ["2.00"],
+            "shipped": ["3.00"],
+            "cancelled": ["4.00"],
+        }
+    )
+
+    assert response.status_code == 200
+    assert "Products" in response.text
+    assert "Categories" in response.text
+    assert "Customers" in response.text
+    assert "Orders" in response.text
+    assert "Low Stock Products" in response.text
+    assert "New Orders" in response.text
+    assert "Paid Orders" in response.text
+    assert "Shipped Orders" in response.text
+    assert "Cancelled Orders" in response.text
+
+def test_admin_dashboard_contains_quick_links():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Dashboard" in response.text
+    assert "Products" in response.text
+    assert "Orders" in response.text
+    assert "Categories" in response.text
+    assert "Customers" in response.text
+    assert "Low Stock" in response.text
+    assert "Swagger UI" in response.text
+    assert "Health Check" in response.text
+
+    assert "/admin" in response.text
+    assert "/admin/products" in response.text
+    assert "/admin/orders" in response.text
+    assert "/admin/categories" in response.text
+    assert "/admin/customers" in response.text
+    assert "/admin/low-stock" in response.text
+    assert "/docs" in response.text
+    assert "/health" in response.text
+
+def test_admin_products_page_returns_200():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "Admin Products" in response.text
+
+def test_admin_products_page_contains_product_table():
+    create_test_product(stock=10, price=100)
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "ID" in response.text
+    assert "Name" in response.text
+    assert "Price" in response.text
+    assert "Stock" in response.text
+    assert "Category ID" in response.text
+
+def test_admin_dashboard_contains_admin_products_link():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Products" in response.text
+    assert "/admin/products" in response.text
+    
+
+def test_admin_orders_page_returns_200():
+
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/orders")
+
+    assert response.status_code == 200
+    assert "Admin Orders" in response.text
+
+def test_admin_orders_page_contains_orders_table_headers():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/orders")
+
+    assert response.status_code == 200
+    assert "ID" in response.text
+    assert "Customer ID" in response.text
+    assert "Status" in response.text
+    assert "Total Price" in response.text
+    assert "Created At" in response.text
+    assert "Items Count" in response.text
+
+def test_admin_dashboard_contains_admin_orders_link():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Orders" in response.text
+    assert "/admin/orders" in response.text
+
+def test_admin_categories_page_returns_200():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/categories")
+
+    assert response.status_code == 200
+    assert "Admin Categories" in response.text
+
+def test_admin_categories_page_contains_categories_table_headers():
+    create_test_category()
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/categories")
+
+    assert response.status_code == 200
+    assert "ID" in response.text
+    assert "Name" in response.text
+    assert "Products Count" in response.text
+
+def test_admin_dashboard_contains_admin_categories_link():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Categories" in response.text
+    assert "/admin/categories" in response.text
+
+def test_admin_customers_page_returns_200():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/customers")
+
+    assert response.status_code == 200
+    assert "Admin Customers" in response.text
+
+def test_admin_customers_page_contains_customers_table_headers():
+    customer_headers = get_auth_headers(role="customer")
+    create_test_customer(headers=customer_headers)
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/customers")
+
+    assert response.status_code == 200
+    assert "ID" in response.text
+    assert "User ID" in response.text
+    assert "Name" in response.text
+    assert "Email" in response.text
+    assert "Phone" in response.text
+
+def test_admin_dashboard_contains_admin_customers_link():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Customers" in response.text
+    assert "/admin/customers" in response.text
+
+def test_admin_low_stock_page_returns_200():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/low-stock")
+
+    assert response.status_code == 200
+    assert "Admin Low Stock" in response.text
+
+def test_admin_low_stock_page_contains_table_headers():
+    create_test_product(stock=2, price=100)
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/low-stock")
+
+    assert response.status_code == 200
+    assert "ID" in response.text
+    assert "Name" in response.text
+    assert "Price" in response.text
+    assert "Stock" in response.text
+    assert "Category ID" in response.text
+
+def test_admin_low_stock_page_shows_only_low_stock_products():
+    low_stock_product = create_test_product(stock=2, price=100)
+    normal_stock_product = create_test_product(stock=10, price=200)
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/low-stock")
+
+    assert response.status_code == 200
+    assert low_stock_product["name"] in response.text
+    assert normal_stock_product["name"] not in response.text
+
+def test_admin_dashboard_contains_admin_low_stock_link():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Low Stock" in response.text
+    assert "/admin/low-stock" in response.text
+
+def test_admin_orders_page_contains_status_badge_class():
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/orders")
+
+    assert response.status_code == 200
+    assert "status status-new" in response.text
+
+def test_admin_dashboard_contains_extended_stats_cards():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Low Stock Products" in response.text
+    assert "New Orders" in response.text
+    assert "Paid Orders" in response.text
+    assert "Cancelled Orders" in response.text
+
+def test_admin_dashboard_low_stock_count_is_displayed():
+    create_test_product(stock=2, price=100)
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Low Stock Products" in response.text
+
+def test_admin_dashboard_final_polish_content():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Version: <strong>v4.0.0</strong>" in response.text
+    assert "This dashboard provides a visual overview" in response.text
+    assert "Admin pages:" in response.text
+
+def test_admin_pages_have_final_footer():
+    admin_client = get_admin_ui_client()
+
+    urls = [
+        "/admin/products",
+        "/admin/orders",
+        "/admin/categories",
+        "/admin/customers",
+        "/admin/low-stock"
+    ]
+
+    for url in urls:
+        response = admin_client.get(url)
+
+        assert response.status_code == 200
+        assert "Online Shop Admin Dashboard — v4.0.0" in response.text
+
+def test_admin_dashboard_order_status_cards_have_filtered_links():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+
+    assert "New Orders" in response.text
+    assert "Paid Orders" in response.text
+    assert "Shipped Orders" in response.text
+    assert "Cancelled Orders" in response.text
+
+    assert "/admin/orders?status=new" in response.text
+    assert "/admin/orders?status=paid" in response.text
+    assert "/admin/orders?status=shipped" in response.text
+    assert "/admin/orders?status=cancelled" in response.text
+
+
+
+def test_admin_orders_page_can_filter_by_status():
+
+    product = create_test_product(stock=10, price=100)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    create_test_order(
+
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+
+    )
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/orders?status=new")
+
+    assert response.status_code == 200
+    assert "Filtered by status" in response.text
+    assert "new" in response.text
+
+def test_admin_orders_page_contains_status_filter_links():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/orders")
+
+    assert response.status_code == 200
+    assert "Filter by status" in response.text
+
+    assert "/admin/orders" in response.text
+    assert "/admin/orders?status=new" in response.text
+    assert "/admin/orders?status=paid" in response.text
+    assert "/admin/orders?status=shipped" in response.text
+    assert "/admin/orders?status=cancelled" in response.text
+
+    assert "All" in response.text
+    assert "New" in response.text
+    assert "Paid" in response.text
+    assert "Shipped" in response.text
+    assert "Cancelled" in response.text
+
+def test_admin_orders_status_filter_marks_active_status():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get(
+        "/admin/orders",
+        params={
+            "status": "paid"
+        },
+    )
+
+    assert response.status_code == 200
+    assert 'class="active"' in response.text
+    assert "Filtered by status" in response.text
+    assert "paid" in response.text
+
+def test_admin_products_page_contains_filter_ui():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "Product filters" in response.text
+    assert "Search by name or description" in response.text
+    assert "/admin/products?in_stock=true" in response.text
+    assert "/admin/products?in_stock=false" in response.text
+
+def test_admin_products_page_can_filter_by_search():
+    searchable_product = create_test_product(stock=10, price=100)
+    other_product = create_test_product(stock=10, price=200)
+
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get(
+        "/admin/products",
+        params={
+            "search": searchable_product["name"]
+        }
+    )
+
+    assert response.status_code == 200
+    assert searchable_product["name"] in response.text
+    assert other_product["name"] not in response.text
+
+def test_admin_products_page_can_filter_out_of_stock_products():
+    in_stock_product = create_test_product(stock=5, price=100)
+    out_of_stock_product = create_test_product(stock=0, price=200)
+
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get(
+        "/admin/products",
+        params={
+            "in_stock": False
+        },
+    )
+
+    assert response.status_code == 200
+    assert out_of_stock_product["name"] in response.text
+    assert in_stock_product["name"] not in response.text
+
+def test_admin_categories_page_contains_search_ui():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/categories")
+
+    assert response.status_code == 200
+    assert "Category search" in response.text
+    assert "Search by category name" in response.text
+    assert "Reset" in response.text
+
+def test_admin_categories_page_can_filter_by_search():
+    searchable_category = create_test_category()
+    other_category = create_test_category()
+
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get(
+        "/admin/categories",
+        params={
+            "search": searchable_category["name"]
+        },
+    )
+
+
+    assert response.status_code == 200
+    assert searchable_category["name"] in response.text
+    assert other_category["name"] not in response.text
+
+def test_admin_customers_page_contains_search_ui():
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/customers")
+
+    assert response.status_code == 200
+    assert "Customer search" in response.text
+    assert "Search by name, email or phone" in response.text
+    assert "Reset" in response.text
+
+def test_admin_customers_page_can_filter_by_search():
+    customer_headers = get_auth_headers(role="customer")
+
+    searchable_customer = create_test_customer(headers=customer_headers)
+
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get(
+        "/admin/customers",
+        params={
+            "search": searchable_customer["email"]
+        },
+    )
+
+    assert response.status_code == 200
+    assert searchable_customer["email"] in response.text
+
+def test_admin_low_stock_page_uses_product_specific_threshold():
+    low_stock_product = create_test_product(stock=8, price=100)
+    normal_stock_product = create_test_product(stock=8, price=200)
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/low-stock")
+
+    assert response.status_code == 200
+    assert "Low Stock Threshold" in response.text
+
+    # Both products currently use the default threshold.
+    assert low_stock_product["name"] not in response.text
+    assert normal_stock_product["name"] not in response.text
+
+def test_admin_products_page_displays_low_stock_threshold():
+    product = create_test_product(stock=3, price=100)
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "Low Stock Threshold" in response.text
+    assert product["name"] in response.text
+
+def test_admin_low_stock_page_includes_product_when_stock_is_below_custom_threshold():
+    low_stock_product = create_test_product(
+        stock=8,
+        price=100,
+        low_stock_threshold=10
+    )
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/low-stock")
+
+    assert response.status_code == 200
+    assert low_stock_product["name"] in response.text
+    assert "Low Stock Threshold" in response.text
+
+def test_admin_login_page_returns_200():
+    anonymous_client = TestClient(app)
+
+    response = anonymous_client.get("/admin/login")
+
+    assert response.status_code == 200
+    assert "Admin Login" in response.text
+    assert "Username" in response.text
+    assert "Password" in response.text
+
+def test_admin_pages_redirect_to_login_without_cookie():
+    anonymous_client = TestClient(app)
+
+    protected_urls = [
+        "/admin",
+        "/admin/products",
+        "/admin/orders",
+        "/admin/categories",
+        "/admin/customers",
+        "/admin/low-stock"
+    ]
+
+    for url in protected_urls:
+        response = anonymous_client.get(
+            url,
+            follow_redirects=False
+        )
+
+        assert response.status_code == 303, f"{url} returned {response.status_code}"
+        assert response.headers["location"] == "/admin/login"
+
+def test_admin_login_rejects_invalid_credentials():
+    response = client.post(
+        "/admin/login",
+        data={
+            "username": "wrong-admin",
+            "password": "wrong-password"
+        }
+    )
+
+    assert response.status_code == 401
+    assert "Invalid username or password" in response.text
+
+def test_admin_can_login_through_admin_ui():
+    admin_user = create_registered_user(role="admin")
+    admin_client = TestClient(app)
+
+    response = admin_client.post(
+        "/admin/login",
+        data={
+            "username": admin_user["username"],
+            "password": admin_user["password"]
+        },
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin"
+    assert ADMIN_SESSION_COOKIE_NAME in admin_client.cookies
+    assert "admin_username" not in admin_client.cookies
+    assert "httponly" in response.headers["set-cookie"].lower()
+    assert "samesite=lax" in response.headers["set-cookie"].lower()
+    assert "max-age=" in response.headers["set-cookie"].lower()
+
+def test_forged_plain_admin_username_cookie_cannot_access_admin_ui():
+    admin_user = create_registered_user(role="admin")
+    forged_client = TestClient(app)
+    forged_client.cookies.set("admin_username", admin_user["username"])
+
+    response = forged_client.get("/admin", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+def test_customer_cannot_login_to_admin_ui():
+    customer_user = create_registered_user(role="customer")
+
+    response = client.post(
+        "/admin/login",
+        data={
+            "username": customer_user["username"],
+            "password": customer_user["password"]
+        }
+    )
+
+    assert response.status_code == 403
+    assert "Admin access required" in response.text
+
+def test_admin_logout_deletes_admin_session_cookie():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/logout", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+    assert ADMIN_SESSION_COOKIE_NAME not in admin_client.cookies
+    assert f"{ADMIN_SESSION_COOKIE_NAME}=" in response.headers["set-cookie"]
+
+def test_invalid_admin_session_token_cannot_access_admin_ui():
+    invalid_client = TestClient(app)
+    invalid_client.cookies.set(ADMIN_SESSION_COOKIE_NAME, "not-a-valid-token")
+
+    response = invalid_client.get("/admin", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+def test_expired_admin_session_token_cannot_access_admin_ui():
+    admin_user = create_registered_user(role="admin")
+    expired_token = jwt.encode(
+        {
+            "sub": admin_user["username"],
+            "user_id": admin_user["id"],
+            "role": "admin",
+            "typ": ADMIN_SESSION_TOKEN_TYPE,
+            "exp": datetime.now(UTC) - timedelta(seconds=1)
+        },
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+    expired_client = TestClient(app)
+    expired_client.cookies.set(ADMIN_SESSION_COOKIE_NAME, expired_token)
+
+    response = expired_client.get("/admin", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+def test_admin_logout_redirects_to_login():
+    response = client.get("/admin/logout", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+def test_admin_ui_client_can_access_dashboard():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Online Shop Admin Dashboard" in response.text
+
+def test_admin_product_create_page_returns_200_for_admin():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/products/create")
+
+    assert response.status_code == 200
+    assert "Create Product" in response.text
+    assert "Low Stock Threshold" in response.text
+    assert "Category ID" in response.text
+
+def test_admin_product_create_page_redirects_without_login():
+    anonymous_client = TestClient(app)
+
+    response = anonymous_client.get(
+        "/admin/products/create",
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+def test_admin_can_create_product_from_ui():
+    admin_client = get_admin_ui_client()
+    category = create_test_category()
+
+    product_name = f"Admin UI Product {time.time()}"
+
+    response = admin_client.post(
+        "/admin/products/create",
+        data={
+            "name": product_name,
+            "price": 150,
+            "description": "Created from admin UI",
+            "image_url": "https://example.com/admin-product.jpg",
+            "stock": 7,
+            "low_stock_threshold": 10,
+            "category_id": category["id"]
+        },
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/products"
+
+    products_response = admin_client.get("/admin/products")
+
+    assert products_response.status_code == 200
+    assert product_name in products_response.text
+
+def test_admin_product_create_rejects_invalid_category():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.post(
+        "/admin/products/create",
+        data={
+            "name": f"Invalid Category Product {time.time()}",
+            "price": 150,
+            "description": "Invalid category test",
+            "image_url": "https://example.com/admin-product.jpg",
+            "stock": 7,
+            "low_stock_threshold": 10,
+            "category_id": 999999
+        }
+    )
+
+    assert response.status_code == 404
+    assert "Category not found" in response.text
+
+def test_admin_products_page_contains_create_product_link():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "Create Product" in response.text
+    assert "/admin/products/create" in response.text
+
+def test_admin_product_edit_page_returns_200_for_admin():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.get(f"/admin/products/{product['id']}/edit")
+
+    assert response.status_code == 200
+    assert "Edit Product" in response.text
+    assert product["name"] in response.text
+    assert "Low Stock Threshold" in response.text
+    assert "Update Product" in response.text
+
+def test_admin_product_edit_page_redirects_without_login():
+    product = create_test_product(stock=5, price=100)
+    anonymous_client = TestClient(app)
+
+    response = anonymous_client.get(
+        f"/admin/products/{product['id']}/edit",
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+def test_admin_can_update_product_from_ui():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+    category = create_test_category()
+
+    updated_name = f"Updated Admin Product {time.time()}"
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/edit",
+        data={
+            "name": updated_name,
+            "price": 250,
+            "description": "Updated from admin UI",
+            "image_url": "https://example.com/updated-product.jpg",
+            "stock": 12,
+            "low_stock_threshold": 20,
+            "category_id": category["id"]
+        },
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/products"
+
+    products_response = admin_client.get("/admin/products")
+
+    assert products_response.status_code == 200
+    assert updated_name in products_response.text
+    assert "20" in products_response.text
+
+def test_admin_product_edit_rejects_invalid_category():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/edit",
+        data={
+            "name": product["name"],
+            "price": 250,
+            "description": "Invalid category update",
+            "image_url": "https://example.com/updated-product.jpg",
+            "stock": 12,
+            "low_stock_threshold": 20,
+            "category_id": 999999
+        }
+    )
+
+    assert response.status_code == 404
+    assert "Category not found" in response.text
+
+def test_admin_products_page_contains_edit_product_link():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "Edit" in response.text
+    assert f"/admin/products/{product['id']}/edit" in response.text
+
+def test_admin_products_page_contains_delete_button_and_modal():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "Delete" in response.text
+    assert f"/admin/products/{product['id']}/delete" in response.text
+    assert "Delete product?" in response.text
+    assert "Are you sure you want to delete this product?" in response.text
+    assert "Cancel" in response.text
+
+def test_admin_product_edit_page_contains_update_confirmation_modal():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.get(f"/admin/products/{product['id']}/edit")
+
+    assert response.status_code == 200
+    assert "Update product?" in response.text
+    assert "Are you sure you want to save these product changes?" in response.text
+    assert "Cancel" in response.text
+    assert "Update" in response.text
+
+def test_admin_product_delete_redirects_without_login():
+    product = create_test_product(stock=5, price=100)
+    anonymous_client = TestClient(app)
+
+    response = anonymous_client.post(
+        f"/admin/products/{product['id']}/delete",
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+def test_admin_can_delete_product_without_orders():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/delete",
+        follow_redirects=False
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/products"
+
+    products_response = admin_client.get("/admin/products")
+
+    assert products_response.status_code == 200
+    assert product["name"] not in products_response.text
+
+def test_admin_product_delete_blocked_when_product_is_used_in_orders():
+    admin_client = get_admin_ui_client()
+
+    product = create_test_product(stock=10, price=100)
+
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers
+    )
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/delete"
+    )
+
+    assert response.status_code == 400
+    assert "Product cannot be deleted because it is used in orders." in response.text
+
+def test_admin_product_create_rejects_more_than_two_decimal_places():
+    category = create_test_category()
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.post(
+        "/admin/products/create",
+        data={
+            "name": f"Admin Money Product {time.time()}",
+            "price": "19.999",
+            "description": "Created from admin UI",
+            "image_url": "https://example.com/admin-product.jpg",
+            "stock": "5",
+            "low_stock_threshold": "5",
+            "category_id": str(category["id"]),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 400
+    assert "more than 2 decimal places" in response.text
+
+def test_admin_product_edit_rejects_more_than_two_decimal_places():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/edit",
+        data={
+            "name": product["name"],
+            "price": "19.999",
+            "description": product["description"],
+            "image_url": "https://example.com/updated-product.jpg",
+            "stock": "5",
+            "low_stock_threshold": "5",
+            "category_id": str(product["category_id"]),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 400
+    assert "more than 2 decimal places" in response.text
+
+def test_admin_products_page_displays_money_with_two_decimal_places():
+    create_test_product(stock=10, price=19.9)
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "19.90" in response.text
+
+def test_admin_low_stock_page_displays_product_price_with_two_decimal_places():
+    create_test_product(stock=2, price=19.9)
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/low-stock")
+
+    assert response.status_code == 200
+    assert "19.90" in response.text
+
+def test_admin_orders_page_displays_total_price_with_two_decimal_places():
+    product = create_test_product(stock=10, price=19.9)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers,
+    )
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/orders")
+
+    assert response.status_code == 200
+    assert "19.90" in response.text
+
