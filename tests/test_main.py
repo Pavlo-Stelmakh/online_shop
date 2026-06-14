@@ -15,8 +15,12 @@ from sqlalchemy.orm import sessionmaker
 from database import Base, get_db
 import main as main_module
 from auth import SECRET_KEY, ALGORITHM
-from models import Customer, Order, OrderItem, Product, User
-from routes.admin import ADMIN_SESSION_COOKIE_NAME, ADMIN_SESSION_TOKEN_TYPE
+from models import Category, Customer, Order, OrderItem, Product, User
+from routes.admin import (
+    ADMIN_SESSION_COOKIE_NAME,
+    ADMIN_SESSION_TOKEN_TYPE,
+    create_admin_session_token,
+)
 
 
 
@@ -3034,6 +3038,111 @@ def test_delete_category_requires_auth():
     assert response.status_code == 401
 
 
+
+def build_isolated_admin_dashboard_response(order_totals_by_status):
+    dashboard_db_path = Path(tempfile.gettempdir()) / f"online_shop_admin_dashboard_{time.time_ns()}.db"
+    dashboard_engine = create_engine(
+        f"sqlite:///{dashboard_db_path}",
+        connect_args={"check_same_thread": False},
+    )
+    DashboardSessionLocal = sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=dashboard_engine,
+    )
+    Base.metadata.create_all(bind=dashboard_engine)
+    db = DashboardSessionLocal()
+
+    def override_dashboard_db():
+        dashboard_db = DashboardSessionLocal()
+
+        try:
+            yield dashboard_db
+        finally:
+            dashboard_db.close()
+
+    previous_override = app.dependency_overrides.get(get_db)
+
+    try:
+        admin_user = User(
+            username=f"dashboard_admin_{time.time_ns()}",
+            email=f"dashboard_admin_{time.time_ns()}@example.com",
+            hashed_password="test",
+            role="admin",
+        )
+        customer_user = User(
+            username=f"dashboard_customer_{time.time_ns()}",
+            email=f"dashboard_customer_{time.time_ns()}@example.com",
+            hashed_password="test",
+            role="customer",
+        )
+        db.add_all([admin_user, customer_user])
+        db.commit()
+        db.refresh(admin_user)
+        db.refresh(customer_user)
+
+        category = Category(name=f"Dashboard Category {time.time_ns()}")
+        db.add(category)
+        db.commit()
+        db.refresh(category)
+
+        low_stock_product = Product(
+            name=f"Dashboard Low Stock Product {time.time_ns()}",
+            price=Decimal("1.00"),
+            description="Dashboard low stock product",
+            stock=2,
+            category_id=category.id,
+        )
+        in_stock_product = Product(
+            name=f"Dashboard Product {time.time_ns()}",
+            price=Decimal("2.00"),
+            description="Dashboard product",
+            stock=10,
+            category_id=category.id,
+        )
+        db.add_all([low_stock_product, in_stock_product])
+
+        customer = Customer(
+            user_id=customer_user.id,
+            name="Dashboard Customer",
+            email=f"dashboard_customer_{time.time_ns()}@example.com",
+            phone="+380501112233",
+        )
+        db.add(customer)
+        db.commit()
+        db.refresh(customer)
+
+        for status, totals in order_totals_by_status.items():
+            for total in totals:
+                db.add(
+                    Order(
+                        customer_id=customer.id,
+                        status=status,
+                        total_price=Decimal(total),
+                    )
+                )
+
+        db.commit()
+
+        app.dependency_overrides[get_db] = override_dashboard_db
+        dashboard_client = TestClient(app)
+        dashboard_client.cookies.set(
+            ADMIN_SESSION_COOKIE_NAME,
+            create_admin_session_token(admin_user),
+        )
+
+        return dashboard_client.get("/admin")
+    finally:
+        if previous_override is None:
+            app.dependency_overrides.pop(get_db, None)
+        else:
+            app.dependency_overrides[get_db] = previous_override
+
+        db.close()
+        Base.metadata.drop_all(bind=dashboard_engine)
+        dashboard_engine.dispose()
+        dashboard_db_path.unlink(missing_ok=True)
+
 def test_admin_dashboard_returns_200():
     admin_client = get_admin_ui_client()
     response = admin_client.get("/admin")
@@ -3051,6 +3160,74 @@ def test_admin_dashboard_contains_dashboard_cards():
     assert "Categories" in response.text
     assert "Customers" in response.text
     assert "Orders" in response.text
+
+
+def test_admin_dashboard_displays_total_revenue():
+    response = build_isolated_admin_dashboard_response({"paid": ["200.00"]})
+
+    assert response.status_code == 200
+    assert "Total Revenue" in response.text
+    assert "200.00" in response.text
+
+
+def test_admin_dashboard_revenue_includes_paid_and_shipped_orders():
+    response = build_isolated_admin_dashboard_response(
+        {
+            "paid": ["200.00"],
+            "shipped": ["19.90"],
+        }
+    )
+
+    assert response.status_code == 200
+    assert "219.90" in response.text
+
+
+def test_admin_dashboard_revenue_excludes_new_and_cancelled_orders():
+    response = build_isolated_admin_dashboard_response(
+        {
+            "paid": ["0.30"],
+            "new": ["200.00"],
+            "cancelled": ["19.90"],
+        }
+    )
+
+    assert response.status_code == 200
+    assert "0.30" in response.text
+    assert "219.90" not in response.text
+
+
+def test_admin_dashboard_revenue_is_displayed_with_two_decimal_places():
+    response = build_isolated_admin_dashboard_response(
+        {
+            "paid": ["19.90"],
+            "shipped": ["0.30"],
+        }
+    )
+
+    assert response.status_code == 200
+    assert "<p>20.20</p>" in response.text
+
+
+def test_admin_dashboard_continues_to_show_basic_counts():
+    response = build_isolated_admin_dashboard_response(
+        {
+            "new": ["1.00"],
+            "paid": ["2.00"],
+            "shipped": ["3.00"],
+            "cancelled": ["4.00"],
+        }
+    )
+
+    assert response.status_code == 200
+    assert "Products" in response.text
+    assert "Categories" in response.text
+    assert "Customers" in response.text
+    assert "Orders" in response.text
+    assert "Low Stock Products" in response.text
+    assert "New Orders" in response.text
+    assert "Paid Orders" in response.text
+    assert "Shipped Orders" in response.text
+    assert "Cancelled Orders" in response.text
 
 def test_admin_dashboard_contains_quick_links():
     admin_client = get_admin_ui_client()
