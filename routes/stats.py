@@ -16,6 +16,19 @@ router = APIRouter(
 )
 
 
+def calculate_total_revenue(db: Session) -> Decimal:
+    total_revenue = db.query(
+        func.coalesce(func.sum(Order.total_price), Decimal("0.00"))
+    ).filter(
+        Order.status.in_(["paid", "shipped"])
+    ).scalar()
+
+    return Decimal(total_revenue).quantize(
+        Decimal("0.01"),
+        rounding=ROUND_HALF_UP
+    )
+
+
 @router.get("/summary", response_model=StatsSummaryResponse)
 def get_stats_summary(
     db: Session = Depends(get_db),
@@ -25,16 +38,7 @@ def get_stats_summary(
     customers_count = db.query(Customer).count()
     orders_count = db.query(Order).count()
 
-    total_revenue = db.query(
-        func.coalesce(func.sum(Order.total_price), Decimal("0.00"))
-    ).filter(
-        Order.status.in_(["paid", "shipped"])
-    ).scalar()
-
-    total_revenue = Decimal(total_revenue).quantize(
-        Decimal("0.01"),
-        rounding=ROUND_HALF_UP
-    )
+    total_revenue = calculate_total_revenue(db)
 
     return {
         "products_count": products_count,

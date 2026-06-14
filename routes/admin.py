@@ -11,6 +11,7 @@ from jose import jwt, JWTError
 from auth import verify_password, SECRET_KEY, ALGORITHM
 from database import get_db
 from models import Product, Category, Customer, Order, User, OrderItem
+from routes.stats import calculate_total_revenue
 from utils.money import MoneyValidationError, format_money, parse_positive_money
 
 router = APIRouter(
@@ -216,7 +217,7 @@ def admin_dashboard(
     paid_orders_count = db.query(Order).filter(Order.status == "paid").count()
     shipped_orders_count = db.query(Order).filter(Order.status == "shipped").count()
     cancelled_orders_count = db.query(Order).filter(Order.status == "cancelled").count()
-
+    total_revenue = calculate_total_revenue(db)
 
     return templates.TemplateResponse(
         request=request,
@@ -230,7 +231,8 @@ def admin_dashboard(
             "new_orders_count": new_orders_count,
             "paid_orders_count": paid_orders_count,
             "shipped_orders_count": shipped_orders_count,
-            "cancelled_orders_count": cancelled_orders_count
+            "cancelled_orders_count": cancelled_orders_count,
+            "total_revenue": total_revenue
         }
     )
 
