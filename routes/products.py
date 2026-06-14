@@ -4,7 +4,12 @@ from sqlalchemy.orm import Session
 from database import get_db
 from routes.auth import get_admin_user
 from models import Product, Category, OrderItem, User
-from schemas import ProductCreate, ProductResponse, ProductCatalogResponse
+from schemas import (
+    ProductCatalogOffsetResponse,
+    ProductCatalogPageResponse,
+    ProductCreate,
+    ProductResponse,
+)
 
 router = APIRouter(
     prefix="/products",
@@ -181,7 +186,7 @@ def get_limited_products(
     return products
 
 
-@router.get("/catalog/pages", response_model=ProductCatalogResponse)
+@router.get("/catalog/pages", response_model=ProductCatalogPageResponse)
 def get_catalog_products_with_pages(
     search: str | None = None,
     min_price: float | None = None,
@@ -223,7 +228,7 @@ def get_catalog_products_with_pages(
     }
 
 
-@router.get("/catalog", response_model=ProductCatalogResponse)
+@router.get("/catalog", response_model=ProductCatalogOffsetResponse)
 def get_products_catalog(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),

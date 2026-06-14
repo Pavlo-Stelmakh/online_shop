@@ -1442,7 +1442,15 @@ The project provides an extended product catalog endpoint:
 GET /products/catalog
 ```
 
-Unlike `GET /products`, this endpoint returns pagination metadata together with product items.
+Unlike `GET /products`, this endpoint returns offset pagination metadata together with product items (`total`, `skip`, `limit`, `items`).
+
+For clients that need page-based pagination metadata, use:
+
+```text
+GET /products/catalog/pages
+```
+
+`GET /products/catalog/pages` returns `items`, `total`, `page`, `limit` and `pages` instead of `skip`.
 
 Response example:
 
@@ -1482,6 +1490,12 @@ Example:
 
 ```text
 GET /products/catalog?category_id=1&min_price=100&max_price=500&in_stock=true&sort_by=price&sort_order=asc&skip=0&limit=10
+```
+
+Page-based catalog example:
+
+```text
+GET /products/catalog/pages?page=1&limit=10
 ```
 #### Product Catalog Search
 

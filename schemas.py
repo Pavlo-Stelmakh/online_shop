@@ -46,12 +46,19 @@ class ProductResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-class ProductCatalogResponse(BaseModel):
+class ProductCatalogPageResponse(BaseModel):
     items: list[ProductResponse]
     total: int
     page: int
     limit: int
     pages: int
+
+
+class ProductCatalogOffsetResponse(BaseModel):
+    total: int
+    skip: int
+    limit: int
+    items: list[ProductResponse]
 
 
 class CustomerCreate(BaseModel):
@@ -132,11 +139,3 @@ class UserResponse(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
-
-
-class ProductCatalogResponse(BaseModel):
-    total: int
-    skip: int
-    limit: int
-    items: list[ProductResponse]
-
