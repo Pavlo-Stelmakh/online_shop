@@ -1,4 +1,7 @@
+from decimal import Decimal, ROUND_HALF_UP
+
 from fastapi import APIRouter, Depends
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -22,14 +25,16 @@ def get_stats_summary(
     customers_count = db.query(Customer).count()
     orders_count = db.query(Order).count()
 
-    paid_orders = db.query(Order).filter(
+    total_revenue = db.query(
+        func.coalesce(func.sum(Order.total_price), Decimal("0.00"))
+    ).filter(
         Order.status.in_(["paid", "shipped"])
-    ).all()
+    ).scalar()
 
-    total_revenue = 0
-
-    for order in paid_orders:
-        total_revenue += order.total_price
+    total_revenue = Decimal(total_revenue).quantize(
+        Decimal("0.01"),
+        rounding=ROUND_HALF_UP
+    )
 
     return {
         "products_count": products_count,

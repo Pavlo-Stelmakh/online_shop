@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import tempfile
 import time
+from decimal import Decimal
 from datetime import datetime, timedelta, UTC
 
 import pytest
@@ -4352,3 +4353,105 @@ def test_create_order_multi_item_total_is_exact():
     order = response.json()
     assert order["total_price"] == 40.28
     assert [item["unit_price"] for item in order["items"]] == [0.10, 19.99]
+
+
+def build_isolated_stats_response(order_totals_by_status):
+    stats_db_path = Path(tempfile.gettempdir()) / f"online_shop_stats_{time.time_ns()}.db"
+    stats_engine = create_engine(
+        f"sqlite:///{stats_db_path}",
+        connect_args={"check_same_thread": False},
+    )
+    StatsSessionLocal = sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=stats_engine,
+    )
+    Base.metadata.create_all(bind=stats_engine)
+    db = StatsSessionLocal()
+
+    try:
+        user = User(
+            username=f"stats_user_{time.time_ns()}",
+            email=f"stats_user_{time.time_ns()}@example.com",
+            hashed_password="test",
+            role="customer",
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        customer = Customer(
+            user_id=user.id,
+            name="Stats Customer",
+            email=f"stats_customer_{time.time_ns()}@example.com",
+            phone="+380501112233",
+        )
+        db.add(customer)
+        db.commit()
+        db.refresh(customer)
+
+        for status, totals in order_totals_by_status.items():
+            for total in totals:
+                db.add(
+                    Order(
+                        customer_id=customer.id,
+                        status=status,
+                        total_price=Decimal(total),
+                    )
+                )
+
+        db.commit()
+
+        from routes.stats import get_stats_summary
+
+        return get_stats_summary(
+            db=db,
+            current_user=User(role="admin"),
+        )
+    finally:
+        db.close()
+        Base.metadata.drop_all(bind=stats_engine)
+        stats_engine.dispose()
+        stats_db_path.unlink(missing_ok=True)
+
+
+def test_stats_revenue_includes_paid_orders():
+    response = build_isolated_stats_response({"paid": ["12.34"]})
+
+    assert response["total_revenue"] == Decimal("12.34")
+
+
+def test_stats_revenue_includes_shipped_orders():
+    response = build_isolated_stats_response({"shipped": ["23.45"]})
+
+    assert response["total_revenue"] == Decimal("23.45")
+
+
+def test_stats_revenue_excludes_new_orders():
+    response = build_isolated_stats_response({"new": ["99.99"]})
+
+    assert response["total_revenue"] == Decimal("0.00")
+
+
+def test_stats_revenue_excludes_cancelled_orders():
+    response = build_isolated_stats_response({"cancelled": ["99.99"]})
+
+    assert response["total_revenue"] == Decimal("0.00")
+
+
+def test_stats_revenue_sums_fractional_orders_exactly():
+    response = build_isolated_stats_response(
+        {
+            "paid": ["0.10", "0.20"],
+            "shipped": ["19.99"],
+        }
+    )
+
+    assert response["total_revenue"] == Decimal("20.29")
+    assert str(response["total_revenue"]) == "20.29"
+
+
+def test_stats_revenue_is_zero_for_empty_orders():
+    response = build_isolated_stats_response({})
+
+    assert response["total_revenue"] == Decimal("0.00")
