@@ -327,12 +327,44 @@ def update_order_status(
 
         return cancelled_order
 
-    order.status = status
+    rows_updated = db.query(Order).filter(
+        Order.id == order_id,
+        Order.status == order.status,
+    ).update(
+        {Order.status: status},
+        synchronize_session=False,
+    )
+
+    if rows_updated == 0:
+        db.rollback()
+
+        current_order = db.query(Order).filter(Order.id == order_id).first()
+
+        if current_order is None:
+            raise HTTPException(status_code=404, detail="Order not found")
+
+        if current_order.status == status:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Order already has status '{status}'"
+            )
+
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Cannot change order status from '{current_order.status}' "
+                f"to '{status}'"
+            )
+        )
 
     db.commit()
-    db.refresh(order)
 
-    return order
+    updated_order = db.query(Order).filter(Order.id == order_id).first()
+
+    if updated_order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    return updated_order
 
 
 @router.delete("/{order_id}")

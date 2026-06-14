@@ -139,6 +139,121 @@ def _update_order_status(order_id: int, status: str):
     )
 
 
+def _get_order_status(order_id: int) -> str:
+    with TestingSessionLocal() as db:
+        order = db.query(Order).filter(Order.id == order_id).first()
+
+        assert order is not None
+
+        return order.status
+
+
+def test_admin_can_update_new_order_to_paid():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=1)
+
+    response = _update_order_status(order["id"], "paid")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "paid"
+    assert _get_order_status(order["id"]) == "paid"
+    assert _get_product_stock(product["id"]) == 9
+
+
+def test_admin_can_update_paid_order_to_shipped():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=1)
+
+    paid_response = _update_order_status(order["id"], "paid")
+    shipped_response = _update_order_status(order["id"], "shipped")
+
+    assert paid_response.status_code == 200
+    assert shipped_response.status_code == 200
+    assert shipped_response.json()["status"] == "shipped"
+    assert _get_order_status(order["id"]) == "shipped"
+    assert _get_product_stock(product["id"]) == 9
+
+
+def test_new_order_cannot_skip_directly_to_shipped():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=1)
+
+    response = _update_order_status(order["id"], "shipped")
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        "Cannot change order status from 'new' to 'shipped'"
+    )
+    assert _get_order_status(order["id"]) == "new"
+    assert _get_product_stock(product["id"]) == 9
+
+
+def test_paid_order_cannot_transition_back_to_new():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=1)
+
+    paid_response = _update_order_status(order["id"], "paid")
+    response = _update_order_status(order["id"], "new")
+
+    assert paid_response.status_code == 200
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Cannot change order status from 'paid' to 'new'"
+    assert _get_order_status(order["id"]) == "paid"
+    assert _get_product_stock(product["id"]) == 9
+
+
+def test_shipped_order_terminal_transitions_are_rejected():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=1)
+
+    assert _update_order_status(order["id"], "paid").status_code == 200
+    assert _update_order_status(order["id"], "shipped").status_code == 200
+
+    for status in ("new", "paid", "cancelled"):
+        response = _update_order_status(order["id"], status)
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == (
+            f"Cannot change order status from 'shipped' to '{status}'"
+        )
+        assert _get_order_status(order["id"]) == "shipped"
+        assert _get_product_stock(product["id"]) == 9
+
+
+def test_cancelled_order_terminal_transitions_are_rejected():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=1)
+
+    assert _update_order_status(order["id"], "cancelled").status_code == 200
+
+    for status in ("new", "paid", "shipped"):
+        response = _update_order_status(order["id"], status)
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == (
+            f"Cannot change order status from 'cancelled' to '{status}'"
+        )
+        assert _get_order_status(order["id"]) == "cancelled"
+        assert _get_product_stock(product["id"]) == 10
+
+
+def test_same_status_update_is_rejected():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=1)
+
+    response = _update_order_status(order["id"], "new")
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Order already has status 'new'"
+    assert _get_order_status(order["id"]) == "new"
+    assert _get_product_stock(product["id"]) == 9
+
+
+def test_failed_transition_does_not_change_status():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=1)
+
+    assert _get_order_status(order["id"]) == "new"
+
+    response = _update_order_status(order["id"], "shipped")
+
+    assert response.status_code == 400
+    assert _get_order_status(order["id"]) == "new"
+    assert _get_product_stock(product["id"]) == 9
+
+
 def test_cancelling_new_order_restores_stock_once():
     product, order = _create_order_for_stock_restore(initial_stock=10, quantity=3)
 
