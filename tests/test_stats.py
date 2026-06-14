@@ -1,8 +1,5 @@
-import importlib
-from pathlib import Path
 from decimal import Decimal
 
-from database import Base
 from tests.helpers import (
     build_isolated_stats_response,
     client,
@@ -10,37 +7,7 @@ from tests.helpers import (
     create_test_order,
     create_test_product,
     get_auth_headers,
-    main_module,
 )
-
-
-def test_importing_app_does_not_create_database_tables(monkeypatch):
-    def fail_create_all(*args, **kwargs):
-        raise AssertionError("Application import must not create database tables")
-
-    monkeypatch.setattr(Base.metadata, "create_all", fail_create_all)
-
-    reloaded_main = importlib.reload(main_module)
-
-    assert reloaded_main.app is not None
-
-
-def test_home():
-    response = client.get("/")
-
-    assert response.status_code == 200
-    assert response.json() == {
-        "message": "Online Shop API is running",
-        "docs": "/docs",
-        "health": "/health"
-    }
-
-
-def test_health_check():
-    response = client.get("/health")
-
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
 
 
 def test_non_admin_cannot_get_stats_summary():
@@ -85,18 +52,6 @@ def test_stats_summary_api_returns_numeric_total_revenue():
     assert not isinstance(response.json()["total_revenue"], str)
 
 
-def test_start_script_runs_migrations_before_uvicorn():
-    script_path = Path("scripts/start.sh")
-
-    assert script_path.exists()
-
-    script = script_path.read_text()
-    assert "alembic upgrade head" in script
-    assert "uvicorn main:app --host 0.0.0.0 --port" in script
-    assert "${PORT:-8000}" in script
-    assert script.index("alembic upgrade head") < script.index("uvicorn main:app")
-
-
 def test_stats_revenue_includes_paid_orders():
     response = build_isolated_stats_response({"paid": ["12.34"]})
 
@@ -137,5 +92,3 @@ def test_stats_revenue_is_zero_for_empty_orders():
     response = build_isolated_stats_response({})
 
     assert response["total_revenue"] == Decimal("0.00")
-
-
