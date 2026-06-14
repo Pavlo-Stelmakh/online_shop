@@ -37,6 +37,13 @@ def create_order(
             detail="Duplicate product in order items"
         )
 
+    for item_data in order_data.items:
+        if item_data.quantity <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid quantity"
+            )
+
     customer = db.query(Customer).filter(
         Customer.id == order_data.customer_id
     ).first()
@@ -64,37 +71,47 @@ def create_order(
 
     total_price = Decimal("0.00")
 
-    for item_data in order_data.items:
-        if item_data.quantity <= 0:
-            db.rollback()
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid quantity"
-            )
+    products = db.query(Product).filter(
+        Product.id.in_(product_ids)
+    ).all()
+    products_by_id = {product.id: product for product in products}
 
-        product = db.query(Product).filter(
-            Product.id == item_data.product_id
-        ).first()
-
-        if product is None:
+    for product_id in product_ids:
+        if product_id not in products_by_id:
             db.rollback()
             raise HTTPException(
                 status_code=404,
-                detail=f"Product with id {item_data.product_id} not found"
+                detail=f"Product with id {product_id} not found"
             )
 
-        if product.stock < item_data.quantity:
+    items_by_product_id = {
+        item_data.product_id: item_data
+        for item_data in order_data.items
+    }
+
+    for product_id in sorted(product_ids):
+        item_data = items_by_product_id[product_id]
+        rows_updated = db.query(Product).filter(
+            Product.id == product_id,
+            Product.stock >= item_data.quantity,
+        ).update(
+            {Product.stock: Product.stock - item_data.quantity},
+            synchronize_session=False,
+        )
+
+        if rows_updated == 0:
             db.rollback()
             raise HTTPException(
                 status_code=400,
-                detail=f"Not enough stock for product {product.name}"
+                detail=f"Not enough stock for product {products_by_id[product_id].name}"
             )
+
+    for item_data in order_data.items:
+        product = products_by_id[item_data.product_id]
 
         unit_price = quantize_money(product.price)
         item_total = quantize_money(unit_price * item_data.quantity)
         total_price = quantize_money(total_price + item_total)
-
-        product.stock -= item_data.quantity
 
         order_item = OrderItem(
             order_id=order.id,
