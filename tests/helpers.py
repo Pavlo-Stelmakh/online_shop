@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 import tempfile
 import time
@@ -122,6 +123,25 @@ def get_auth_headers(role: str = "admin"):
     return {
         "Authorization": f"Bearer {token}"
     }
+
+
+def extract_admin_csrf_token(response):
+    match = re.search(
+        r'name="csrf_token" value="([^"]+)"',
+        response.text
+    )
+
+    assert match is not None
+
+    return match.group(1)
+
+
+def get_admin_ui_csrf_token(admin_client, path: str = "/admin/products/create"):
+    response = admin_client.get(path)
+
+    assert response.status_code == 200
+
+    return extract_admin_csrf_token(response)
 
 
 def get_admin_ui_client():
