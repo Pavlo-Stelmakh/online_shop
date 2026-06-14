@@ -4087,6 +4087,36 @@ def test_non_admin_cannot_get_stats_summary():
     assert response.json()["detail"] == "Admin access required"
 
 
+def test_stats_summary_api_returns_numeric_total_revenue():
+    product = create_test_product(stock=10, price=19.9)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers,
+    )
+
+    admin_headers = get_auth_headers(role="admin")
+    status_response = client.put(
+        f"/orders/{order['id']}/status",
+        params={"status": "paid"},
+        headers=admin_headers,
+    )
+
+    assert status_response.status_code == 200
+
+    response = client.get(
+        "/stats/summary",
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200
+    assert isinstance(response.json()["total_revenue"], (int, float))
+    assert not isinstance(response.json()["total_revenue"], str)
+
+
 def test_customer_orders_route_is_registered_and_admin_only():
     product = create_test_product(stock=10, price=100)
 
@@ -4269,6 +4299,34 @@ def test_admin_products_page_displays_money_with_two_decimal_places():
     admin_client = get_admin_ui_client()
 
     response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "19.90" in response.text
+
+
+def test_admin_low_stock_page_displays_product_price_with_two_decimal_places():
+    create_test_product(stock=2, price=19.9)
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/low-stock")
+
+    assert response.status_code == 200
+    assert "19.90" in response.text
+
+
+def test_admin_orders_page_displays_total_price_with_two_decimal_places():
+    product = create_test_product(stock=10, price=19.9)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers,
+    )
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/orders")
 
     assert response.status_code == 200
     assert "19.90" in response.text
