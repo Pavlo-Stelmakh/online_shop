@@ -1478,3 +1478,114 @@ def test_create_order_multi_item_total_is_exact():
     assert [item["unit_price"] for item in order["items"]] == [0.10, 19.99]
 
 
+
+
+def test_create_order_with_not_enough_stock_keeps_stock_unchanged():
+    product = create_test_product(stock=1, price=100)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {"product_id": product["id"], "quantity": 2},
+            ],
+        },
+        headers=customer_headers,
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == f"Not enough stock for product {product['name']}"
+
+    product_response = client.get(f"/products/{product['id']}")
+
+    assert product_response.status_code == 200
+    assert product_response.json()["stock"] == 1
+
+
+def test_invalid_multi_item_order_with_insufficient_stock_rolls_back_all_stock_changes():
+    product_1 = create_test_product(stock=10, price=100)
+    product_2 = create_test_product(stock=1, price=200)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {"product_id": product_1["id"], "quantity": 2},
+                {"product_id": product_2["id"], "quantity": 2},
+            ],
+        },
+        headers=customer_headers,
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == f"Not enough stock for product {product_2['name']}"
+
+    product_1_response = client.get(f"/products/{product_1['id']}")
+    product_2_response = client.get(f"/products/{product_2['id']}")
+
+    assert product_1_response.status_code == 200
+    assert product_2_response.status_code == 200
+    assert product_1_response.json()["stock"] == 10
+    assert product_2_response.json()["stock"] == 1
+
+
+def test_create_order_with_duplicate_product_does_not_mutate_stock():
+    product = create_test_product(stock=10, price=100)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {"product_id": product["id"], "quantity": 2},
+                {"product_id": product["id"], "quantity": 3},
+            ],
+        },
+        headers=customer_headers,
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Duplicate product in order items"
+
+    product_response = client.get(f"/products/{product['id']}")
+
+    assert product_response.status_code == 200
+    assert product_response.json()["stock"] == 10
+
+
+def test_create_order_atomic_update_path_is_rollback_safe_for_later_item_failure():
+    product_1 = create_test_product(stock=5, price=10)
+    product_2 = create_test_product(stock=5, price=20)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {"product_id": product_2["id"], "quantity": 2},
+                {"product_id": product_1["id"], "quantity": 6},
+            ],
+        },
+        headers=customer_headers,
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == f"Not enough stock for product {product_1['name']}"
+
+    product_1_response = client.get(f"/products/{product_1['id']}")
+    product_2_response = client.get(f"/products/{product_2['id']}")
+
+    assert product_1_response.status_code == 200
+    assert product_2_response.status_code == 200
+    assert product_1_response.json()["stock"] == 5
+    assert product_2_response.json()["stock"] == 5
