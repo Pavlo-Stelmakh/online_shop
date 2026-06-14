@@ -152,7 +152,7 @@
                             <tr>
                                 <td>{{ product.id }}</td>
                                 <td>{{ product.name }}</td>
-                                <td>{{ product.price }}</td>
+                                <td>{{ product.price|money }}</td>
                                 <td>
                                     {% if product.stock == 0 %}
                                         <span class="stock-zero">{{ product.stock }}</span>
