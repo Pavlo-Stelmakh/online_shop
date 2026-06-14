@@ -20,6 +20,7 @@ from tests.helpers import (
     create_test_order,
     create_test_product,
     get_admin_ui_client,
+    get_admin_ui_csrf_token,
     get_auth_headers,
 )
 
@@ -740,7 +741,8 @@ def test_admin_can_create_product_from_ui():
             "image_url": "https://example.com/admin-product.jpg",
             "stock": 7,
             "low_stock_threshold": 10,
-            "category_id": category["id"]
+            "category_id": category["id"],
+            "csrf_token": get_admin_ui_csrf_token(admin_client)
         },
         follow_redirects=False
     )
@@ -752,6 +754,58 @@ def test_admin_can_create_product_from_ui():
 
     assert products_response.status_code == 200
     assert product_name in products_response.text
+
+
+def test_admin_product_create_without_csrf_fails():
+    admin_client = get_admin_ui_client()
+    category = create_test_category()
+
+    response = admin_client.post(
+        "/admin/products/create",
+        data={
+            "name": f"Missing CSRF Product {time.time()}",
+            "price": 150,
+            "description": "Missing csrf",
+            "stock": 7,
+            "low_stock_threshold": 10,
+            "category_id": category["id"],
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 403
+
+
+def test_admin_product_edit_without_csrf_fails():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/edit",
+        data={
+            "name": product["name"],
+            "price": 250,
+            "description": "Missing csrf",
+            "stock": 12,
+            "low_stock_threshold": 20,
+            "category_id": product["category_id"],
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 403
+
+
+def test_admin_product_delete_without_csrf_fails():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/delete",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 403
 
 def test_admin_product_create_rejects_invalid_category():
     admin_client = get_admin_ui_client()
@@ -765,12 +819,33 @@ def test_admin_product_create_rejects_invalid_category():
             "image_url": "https://example.com/admin-product.jpg",
             "stock": 7,
             "low_stock_threshold": 10,
-            "category_id": 999999
+            "category_id": 999999,
+            "csrf_token": get_admin_ui_csrf_token(admin_client)
         }
     )
 
     assert response.status_code == 404
     assert "Category not found" in response.text
+
+
+def test_api_bearer_product_create_does_not_require_csrf():
+    category = create_test_category()
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json={
+            "name": f"Bearer API Product {time.time()}",
+            "price": 99.99,
+            "description": "Created through bearer API without csrf",
+            "stock": 4,
+            "low_stock_threshold": 2,
+            "category_id": category["id"],
+        },
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200
 
 def test_admin_products_page_contains_create_product_link():
     admin_client = get_admin_ui_client()
@@ -821,7 +896,8 @@ def test_admin_can_update_product_from_ui():
             "image_url": "https://example.com/updated-product.jpg",
             "stock": 12,
             "low_stock_threshold": 20,
-            "category_id": category["id"]
+            "category_id": category["id"],
+            "csrf_token": get_admin_ui_csrf_token(admin_client)
         },
         follow_redirects=False
     )
@@ -848,7 +924,8 @@ def test_admin_product_edit_rejects_invalid_category():
             "image_url": "https://example.com/updated-product.jpg",
             "stock": 12,
             "low_stock_threshold": 20,
-            "category_id": 999999
+            "category_id": 999999,
+            "csrf_token": get_admin_ui_csrf_token(admin_client, f"/admin/products/{product['id']}/edit")
         }
     )
 
@@ -908,6 +985,7 @@ def test_admin_can_delete_product_without_orders():
 
     response = admin_client.post(
         f"/admin/products/{product['id']}/delete",
+        data={"csrf_token": get_admin_ui_csrf_token(admin_client, "/admin/products")},
         follow_redirects=False
     )
 
@@ -935,7 +1013,8 @@ def test_admin_product_delete_blocked_when_product_is_used_in_orders():
     )
 
     response = admin_client.post(
-        f"/admin/products/{product['id']}/delete"
+        f"/admin/products/{product['id']}/delete",
+        data={"csrf_token": get_admin_ui_csrf_token(admin_client, "/admin/products")}
     )
 
     assert response.status_code == 400
@@ -955,6 +1034,7 @@ def test_admin_product_create_rejects_more_than_two_decimal_places():
             "stock": "5",
             "low_stock_threshold": "5",
             "category_id": str(category["id"]),
+            "csrf_token": get_admin_ui_csrf_token(admin_client),
         },
         follow_redirects=False,
     )
@@ -976,6 +1056,7 @@ def test_admin_product_edit_rejects_more_than_two_decimal_places():
             "stock": "5",
             "low_stock_threshold": "5",
             "category_id": str(product["category_id"]),
+            "csrf_token": get_admin_ui_csrf_token(admin_client, f"/admin/products/{product['id']}/edit"),
         },
         follow_redirects=False,
     )

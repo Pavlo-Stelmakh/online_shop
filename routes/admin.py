@@ -1,7 +1,8 @@
+import hashlib
 import os
 from datetime import datetime, timedelta, UTC
 
-from fastapi import APIRouter, Depends, Request, Form, Response
+from fastapi import APIRouter, Depends, Request, Form, Response, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -27,6 +28,8 @@ ADMIN_SESSION_EXPIRE_SECONDS = int(
     os.getenv("ADMIN_SESSION_EXPIRE_SECONDS", "1800")
 )
 ADMIN_SESSION_TOKEN_TYPE = "admin_ui_session"
+ADMIN_CSRF_TOKEN_TYPE = "admin_ui_csrf"
+
 
 
 def is_admin_cookie_secure() -> bool:
@@ -51,6 +54,65 @@ def create_admin_session_token(user: User) -> str:
         SECRET_KEY,
         algorithm=ALGORITHM
     )
+
+
+def create_admin_csrf_token(admin_session_token: str) -> str:
+    session_digest = hashlib.sha256(
+        admin_session_token.encode("utf-8")
+    ).hexdigest()
+
+    payload = {
+        "typ": ADMIN_CSRF_TOKEN_TYPE,
+        "session_sha256": session_digest
+    }
+
+    return jwt.encode(
+        payload,
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+
+
+def validate_admin_csrf_token(
+    admin_session_token: str,
+    csrf_token: str | None
+) -> bool:
+    if not csrf_token:
+        return False
+
+    try:
+        payload = jwt.decode(
+            csrf_token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+    except JWTError:
+        return False
+
+    if payload.get("typ") != ADMIN_CSRF_TOKEN_TYPE:
+        return False
+
+    expected_digest = hashlib.sha256(
+        admin_session_token.encode("utf-8")
+    ).hexdigest()
+
+    return payload.get("session_sha256") == expected_digest
+
+
+def require_admin_csrf(request: Request, csrf_token: str | None):
+    admin_session_token = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)
+
+    if not admin_session_token:
+        raise HTTPException(status_code=403, detail="CSRF validation failed")
+
+    if not validate_admin_csrf_token(admin_session_token, csrf_token):
+        raise HTTPException(status_code=403, detail="CSRF validation failed")
+
+
+def get_admin_csrf_token(request: Request) -> str:
+    admin_session_token = request.cookies[ADMIN_SESSION_COOKIE_NAME]
+
+    return create_admin_csrf_token(admin_session_token)
 
 
 def decode_admin_session_token(token: str):
@@ -274,7 +336,8 @@ def admin_products(
             "products": products,
             "search": search or "",
             "in_stock": in_stock,
-            "error": None
+            "error": None,
+            "csrf_token": get_admin_csrf_token(request)
         }
     )
 
@@ -293,7 +356,8 @@ def admin_product_create_page(
         request=request,
         name="admin_product_create.html",
         context={
-            "error": None
+            "error": None,
+            "csrf_token": get_admin_csrf_token(request)
         }
     )
 
@@ -308,12 +372,15 @@ def admin_product_create(
     stock: int = Form(...),
     low_stock_threshold: int = Form(...),
     category_id: int = Form(...),
+    csrf_token: str | None = Form(None),
     db: Session = Depends(get_db)
 ):
     admin_user = require_admin_ui(request, db)
 
     if isinstance(admin_user, RedirectResponse):
         return admin_user
+
+    require_admin_csrf(request, csrf_token)
 
     try:
         price_amount = parse_positive_money(price)
@@ -322,7 +389,8 @@ def admin_product_create(
             request=request,
             name="admin_product_create.html",
             context={
-                "error": str(exc)
+                "error": str(exc),
+                "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
         )
@@ -332,7 +400,8 @@ def admin_product_create(
             request=request,
             name="admin_product_create.html",
             context={
-                "error": "stock must be greater than or equal to 0"
+                "error": "stock must be greater than or equal to 0",
+                "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
         )
@@ -342,7 +411,8 @@ def admin_product_create(
             request=request,
             name="admin_product_create.html",
             context={
-                "error": "low_stock_threshold must be between 1 and 100"
+                "error": "low_stock_threshold must be between 1 and 100",
+                "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
         )
@@ -354,7 +424,8 @@ def admin_product_create(
             request=request,
             name="admin_product_create.html",
             context={
-                "error": "Category not found"
+                "error": "Category not found",
+                "csrf_token": get_admin_csrf_token(request)
             },
             status_code=404
         )
@@ -402,7 +473,8 @@ def admin_product_edit_page(
         name="admin_product_edit.html",
         context={
             "product": product,
-            "error": None
+            "error": None,
+            "csrf_token": get_admin_csrf_token(request)
         }
     )
 
@@ -418,12 +490,15 @@ def admin_product_edit(
     stock: int = Form(...),
     low_stock_threshold: int = Form(...),
     category_id: int = Form(...),
+    csrf_token: str | None = Form(None),
     db: Session = Depends(get_db)
 ):
     admin_user = require_admin_ui(request, db)
 
     if isinstance(admin_user, RedirectResponse):
         return admin_user
+
+    require_admin_csrf(request, csrf_token)
 
     product = db.query(Product).filter(Product.id == product_id).first()
 
@@ -441,7 +516,8 @@ def admin_product_edit(
             name="admin_product_edit.html",
             context={
                 "product": product,
-                "error": str(exc)
+                "error": str(exc),
+                "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
         )
@@ -452,7 +528,8 @@ def admin_product_edit(
             name="admin_product_edit.html",
             context={
                 "product": product,
-                "error": "stock must be greater than or equal to 0"
+                "error": "stock must be greater than or equal to 0",
+                "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
         )
@@ -463,7 +540,8 @@ def admin_product_edit(
             name="admin_product_edit.html",
             context={
                 "product": product,
-                "error": "low_stock_threshold must be between 1 and 100"
+                "error": "low_stock_threshold must be between 1 and 100",
+                "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
         )
@@ -476,7 +554,8 @@ def admin_product_edit(
             name="admin_product_edit.html",
             context={
                 "product": product,
-                "error": "Category not found"
+                "error": "Category not found",
+                "csrf_token": get_admin_csrf_token(request)
             },
             status_code=404
         )
@@ -500,12 +579,15 @@ def admin_product_edit(
 def admin_product_delete(
     product_id: int,
     request: Request,
+    csrf_token: str | None = Form(None),
     db: Session = Depends(get_db)
 ):
     admin_user = require_admin_ui(request, db)
 
     if isinstance(admin_user, RedirectResponse):
         return admin_user
+
+    require_admin_csrf(request, csrf_token)
 
     product = db.query(Product).filter(Product.id == product_id).first()
 
@@ -527,7 +609,8 @@ def admin_product_delete(
                 "products": db.query(Product).order_by(Product.id.desc()).all(),
                 "search": "",
                 "in_stock": None,
-                "error": "Product cannot be deleted because it is used in orders."
+                "error": "Product cannot be deleted because it is used in orders.",
+                "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
         )
