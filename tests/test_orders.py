@@ -238,6 +238,21 @@ def test_same_status_update_is_rejected():
     assert _get_product_stock(product["id"]) == 9
 
 
+def test_failed_transition_does_not_change_persisted_status():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=2)
+
+    paid_response = _update_order_status(order["id"], "paid")
+    failed_response = _update_order_status(order["id"], "new")
+
+    assert paid_response.status_code == 200
+    assert failed_response.status_code == 400
+    assert failed_response.json()["detail"] == (
+        "Cannot change order status from 'paid' to 'new'"
+    )
+    assert _get_order_status(order["id"]) == "paid"
+    assert _get_product_stock(product["id"]) == 8
+
+
 def test_cancelling_new_order_restores_stock_once():
     product, order = _create_order_for_stock_restore(initial_stock=10, quantity=3)
 
