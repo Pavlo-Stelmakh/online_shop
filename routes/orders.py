@@ -8,7 +8,7 @@ from routes.auth import get_current_user, get_admin_user
 from datetime import date, time, datetime
 from decimal import Decimal
 
-from utils.money import money_to_float, parse_money
+from utils.money import quantize_money
 
 
 router = APIRouter(
@@ -56,7 +56,7 @@ def create_order(
     order = Order(
         customer_id=order_data.customer_id,
         status="new",
-        total_price=0
+        total_price=Decimal("0.00")
     )
 
     db.add(order)
@@ -90,9 +90,9 @@ def create_order(
                 detail=f"Not enough stock for product {product.name}"
             )
 
-        unit_price = parse_money(product.price)
-        item_total = unit_price * item_data.quantity
-        total_price += item_total
+        unit_price = quantize_money(product.price)
+        item_total = quantize_money(unit_price * item_data.quantity)
+        total_price = quantize_money(total_price + item_total)
 
         product.stock -= item_data.quantity
 
@@ -100,12 +100,12 @@ def create_order(
             order_id=order.id,
             product_id=item_data.product_id,
             quantity=item_data.quantity,
-            unit_price=money_to_float(unit_price),
+            unit_price=unit_price,
         )
 
         db.add(order_item)
 
-    order.total_price = money_to_float(total_price)
+    order.total_price = quantize_money(total_price)
 
     db.commit()
     db.refresh(order)

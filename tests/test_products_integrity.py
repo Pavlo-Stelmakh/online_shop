@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from sqlalchemy import CheckConstraint, create_engine, inspect, text
+from sqlalchemy import CheckConstraint, Numeric, create_engine, inspect, text
 from sqlalchemy.exc import IntegrityError
 
 from models import Product
@@ -21,6 +21,14 @@ PRODUCT_CONSTRAINTS = {
     STOCK_CONSTRAINT_NAME: "stock >= 0",
     LOW_STOCK_THRESHOLD_CONSTRAINT_NAME: "low_stock_threshold >= 0",
 }
+
+
+def test_product_price_uses_numeric_money_type_in_model_metadata():
+    price_type = Product.__table__.c.price.type
+
+    assert isinstance(price_type, Numeric)
+    assert price_type.precision == 12
+    assert price_type.scale == 2
 
 
 def test_product_required_fields_are_not_nullable_in_model_metadata():

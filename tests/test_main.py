@@ -4296,3 +4296,59 @@ def test_product_filters_continue_working_with_money_validation():
     for product in data:
         assert product["price"] >= 100
         assert product["price"] <= 500
+
+
+def test_create_order_decimal_total_for_19_99_times_3():
+    product = create_test_product(stock=10, price=19.99)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=3,
+        headers=customer_headers,
+    )
+
+    assert order["total_price"] == 59.97
+    assert order["items"][0]["unit_price"] == 19.99
+
+
+def test_create_order_decimal_total_for_0_10_times_3_has_no_float_artifact():
+    product = create_test_product(stock=10, price=0.10)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=3,
+        headers=customer_headers,
+    )
+
+    assert order["total_price"] == 0.30
+    assert str(order["total_price"]) == "0.3"
+
+
+def test_create_order_multi_item_total_is_exact():
+    product_1 = create_test_product(stock=10, price=0.10)
+    product_2 = create_test_product(stock=10, price=19.99)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer["id"],
+            "items": [
+                {"product_id": product_1["id"], "quantity": 3},
+                {"product_id": product_2["id"], "quantity": 2},
+            ],
+        },
+        headers=customer_headers,
+    )
+
+    assert response.status_code == 200
+    order = response.json()
+    assert order["total_price"] == 40.28
+    assert [item["unit_price"] for item in order["items"]] == [0.10, 19.99]

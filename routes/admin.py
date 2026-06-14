@@ -11,7 +11,7 @@ from jose import jwt, JWTError
 from auth import verify_password, SECRET_KEY, ALGORITHM
 from database import get_db
 from models import Product, Category, Customer, Order, User, OrderItem
-from utils.money import MoneyValidationError, format_money, money_to_float, parse_positive_money
+from utils.money import MoneyValidationError, format_money, parse_positive_money
 
 router = APIRouter(
     prefix="/admin",
@@ -361,7 +361,7 @@ def admin_product_create(
 
     product = Product(
         name=name,
-        price=money_to_float(price_amount),
+        price=price_amount,
         description=description,
         image_url=image_url,
         stock=stock,
@@ -482,7 +482,7 @@ def admin_product_edit(
         )
 
     product.name = name
-    product.price = money_to_float(price_amount)
+    product.price = price_amount
     product.description = description
     product.image_url = image_url
     product.stock = stock
