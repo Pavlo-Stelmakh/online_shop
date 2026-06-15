@@ -89,7 +89,7 @@ Tests are run with:
 ```bash
 python -m pytest
 ```
-GitHub Actions is used for CI checks on pull requests and main branch updates.
+GitHub Actions is used for CI checks on pull requests and main branch updates. CI runs `python -m pytest`, applies `alembic upgrade head` to a temporary SQLite database, and runs `python scripts/audit_data_integrity.py` against that migrated temporary database.
 
 ## Data integrity audit
 
