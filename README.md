@@ -81,7 +81,7 @@ Current automated test status:
 
 ```text
 python -m pytest
-245 passed
+281 passed
 ```
 
 Tests are run with:
@@ -99,7 +99,7 @@ Run the read-only data integrity audit before adding stricter database constrain
 python scripts/audit_data_integrity.py
 ```
 
-The audit uses `DATABASE_URL`, prints a report, exits with code `0` when no problems are found, and exits with code `1` when integrity problems are detected.
+Before running the audit, the target database must already be migrated with `alembic upgrade head`. The audit uses `DATABASE_URL`, prints a report, exits with code `0` when no problems are found, and exits with code `1` when integrity problems are detected. If the local SQLite database is empty or has not been migrated, the audit can fail with a `no such table` error.
 
 Production precondition for the `customers.user_id -> users.id` foreign key: the audit script must return `Result: PASS` before deploy, and the `customers_user_orphan` check must be `0`.
 
@@ -513,7 +513,7 @@ low_stock_threshold = 10
 result: low stock
 ```
 
-The admin low stock page displays products based on each product's individual threshold.
+The admin dashboard low-stock count, admin products badge styling, and `/admin/low-stock` page all use each product's individual `low_stock_threshold`.
 
 Admin dashboard login authentication:
 
@@ -2155,7 +2155,20 @@ paid → cancelled
 
 shipped → final status
 cancelled → final status
-``## Customer Ownership Logic
+```
+
+Invalid status transitions are rejected by the API.
+
+Examples of invalid transitions:
+
+```text
+new → shipped
+paid → new
+shipped → cancelled
+cancelled → paid
+```
+
+## Customer Ownership Logic
 
 The project links application users to customer profiles.
 
@@ -2169,17 +2182,7 @@ There are two related entities:
 Each customer profile is connected to a user through:
 
 ```text
-customers.user_id`
-
-Invalid status transitions are rejected by the API.
-
-Examples of invalid transitions:
-
-```text
-new → shipped
-paid → new
-shipped → cancelled
-cancelled → paid
+customers.user_id
 ```
 
 ## Stock Logic
@@ -2366,9 +2369,9 @@ python -m pytest
 Expected result:
 
 ```text
-245 passed
+281 passed
 ```
-Current test suite includes 245 automated tests covering authentication, roles, products, categories, customers, orders, stock logic, order status rules, deployment endpoints, admin UI authentication, security behavior, startup scripts, and data integrity checks.
+Current test suite includes 281 automated tests covering authentication, roles, products, categories, customers, orders, stock logic, order status rules, deployment endpoints, admin UI authentication, security behavior, startup scripts, and data integrity checks.
 
 The tests use a separate SQLite database:
 
@@ -2531,6 +2534,7 @@ Admin users can manage categories, products and orders
 Customer users can create orders only for their own customer profile
 Automated tests are configured with pytest
 GitHub Actions CI workflow is configured
+```
 
 
 ## Future Improvements
@@ -2757,7 +2761,7 @@ Production-ready portfolio backend API
 Main quality checks:
 
 ```text
-108 automated tests passed
+281 automated tests passed
 GitHub Actions CI enabled
 Render deployment verified
 Swagger UI available
