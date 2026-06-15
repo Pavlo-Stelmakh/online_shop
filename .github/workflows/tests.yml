@@ -7,6 +7,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      CI_AUDIT_DATABASE_URL: sqlite:///./ci_audit.db
 
     steps:
       - name: Checkout code
@@ -21,6 +23,22 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Run Alembic migrations on audit database
+        env:
+          SECRET_KEY: ci_test_secret_key_not_for_production
+          ENVIRONMENT: test
+          DATABASE_URL: ${{ env.CI_AUDIT_DATABASE_URL }}
+        run: |
+          python -m alembic upgrade head
+
+      - name: Run data integrity audit
+        env:
+          SECRET_KEY: ci_test_secret_key_not_for_production
+          ENVIRONMENT: test
+          DATABASE_URL: ${{ env.CI_AUDIT_DATABASE_URL }}
+        run: |
+          python scripts/audit_data_integrity.py
 
       - name: Run tests
         run: |
