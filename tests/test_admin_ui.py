@@ -10,6 +10,7 @@ from routes.admin import (
     ADMIN_SESSION_COOKIE_NAME,
     ADMIN_SESSION_TOKEN_TYPE,
     create_admin_session_token,
+    format_admin_datetime,
 )
 from tests.helpers import (
     app,
@@ -23,8 +24,38 @@ from tests.helpers import (
     get_admin_ui_client,
     get_admin_ui_csrf_token,
     get_auth_headers,
+    TestingSessionLocal,
 )
+from models import Order
 
+
+
+def _set_order_admin_display_fields(order_id, created_at=None, status=None):
+    db = TestingSessionLocal()
+
+    try:
+        order = db.query(Order).filter(Order.id == order_id).first()
+        assert order is not None
+
+        if created_at is not None:
+            order.created_at = created_at
+
+        if status is not None:
+            order.status = status
+
+        db.commit()
+    finally:
+        db.close()
+
+
+def test_admin_datetime_formatter_handles_none_safely():
+    assert format_admin_datetime(None) == ""
+
+
+def test_admin_datetime_formatter_uses_consistent_human_readable_format():
+    value = datetime(2026, 6, 15, 9, 7, 33, tzinfo=UTC)
+
+    assert format_admin_datetime(value) == "2026-06-15 09:07"
 
 def test_admin_dashboard_returns_200():
     admin_client = get_admin_ui_client()
@@ -1453,6 +1484,62 @@ def test_admin_orders_list_contains_order_detail_link():
     assert f'/admin/orders/{order["id"]}' in response.text
     assert "View Details" in response.text
 
+
+
+def test_admin_orders_page_displays_formatted_created_at_not_raw_default_repr():
+    product, customer, order = _create_admin_ui_order()
+    created_at = datetime(2026, 6, 15, 9, 7, 33, tzinfo=UTC)
+    _set_order_admin_display_fields(order["id"], created_at=created_at)
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/orders")
+
+    assert response.status_code == 200
+    assert "2026-06-15 09:07" in response.text
+    assert "2026-06-15 09:07:33" not in response.text
+
+
+def test_admin_order_detail_displays_formatted_created_at():
+    product, customer, order = _create_admin_ui_order()
+    created_at = datetime(2026, 6, 15, 10, 8, 44, tzinfo=UTC)
+    _set_order_admin_display_fields(order["id"], created_at=created_at)
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get(f"/admin/orders/{order['id']}")
+
+    assert response.status_code == 200
+    assert "Created At" in response.text
+    assert "2026-06-15 10:08" in response.text
+    assert "2026-06-15 10:08:44" not in response.text
+
+
+def test_admin_customer_detail_embedded_orders_display_formatted_created_at():
+    product, customer, order = _create_admin_ui_order()
+    created_at = datetime(2026, 6, 15, 11, 9, 55, tzinfo=UTC)
+    _set_order_admin_display_fields(order["id"], created_at=created_at)
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get(f"/admin/customers/{customer['id']}")
+
+    assert response.status_code == 200
+    assert "2026-06-15 11:09" in response.text
+    assert "2026-06-15 11:09:55" not in response.text
+
+
+def test_admin_customer_detail_embedded_orders_use_status_badges_for_all_statuses():
+    expected_statuses = ["new", "paid", "shipped", "cancelled"]
+
+    for status in expected_statuses:
+        product, customer, order = _create_admin_ui_order()
+        _set_order_admin_display_fields(order["id"], status=status)
+
+        admin_client = get_admin_ui_client()
+        response = admin_client.get(f"/admin/customers/{customer['id']}")
+
+        assert response.status_code == 200
+        assert f'class="status status-{status}"' in response.text
+        assert f">{status}</span>" in response.text
+        assert f"<td>{status}</td>" not in response.text
 
 def test_admin_changes_new_to_paid_via_ui_with_csrf():
     product, customer, order = _create_admin_ui_order()

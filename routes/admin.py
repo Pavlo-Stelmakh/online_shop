@@ -27,6 +27,16 @@ router = APIRouter(
 templates = Jinja2Templates(directory="templates")
 templates.env.filters["money"] = format_money
 
+
+def format_admin_datetime(value: datetime | None) -> str:
+    if value is None:
+        return ""
+
+    return value.strftime("%Y-%m-%d %H:%M")
+
+
+templates.env.filters["datetime"] = format_admin_datetime
+
 ADMIN_SESSION_COOKIE_NAME = "admin_session"
 ADMIN_SESSION_EXPIRE_SECONDS = int(
     os.getenv("ADMIN_SESSION_EXPIRE_SECONDS", "1800")

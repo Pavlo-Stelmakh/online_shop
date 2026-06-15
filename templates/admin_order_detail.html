@@ -63,6 +63,8 @@
                 <dd>{{ order.customer.name }} (ID {{ order.customer.id }}, {{ order.customer.email }})</dd>
                 <dt>Total Price</dt>
                 <dd>{{ order.total_price|money }}</dd>
+                <dt>Created At</dt>
+                <dd>{{ order.created_at|datetime }}</dd>
             </dl>
         </section>
 
