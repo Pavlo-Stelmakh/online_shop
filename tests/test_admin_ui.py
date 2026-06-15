@@ -867,6 +867,210 @@ def test_admin_product_create_rejects_invalid_category():
     assert "Category not found" in response.text
 
 
+
+def test_admin_product_create_invalid_price_preserves_submitted_values():
+    category = create_test_category()
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.post(
+        "/admin/products/create",
+        data={
+            "name": "Attempted Create Product",
+            "price": "19.999",
+            "description": "Attempted create description",
+            "image_url": "https://example.com/attempted-create.jpg",
+            "stock": "11",
+            "low_stock_threshold": "4",
+            "category_id": str(category["id"]),
+            "csrf_token": get_admin_ui_csrf_token(admin_client),
+        },
+    )
+
+    assert response.status_code == 400
+    assert 'value="Attempted Create Product"' in response.text
+    assert "Attempted create description" in response.text
+    assert 'value="https://example.com/attempted-create.jpg"' in response.text
+    assert 'value="11"' in response.text
+    assert 'value="4"' in response.text
+    assert f'value="{category["id"]}"' in response.text
+
+
+def test_admin_product_create_invalid_category_preserves_submitted_fields():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.post(
+        "/admin/products/create",
+        data={
+            "name": "Invalid Category Attempt",
+            "price": "29.99",
+            "description": "Invalid category description",
+            "image_url": "https://example.com/invalid-category.jpg",
+            "stock": "9",
+            "low_stock_threshold": "3",
+            "category_id": "999999",
+            "csrf_token": get_admin_ui_csrf_token(admin_client),
+        },
+    )
+
+    assert response.status_code == 404
+    assert 'value="Invalid Category Attempt"' in response.text
+    assert 'value="29.99"' in response.text
+    assert "Invalid category description" in response.text
+    assert 'value="https://example.com/invalid-category.jpg"' in response.text
+    assert 'value="9"' in response.text
+    assert 'value="3"' in response.text
+    assert 'value="999999"' in response.text
+
+
+def test_admin_product_edit_invalid_price_shows_attempted_values_not_persisted_values():
+    product = create_test_product(stock=5, price=100, low_stock_threshold=5)
+    category = create_test_category()
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/edit",
+        data={
+            "name": "Attempted Edit Product",
+            "price": "12.999",
+            "description": "Attempted edit description",
+            "image_url": "https://example.com/attempted-edit.jpg",
+            "stock": "14",
+            "low_stock_threshold": "6",
+            "category_id": str(category["id"]),
+            "csrf_token": get_admin_ui_csrf_token(admin_client, f"/admin/products/{product['id']}/edit"),
+        },
+    )
+
+    assert response.status_code == 400
+    assert 'value="Attempted Edit Product"' in response.text
+    assert 'value="12.999"' in response.text
+    assert "Attempted edit description" in response.text
+    assert 'value="https://example.com/attempted-edit.jpg"' in response.text
+    assert 'value="14"' in response.text
+    assert 'value="6"' in response.text
+    assert f'value="{category["id"]}"' in response.text
+    assert f'value="{product["name"]}"' not in response.text
+    assert 'value="100.00"' not in response.text
+
+
+def test_admin_product_edit_invalid_stock_or_threshold_preserves_attempted_fields():
+    product = create_test_product(stock=5, price=100, low_stock_threshold=5)
+    category = create_test_category()
+    admin_client = get_admin_ui_client()
+    path = f"/admin/products/{product['id']}/edit"
+
+    stock_response = admin_client.post(
+        path,
+        data={
+            "name": "Negative Stock Attempt",
+            "price": "45.50",
+            "description": "Negative stock description",
+            "image_url": "https://example.com/negative-stock.jpg",
+            "stock": "-1",
+            "low_stock_threshold": "8",
+            "category_id": str(category["id"]),
+            "csrf_token": get_admin_ui_csrf_token(admin_client, path),
+        },
+    )
+    threshold_response = admin_client.post(
+        path,
+        data={
+            "name": "Bad Threshold Attempt",
+            "price": "55.50",
+            "description": "Bad threshold description",
+            "image_url": "https://example.com/bad-threshold.jpg",
+            "stock": "10",
+            "low_stock_threshold": "101",
+            "category_id": str(category["id"]),
+            "csrf_token": get_admin_ui_csrf_token(admin_client, path),
+        },
+    )
+
+    assert stock_response.status_code == 400
+    assert 'value="Negative Stock Attempt"' in stock_response.text
+    assert 'value="45.50"' in stock_response.text
+    assert "Negative stock description" in stock_response.text
+    assert 'value="-1"' in stock_response.text
+    assert 'value="8"' in stock_response.text
+
+    assert threshold_response.status_code == 400
+    assert 'value="Bad Threshold Attempt"' in threshold_response.text
+    assert 'value="55.50"' in threshold_response.text
+    assert "Bad threshold description" in threshold_response.text
+    assert 'value="10"' in threshold_response.text
+    assert 'value="101"' in threshold_response.text
+
+
+def test_admin_customer_edit_duplicate_email_preserves_attempted_values():
+    customer = create_test_customer()
+    other_customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+    path = f'/admin/customers/{customer["id"]}'
+
+    response = admin_client.post(
+        f'{path}/edit',
+        data={
+            "name": "Attempted Duplicate Customer",
+            "email": other_customer["email"],
+            "phone": "+380509990001",
+            "csrf_token": get_admin_ui_csrf_token(admin_client, path),
+        },
+    )
+
+    assert response.status_code == 400
+    assert 'value="Attempted Duplicate Customer"' in response.text
+    assert f'value="{other_customer["email"]}"' in response.text
+    assert 'value="+380509990001"' in response.text
+    assert f'value="{customer["email"]}"' not in response.text
+
+
+def test_admin_customer_edit_empty_field_preserves_attempted_values():
+    customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+    path = f'/admin/customers/{customer["id"]}'
+
+    response = admin_client.post(
+        f'{path}/edit',
+        data={
+            "name": " ",
+            "email": "attempted-empty@example.com",
+            "phone": "+380509990002",
+            "csrf_token": get_admin_ui_csrf_token(admin_client, path),
+        },
+    )
+
+    assert response.status_code == 400
+    assert 'value=" "' in response.text
+    assert 'value="attempted-empty@example.com"' in response.text
+    assert 'value="+380509990002"' in response.text
+
+
+def test_failed_admin_login_preserves_username():
+    response = client.post(
+        "/admin/login",
+        data={
+            "username": "attempted-admin",
+            "password": "wrong-password",
+        },
+    )
+
+    assert response.status_code == 401
+    assert 'value="attempted-admin"' in response.text
+
+
+def test_failed_admin_login_does_not_preserve_password_in_response_html():
+    response = client.post(
+        "/admin/login",
+        data={
+            "username": "attempted-admin",
+            "password": "super-secret-password",
+        },
+    )
+
+    assert response.status_code == 401
+    assert "super-secret-password" not in response.text
+    assert '<input id="password" type="password" name="password" required>' in response.text
+
 def test_api_bearer_product_create_does_not_require_csrf():
     category = create_test_category()
     admin_headers = get_auth_headers(role="admin")
