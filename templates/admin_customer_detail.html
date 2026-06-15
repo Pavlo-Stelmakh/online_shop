@@ -72,11 +72,11 @@
                 <form method="post" action="/admin/customers/{{ customer.id }}/edit">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <label for="name">Name</label>
-                    <input id="name" name="name" value="{{ customer.name }}" required>
+                    <input id="name" name="name" value="{{ form_values.get('name', customer.name) }}" required>
                     <label for="email">Email</label>
-                    <input id="email" name="email" type="email" value="{{ customer.email }}" required>
+                    <input id="email" name="email" type="email" value="{{ form_values.get('email', customer.email) }}" required>
                     <label for="phone">Phone</label>
-                    <input id="phone" name="phone" value="{{ customer.phone }}" required>
+                    <input id="phone" name="phone" value="{{ form_values.get('phone', customer.phone) }}" required>
                     <p><button type="submit">Save Customer</button></p>
                 </form>
             </section>

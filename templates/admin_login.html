@@ -98,7 +98,7 @@
 
             <form method="post" action="/admin/login">
                 <label for="username">Username</label>
-                <input id="username" type="text" name="username" required>
+                <input id="username" type="text" name="username" value="{{ form_values.get('username', '') }}" required>
 
                 <label for="password">Password</label>
                 <input id="password" type="password" name="password" required>

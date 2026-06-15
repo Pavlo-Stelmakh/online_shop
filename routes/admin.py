@@ -157,6 +157,39 @@ def render_admin_categories(
         status_code=status_code
     )
 
+
+
+def build_product_form_values(
+    name: str,
+    price: str,
+    description: str,
+    image_url: str | None,
+    stock: int,
+    low_stock_threshold: int,
+    category_id: int
+) -> dict[str, str | int]:
+    return {
+        "name": name,
+        "price": price,
+        "description": description,
+        "image_url": image_url or "",
+        "stock": stock,
+        "low_stock_threshold": low_stock_threshold,
+        "category_id": category_id
+    }
+
+
+def build_customer_form_values(
+    name: str,
+    email: str,
+    phone: str
+) -> dict[str, str]:
+    return {
+        "name": name,
+        "email": email,
+        "phone": phone
+    }
+
 def require_admin_csrf(request: Request, csrf_token: str | None):
     admin_session_token = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)
 
@@ -245,7 +278,8 @@ def admin_login_page(request: Request):
         request=request,
         name="admin_login.html",
         context={
-            "error": None
+            "error": None,
+            "form_values": {}
         }
     )
 
@@ -264,7 +298,8 @@ def admin_login(
             request=request,
             name="admin_login.html",
             context={
-                "error": "Invalid username or password"
+                "error": "Invalid username or password",
+                "form_values": {"username": username}
             },
             status_code=401
         )
@@ -274,7 +309,8 @@ def admin_login(
             request=request,
             name="admin_login.html",
             context={
-                "error": "Admin access required"
+                "error": "Admin access required",
+                "form_values": {"username": username}
             },
             status_code=403
         )
@@ -417,6 +453,7 @@ def admin_product_create_page(
         name="admin_product_create.html",
         context={
             "error": None,
+            "form_values": {},
             "csrf_token": get_admin_csrf_token(request)
         }
     )
@@ -442,6 +479,16 @@ def admin_product_create(
 
     require_admin_csrf(request, csrf_token)
 
+    form_values = build_product_form_values(
+        name,
+        price,
+        description,
+        image_url,
+        stock,
+        low_stock_threshold,
+        category_id
+    )
+
     try:
         price_amount = parse_positive_money(price)
     except MoneyValidationError as exc:
@@ -450,6 +497,7 @@ def admin_product_create(
             name="admin_product_create.html",
             context={
                 "error": str(exc),
+                "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
@@ -461,6 +509,7 @@ def admin_product_create(
             name="admin_product_create.html",
             context={
                 "error": "stock must be greater than or equal to 0",
+                "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
@@ -472,6 +521,7 @@ def admin_product_create(
             name="admin_product_create.html",
             context={
                 "error": "low_stock_threshold must be between 1 and 100",
+                "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
@@ -485,6 +535,7 @@ def admin_product_create(
             name="admin_product_create.html",
             context={
                 "error": "Category not found",
+                "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=404
@@ -534,6 +585,7 @@ def admin_product_edit_page(
         context={
             "product": product,
             "error": None,
+            "form_values": {},
             "csrf_token": get_admin_csrf_token(request)
         }
     )
@@ -568,6 +620,16 @@ def admin_product_edit(
             status_code=303
         )
 
+    form_values = build_product_form_values(
+        name,
+        price,
+        description,
+        image_url,
+        stock,
+        low_stock_threshold,
+        category_id
+    )
+
     try:
         price_amount = parse_positive_money(price)
     except MoneyValidationError as exc:
@@ -577,6 +639,7 @@ def admin_product_edit(
             context={
                 "product": product,
                 "error": str(exc),
+                "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
@@ -589,6 +652,7 @@ def admin_product_edit(
             context={
                 "product": product,
                 "error": "stock must be greater than or equal to 0",
+                "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
@@ -601,6 +665,7 @@ def admin_product_edit(
             context={
                 "product": product,
                 "error": "low_stock_threshold must be between 1 and 100",
+                "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
@@ -615,6 +680,7 @@ def admin_product_edit(
             context={
                 "product": product,
                 "error": "Category not found",
+                "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=404
@@ -1027,7 +1093,8 @@ def render_admin_customer_detail(
     request: Request,
     customer: Customer | None,
     error: str | None = None,
-    status_code: int = 200
+    status_code: int = 200,
+    form_values: dict[str, str] | None = None
 ):
     return templates.TemplateResponse(
         request=request,
@@ -1035,6 +1102,7 @@ def render_admin_customer_detail(
         context={
             "customer": customer,
             "error": error,
+            "form_values": form_values or {},
             "csrf_token": get_admin_csrf_token(request)
         },
         status_code=status_code
@@ -1061,6 +1129,7 @@ def admin_customer_detail(
             context={
                 "customer": None,
                 "error": "Customer not found",
+                "form_values": {},
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=404
@@ -1095,10 +1164,13 @@ def admin_customer_edit(
             context={
                 "customer": None,
                 "error": "Customer not found",
+                "form_values": {},
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=404
         )
+
+    form_values = build_customer_form_values(name, email, phone)
 
     name_value = name.strip()
     email_value = email.strip()
@@ -1109,7 +1181,8 @@ def admin_customer_edit(
             request,
             customer,
             error="Name, email and phone are required",
-            status_code=400
+            status_code=400,
+            form_values=form_values
         )
 
     existing_customer = db.query(Customer).filter(
@@ -1122,7 +1195,8 @@ def admin_customer_edit(
             request,
             customer,
             error="Customer with this email already exists",
-            status_code=400
+            status_code=400,
+            form_values=form_values
         )
 
     customer.name = name_value
@@ -1137,7 +1211,8 @@ def admin_customer_edit(
             request,
             customer,
             error="Customer could not be updated",
-            status_code=400
+            status_code=400,
+            form_values=form_values
         )
 
     return RedirectResponse(
@@ -1169,6 +1244,7 @@ def admin_customer_delete(
             context={
                 "customer": None,
                 "error": "Customer not found",
+                "form_values": {},
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=404
