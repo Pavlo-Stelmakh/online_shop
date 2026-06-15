@@ -1,7 +1,12 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+import os
+
+from fastapi import FastAPI, Depends, HTTPException, Query, status
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from database import SessionLocal
+from database import SessionLocal, get_db as database_get_db
 from models import Product, Category
 from schemas import ProductCreate, ProductResponse, CategoryCreate, CategoryResponse
 from routes.categories import router as categories_router
@@ -26,6 +31,44 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+
+@app.get("/health/db")
+def database_health_check(db: Session = Depends(database_get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+    except SQLAlchemyError:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "status": "error",
+                "database": "unavailable"
+            }
+        )
+
+    return {
+        "status": "ok",
+        "database": "ok"
+    }
+
+
+@app.get("/version")
+def version():
+    return {
+        "app": "online_shop",
+        "version": os.getenv("APP_VERSION", "unknown"),
+        "commit": (
+            os.getenv("RENDER_GIT_COMMIT")
+            or os.getenv("COMMIT_SHA")
+            or "unknown"
+        ),
+        "environment": (
+            os.getenv("APP_ENV")
+            or os.getenv("ENVIRONMENT")
+            or os.getenv("RENDER_ENVIRONMENT")
+            or "unknown"
+        )
+    }
 
 app.include_router(categories_router)
 app.include_router(products_router)
