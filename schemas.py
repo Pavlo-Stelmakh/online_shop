@@ -1,8 +1,8 @@
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from utils.money import MoneyValidationError, parse_positive_money
+from utils.money import MoneyValidationError, format_money, parse_positive_money
 
 
 class CategoryCreate(BaseModel):
@@ -37,12 +37,21 @@ class ProductResponse(BaseModel):
     id: int
     name: str
     price: float
+    price_amount: str = Field(
+        default="",
+        description="Exact price amount as a decimal string with two places.",
+    )
     description: str
     image_url: str | None = None
     stock: int
     low_stock_threshold: int
     category_id: int
     category: CategoryResponse
+
+    @model_validator(mode="after")
+    def set_price_amount(self):
+        self.price_amount = format_money(self.price)
+        return self
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -92,7 +101,16 @@ class OrderItemResponse(BaseModel):
     product_id: int
     quantity: int
     unit_price: float
+    unit_price_amount: str = Field(
+        default="",
+        description="Exact unit price amount as a decimal string with two places.",
+    )
     product: ProductResponse
+
+    @model_validator(mode="after")
+    def set_unit_price_amount(self):
+        self.unit_price_amount = format_money(self.unit_price)
+        return self
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -101,8 +119,17 @@ class OrderResponse(BaseModel):
     customer_id: int
     status: str
     total_price: float
+    total_price_amount: str = Field(
+        default="",
+        description="Exact total price amount as a decimal string with two places.",
+    )
     created_at: datetime
     items: list[OrderItemResponse]
+
+    @model_validator(mode="after")
+    def set_total_price_amount(self):
+        self.total_price_amount = format_money(self.total_price)
+        return self
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -121,6 +148,15 @@ class StatsSummaryResponse(BaseModel):
     customers_count: int
     orders_count: int
     total_revenue: float
+    total_revenue_amount: str = Field(
+        default="",
+        description="Exact total revenue amount as a decimal string with two places.",
+    )
+
+    @model_validator(mode="after")
+    def set_total_revenue_amount(self):
+        self.total_revenue_amount = format_money(self.total_revenue)
+        return self
 
 class UserCreate(BaseModel):
     username: str

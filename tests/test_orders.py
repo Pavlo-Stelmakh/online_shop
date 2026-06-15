@@ -1834,3 +1834,37 @@ def test_create_order_atomic_update_path_is_rollback_safe_for_later_item_failure
     assert product_2_response.status_code == 200
     assert product_1_response.json()["stock"] == 5
     assert product_2_response.json()["stock"] == 5
+
+
+def test_order_returns_exact_money_amount_strings_for_trailing_zero_unit_price():
+    product = create_test_product(stock=10, price=19.90)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=3,
+        headers=customer_headers,
+    )
+
+    assert order["items"][0]["unit_price"] == 19.9
+    assert order["items"][0]["unit_price_amount"] == "19.90"
+    assert order["total_price"] == 59.7
+    assert order["total_price_amount"] == "59.70"
+
+
+def test_order_returns_exact_total_amount_string_for_fractional_total():
+    product = create_test_product(stock=10, price=0.10)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=3,
+        headers=customer_headers,
+    )
+
+    assert order["total_price"] == 0.3
+    assert order["total_price_amount"] == "0.30"
