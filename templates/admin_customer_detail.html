@@ -25,6 +25,11 @@
         label { display: block; font-weight: bold; margin: 12px 0 8px; }
         input { box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; }
         form.inline { display: inline; }
+        .status { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: bold; background: #e5e7eb; color: #374151; }
+        .status-new { background: #e5e7eb; color: #374151; }
+        .status-paid { background: #dcfce7; color: #166534; }
+        .status-shipped { background: #dbeafe; color: #1d4ed8; }
+        .status-cancelled { background: #fee2e2; color: #b91c1c; }
         footer { padding: 20px 40px; color: #6b7280; font-size: 14px; }
     </style>
 </head>
@@ -103,9 +108,9 @@
                             {% for order in customer.orders %}
                                 <tr>
                                     <td>{{ order.id }}</td>
-                                    <td>{{ order.status }}</td>
+                                    <td><span class="status status-{{ order.status }}">{{ order.status }}</span></td>
                                     <td>{{ order.total_price|money }}</td>
-                                    <td>{{ order.created_at }}</td>
+                                    <td>{{ order.created_at|datetime }}</td>
                                     <td><a href="/admin/orders/{{ order.id }}">View Details</a></td>
                                 </tr>
                             {% endfor %}
