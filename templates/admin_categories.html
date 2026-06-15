@@ -49,6 +49,16 @@
             background: #1d4ed8;
         }
 
+        .alert {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            border-radius: 10px;
+            color: #991b1b;
+            margin-bottom: 24px;
+            padding: 14px 18px;
+        }
+
+        .create-category,
         .filters {
             background: white;
             border: 1px solid #e5e7eb;
@@ -57,17 +67,21 @@
             margin-bottom: 24px;
         }
 
+        .create-category h2,
         .filters h2 {
             margin: 0 0 12px;
             font-size: 16px;
         }
 
+        .create-category form,
         .filters form {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
         }
 
+        .create-category input,
+        .edit-form input,
         .filters input {
             padding: 9px 12px;
             border: 1px solid #d1d5db;
@@ -75,6 +89,9 @@
             min-width: 220px;
         }
 
+        .create-category button,
+        .edit-form button,
+        .delete-form button,
         .filters button,
         .filters a {
             display: inline-block;
@@ -88,11 +105,23 @@
             font-weight: bold;
         }
 
+        .delete-form button {
+            background: #dc2626;
+        }
+
+        .delete-unavailable {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
         .filters a.secondary {
             background: #e5e7eb;
             color: #374151;
         }
 
+        .create-category button:hover,
+        .edit-form button:hover,
+        .delete-form button:hover,
         .filters a:hover,
         .filters button:hover {
             opacity: 0.9;
@@ -155,7 +184,7 @@
 <body>
     <header>
         <h1>Admin Categories</h1>
-        <p>Inspect product categories and related products count.</p>
+        <p>Inspect and manage product categories and related products count.</p>
     </header>
 
     <main>
@@ -168,6 +197,19 @@
             <a href="/admin/low-stock">Low Stock</a>
             <a href="/docs">Swagger UI</a>
             <a href="/admin/logout">Logout</a>
+        </section>
+
+        {% if error %}
+            <section class="alert" role="alert">{{ error }}</section>
+        {% endif %}
+
+        <section class="create-category">
+            <h2>Create category</h2>
+            <form method="post" action="/admin/categories/create">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="text" name="name" placeholder="Category name" required>
+                <button type="submit">Create</button>
+            </form>
         </section>
 
         <section class="filters">
@@ -193,6 +235,8 @@
                             <th>ID</th>
                             <th>Name</th>
                             <th>Products Count</th>
+                            <th>Edit</th>
+                            <th>Delete</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -201,6 +245,23 @@
                                 <td>{{ row.category.id }}</td>
                                 <td>{{ row.category.name }}</td>
                                 <td><span class="badge">{{ row.products_count }}</span></td>
+                                <td>
+                                    <form class="edit-form" method="post" action="/admin/categories/{{ row.category.id }}/edit">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <input type="text" name="name" value="{{ row.category.name }}" required>
+                                        <button type="submit">Save</button>
+                                    </form>
+                                </td>
+                                <td>
+                                    {% if row.products_count == 0 %}
+                                        <form class="delete-form" method="post" action="/admin/categories/{{ row.category.id }}/delete">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <button type="submit">Delete</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="delete-unavailable">Has products</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>

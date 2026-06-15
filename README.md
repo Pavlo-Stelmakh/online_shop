@@ -304,13 +304,18 @@ Admin categories page:
 /admin/categories
 ```
 
-The admin categories page displays a categories table with:
+The admin categories page supports category management from the web UI. It displays a categories table with:
 
 ```text
 category id
 name
 products count
+create category form
+inline edit category form
+delete category form for empty categories
 ```
+
+State-changing category forms use the admin UI CSRF token. Empty or duplicate category names show controlled errors, and categories with products cannot be deleted.
 
 Admin customers page:
 

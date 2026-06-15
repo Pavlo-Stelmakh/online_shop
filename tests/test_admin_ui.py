@@ -1306,3 +1306,206 @@ def test_admin_order_status_invalid_transition_does_not_500_or_change_status():
     assert "Cannot change order status from &#39;new&#39; to &#39;shipped&#39;" in response.text
     assert detail_response.status_code == 200
     assert "status-new" in detail_response.text
+
+
+def test_admin_can_open_categories_page():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/categories")
+
+    assert response.status_code == 200
+    assert "Admin Categories" in response.text
+    assert "Create category" in response.text
+
+
+def test_anonymous_cannot_open_categories_page():
+    anonymous_client = TestClient(app)
+
+    response = anonymous_client.get("/admin/categories", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+
+def test_non_admin_cannot_open_categories_page():
+    customer_user = create_registered_user(role="customer")
+    non_admin_client = TestClient(app)
+    non_admin_client.cookies.set(
+        ADMIN_SESSION_COOKIE_NAME,
+        create_admin_session_token(type("UserLike", (), customer_user)()),
+    )
+
+    response = non_admin_client.get("/admin/categories", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/login"
+
+
+def test_admin_can_create_category_from_ui_with_valid_csrf():
+    admin_client = get_admin_ui_client()
+    category_name = f"Admin UI Category {time.time()}"
+
+    response = admin_client.post(
+        "/admin/categories/create",
+        data={
+            "name": category_name,
+            "csrf_token": get_admin_ui_csrf_token(admin_client, "/admin/categories"),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/categories"
+
+    categories_response = admin_client.get("/admin/categories")
+    assert category_name in categories_response.text
+
+
+def test_admin_category_create_missing_csrf_returns_403():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.post(
+        "/admin/categories/create",
+        data={"name": f"Missing CSRF Category {time.time()}"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 403
+
+
+def test_admin_category_create_empty_name_returns_controlled_error():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.post(
+        "/admin/categories/create",
+        data={
+            "name": "   ",
+            "csrf_token": get_admin_ui_csrf_token(admin_client, "/admin/categories"),
+        },
+    )
+
+    assert response.status_code == 400
+    assert "Category name is required" in response.text
+
+
+def test_admin_category_create_duplicate_name_returns_controlled_error():
+    admin_client = get_admin_ui_client()
+    category = create_test_category()
+
+    response = admin_client.post(
+        "/admin/categories/create",
+        data={
+            "name": category["name"],
+            "csrf_token": get_admin_ui_csrf_token(admin_client, "/admin/categories"),
+        },
+    )
+
+    assert response.status_code == 400
+    assert "Category already exists" in response.text
+
+
+def test_admin_can_edit_category_from_ui_with_valid_csrf():
+    admin_client = get_admin_ui_client()
+    category = create_test_category()
+    updated_name = f"Edited Admin UI Category {time.time()}"
+
+    response = admin_client.post(
+        f"/admin/categories/{category['id']}/edit",
+        data={
+            "name": updated_name,
+            "csrf_token": get_admin_ui_csrf_token(admin_client, "/admin/categories"),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/categories"
+
+    categories_response = admin_client.get("/admin/categories")
+    assert updated_name in categories_response.text
+
+
+def test_admin_category_edit_missing_csrf_returns_403():
+    admin_client = get_admin_ui_client()
+    category = create_test_category()
+
+    response = admin_client.post(
+        f"/admin/categories/{category['id']}/edit",
+        data={"name": f"Missing Edit CSRF {time.time()}"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 403
+
+
+def test_admin_can_delete_empty_category_from_ui_with_valid_csrf():
+    admin_client = get_admin_ui_client()
+    category = create_test_category()
+
+    response = admin_client.post(
+        f"/admin/categories/{category['id']}/delete",
+        data={"csrf_token": get_admin_ui_csrf_token(admin_client, "/admin/categories")},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/categories"
+
+    categories_response = admin_client.get("/admin/categories")
+    assert category["name"] not in categories_response.text
+
+
+def test_admin_cannot_delete_category_that_has_products():
+    admin_client = get_admin_ui_client()
+    product = create_test_product()
+
+    response = admin_client.post(
+        f"/admin/categories/{product['category_id']}/delete",
+        data={"csrf_token": get_admin_ui_csrf_token(admin_client, "/admin/categories")},
+    )
+
+    assert response.status_code == 400
+    assert "Cannot delete category with products" in response.text
+
+
+def test_admin_category_delete_missing_csrf_returns_403():
+    admin_client = get_admin_ui_client()
+    category = create_test_category()
+
+    response = admin_client.post(
+        f"/admin/categories/{category['id']}/delete",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 403
+
+
+def test_categories_page_shows_created_and_edited_categories():
+    admin_client = get_admin_ui_client()
+    category_name = f"Visible Admin UI Category {time.time()}"
+    edited_name = f"Visible Edited Admin UI Category {time.time()}"
+    csrf_token = get_admin_ui_csrf_token(admin_client, "/admin/categories")
+
+    create_response = admin_client.post(
+        "/admin/categories/create",
+        data={"name": category_name, "csrf_token": csrf_token},
+        follow_redirects=False,
+    )
+    assert create_response.status_code == 303
+
+    categories_response = admin_client.get("/admin/categories")
+    assert category_name in categories_response.text
+
+    category_id = create_test_category()["id"]
+    edit_response = admin_client.post(
+        f"/admin/categories/{category_id}/edit",
+        data={
+            "name": edited_name,
+            "csrf_token": get_admin_ui_csrf_token(admin_client, "/admin/categories"),
+        },
+        follow_redirects=False,
+    )
+    assert edit_response.status_code == 303
+
+    edited_response = admin_client.get("/admin/categories")
+    assert edited_name in edited_response.text
