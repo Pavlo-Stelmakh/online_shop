@@ -1764,6 +1764,37 @@ def test_admin_category_edit_missing_csrf_returns_403():
     assert response.status_code == 403
 
 
+def test_admin_categories_empty_category_delete_ui_has_warning_confirmation_and_csrf():
+    admin_client = get_admin_ui_client()
+    category = create_test_category()
+
+    response = admin_client.get("/admin/categories")
+
+    assert response.status_code == 200
+    assert category["name"] in response.text
+    assert f'/admin/categories/{category["id"]}/delete' in response.text
+    assert "Deleting this empty category is permanent and cannot be undone." in response.text
+    assert (
+        "return confirm('Delete this category? This action cannot be undone.');"
+        in response.text
+    )
+    assert 'name="csrf_token"' in response.text
+
+
+def test_admin_categories_category_with_products_shows_blocked_delete_explanation():
+    admin_client = get_admin_ui_client()
+    product = create_test_product()
+
+    response = admin_client.get("/admin/categories")
+
+    assert response.status_code == 200
+    assert (
+        "Delete unavailable: this category has products. Move or delete those products first."
+        in response.text
+    )
+    assert f'/admin/categories/{product["category_id"]}/delete' not in response.text
+
+
 def test_admin_can_delete_empty_category_from_ui_with_valid_csrf():
     admin_client = get_admin_ui_client()
     category = create_test_category()
@@ -1991,6 +2022,44 @@ def test_admin_customer_edit_duplicate_email_returns_controlled_error():
 
     assert response.status_code == 400
     assert "Customer with this email already exists" in response.text
+
+
+def test_admin_customer_without_orders_delete_ui_has_warning_confirmation_and_csrf():
+    customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get(f'/admin/customers/{customer["id"]}')
+
+    assert response.status_code == 200
+    assert "Deleting this customer is permanent and cannot be undone." in response.text
+    assert (
+        "return confirm('Delete this customer? This action cannot be undone.');"
+        in response.text
+    )
+    assert f'/admin/customers/{customer["id"]}/delete' in response.text
+    assert 'name="csrf_token"' in response.text
+
+
+def test_admin_customer_with_orders_shows_blocked_delete_explanation():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    product = create_test_product()
+    create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        headers=customer_headers,
+    )
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get(f'/admin/customers/{customer["id"]}')
+
+    assert response.status_code == 200
+    assert (
+        "Delete unavailable: this customer has orders. "
+        "Customer records with orders are retained for order history."
+        in response.text
+    )
+    assert f'/admin/customers/{customer["id"]}/delete' not in response.text
 
 
 def test_admin_can_delete_customer_with_no_orders_from_ui():

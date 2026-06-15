@@ -109,9 +109,17 @@
             background: #dc2626;
         }
 
+        .delete-warning,
         .delete-unavailable {
+            display: block;
             color: #6b7280;
             font-size: 13px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .delete-warning {
+            color: #991b1b;
         }
 
         .filters a.secondary {
@@ -254,12 +262,18 @@
                                 </td>
                                 <td>
                                     {% if row.products_count == 0 %}
-                                        <form class="delete-form" method="post" action="/admin/categories/{{ row.category.id }}/delete">
+                                        <form
+                                            class="delete-form"
+                                            method="post"
+                                            action="/admin/categories/{{ row.category.id }}/delete"
+                                            onsubmit="return confirm('Delete this category? This action cannot be undone.');"
+                                        >
+                                            <span class="delete-warning">Deleting this empty category is permanent and cannot be undone.</span>
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                             <button type="submit">Delete</button>
                                         </form>
                                     {% else %}
-                                        <span class="delete-unavailable">Has products</span>
+                                        <span class="delete-unavailable">Delete unavailable: this category has products. Move or delete those products first.</span>
                                     {% endif %}
                                 </td>
                             </tr>
