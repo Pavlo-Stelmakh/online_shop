@@ -1165,11 +1165,55 @@ GET /health
 ```
 Response:
 
-```text
+```json
 {
   "status": "ok"
 }
 ```
+
+### Database Health Check
+
+Checks database connectivity with a lightweight query. The response intentionally does not expose `DATABASE_URL`, passwords, tokens, stack traces, or other secrets.
+
+```text
+GET /health/db
+```
+Successful response:
+
+```json
+{
+  "status": "ok",
+  "database": "ok"
+}
+```
+Unavailable database response:
+
+```json
+{
+  "status": "error",
+  "database": "unavailable"
+}
+```
+
+### Version
+
+Returns safe deployment metadata from environment variables without making runtime git calls. Missing values fall back to `"unknown"`, and secrets are not included in the response.
+
+```text
+GET /version
+```
+Response:
+
+```json
+{
+  "app": "online_shop",
+  "version": "unknown",
+  "commit": "unknown",
+  "environment": "unknown"
+}
+```
+
+Version metadata can be provided with `APP_VERSION`; commit metadata can be provided with `RENDER_GIT_COMMIT` or `COMMIT_SHA`; environment metadata can be provided with `APP_ENV`, `ENVIRONMENT`, or `RENDER_ENVIRONMENT`.
 
 ### Categories
 
