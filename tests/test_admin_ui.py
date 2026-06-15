@@ -1509,3 +1509,178 @@ def test_categories_page_shows_created_and_edited_categories():
 
     edited_response = admin_client.get("/admin/categories")
     assert edited_name in edited_response.text
+
+
+def test_admin_customers_list_contains_detail_links():
+    customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/customers")
+
+    assert response.status_code == 200
+    assert f'/admin/customers/{customer["id"]}' in response.text
+    assert "View Details" in response.text
+
+
+def test_admin_customer_detail_page_shows_fields_and_orders():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    product = create_test_product()
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        headers=customer_headers,
+    )
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get(f'/admin/customers/{customer["id"]}')
+
+    assert response.status_code == 200
+    assert "Admin Customer Detail" in response.text
+    assert str(customer["user_id"]) in response.text
+    assert customer["name"] in response.text
+    assert customer["email"] in response.text
+    assert customer["phone"] in response.text
+    assert f'/admin/orders/{order["id"]}' in response.text
+
+
+def test_admin_can_edit_customer_from_ui_with_valid_csrf():
+    customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+    csrf_token = get_admin_ui_csrf_token(
+        admin_client,
+        f'/admin/customers/{customer["id"]}',
+    )
+
+    response = admin_client.post(
+        f'/admin/customers/{customer["id"]}/edit',
+        data={
+            "name": "Updated UI Customer",
+            "email": f'updated_ui_{time.time()}@example.com',
+            "phone": "+380501110000",
+            "csrf_token": csrf_token,
+        },
+        follow_redirects=False,
+    )
+    detail_response = admin_client.get(f'/admin/customers/{customer["id"]}')
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f'/admin/customers/{customer["id"]}'
+    assert detail_response.status_code == 200
+    assert "Updated UI Customer" in detail_response.text
+    assert "+380501110000" in detail_response.text
+
+
+def test_admin_customer_edit_missing_csrf_returns_403():
+    customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.post(
+        f'/admin/customers/{customer["id"]}/edit',
+        data={
+            "name": "Missing CSRF Customer",
+            "email": f'missing_csrf_{time.time()}@example.com',
+            "phone": "+380501110001",
+        },
+    )
+
+    assert response.status_code == 403
+
+
+def test_admin_customer_edit_empty_fields_returns_controlled_error():
+    customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+    csrf_token = get_admin_ui_csrf_token(
+        admin_client,
+        f'/admin/customers/{customer["id"]}',
+    )
+
+    response = admin_client.post(
+        f'/admin/customers/{customer["id"]}/edit',
+        data={
+            "name": " ",
+            "email": customer["email"],
+            "phone": customer["phone"],
+            "csrf_token": csrf_token,
+        },
+    )
+
+    assert response.status_code == 400
+    assert "Name, email and phone are required" in response.text
+
+
+def test_admin_customer_edit_duplicate_email_returns_controlled_error():
+    customer = create_test_customer()
+    other_customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+    csrf_token = get_admin_ui_csrf_token(
+        admin_client,
+        f'/admin/customers/{customer["id"]}',
+    )
+
+    response = admin_client.post(
+        f'/admin/customers/{customer["id"]}/edit',
+        data={
+            "name": customer["name"],
+            "email": other_customer["email"],
+            "phone": customer["phone"],
+            "csrf_token": csrf_token,
+        },
+    )
+
+    assert response.status_code == 400
+    assert "Customer with this email already exists" in response.text
+
+
+def test_admin_can_delete_customer_with_no_orders_from_ui():
+    customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+    csrf_token = get_admin_ui_csrf_token(
+        admin_client,
+        f'/admin/customers/{customer["id"]}',
+    )
+
+    response = admin_client.post(
+        f'/admin/customers/{customer["id"]}/delete',
+        data={"csrf_token": csrf_token},
+        follow_redirects=False,
+    )
+    detail_response = admin_client.get(f'/admin/customers/{customer["id"]}')
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/customers"
+    assert detail_response.status_code == 404
+    assert "Customer not found" in detail_response.text
+
+
+def test_admin_customer_delete_missing_csrf_returns_403():
+    customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.post(f'/admin/customers/{customer["id"]}/delete')
+
+    assert response.status_code == 403
+
+
+def test_admin_customer_delete_with_orders_returns_controlled_error():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    product = create_test_product()
+    create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        headers=customer_headers,
+    )
+    admin_client = get_admin_ui_client()
+    csrf_token = get_admin_ui_csrf_token(
+        admin_client,
+        f'/admin/customers/{customer["id"]}',
+    )
+
+    response = admin_client.post(
+        f'/admin/customers/{customer["id"]}/delete',
+        data={"csrf_token": csrf_token},
+    )
+
+    assert response.status_code == 400
+    assert "Customer cannot be deleted because they have orders" in response.text

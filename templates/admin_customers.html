@@ -185,6 +185,7 @@
                             <th>Name</th>
                             <th>Email</th>
                             <th>Phone</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -195,6 +196,7 @@
                                 <td>{{ customer.name }}</td>
                                 <td>{{ customer.email }}</td>
                                 <td>{{ customer.phone }}</td>
+                                <td><a href="/admin/customers/{{ customer.id }}">View Details</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>
