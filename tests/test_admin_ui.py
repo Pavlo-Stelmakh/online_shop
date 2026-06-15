@@ -1408,6 +1408,41 @@ def test_admin_order_detail_shows_customer_items_and_money():
     assert "39.80" in response.text
 
 
+def test_admin_order_detail_contains_full_admin_navigation():
+    product, customer, order = _create_admin_ui_order()
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get(f"/admin/orders/{order['id']}")
+
+    assert response.status_code == 200
+    expected_links = [
+        ("Dashboard", "/admin"),
+        ("Products", "/admin/products"),
+        ("Categories", "/admin/categories"),
+        ("Customers", "/admin/customers"),
+        ("Orders", "/admin/orders"),
+        ("Low Stock", "/admin/low-stock"),
+        ("Swagger UI", "/docs"),
+        ("Logout", "/admin/logout"),
+    ]
+    for label, href in expected_links:
+        assert label in response.text
+        assert f'href="{href}"' in response.text
+    assert "Admin Order Detail" in response.text
+    assert f"Order #{order['id']}" in response.text
+
+
+def test_admin_order_detail_contains_back_to_orders_link():
+    product, customer, order = _create_admin_ui_order()
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get(f"/admin/orders/{order['id']}")
+
+    assert response.status_code == 200
+    assert "Back to Orders" in response.text
+    assert 'href="/admin/orders"' in response.text
+
+
 def test_admin_orders_list_contains_order_detail_link():
     product, customer, order = _create_admin_ui_order()
 
@@ -1746,6 +1781,41 @@ def test_admin_customer_detail_page_shows_fields_and_orders():
     assert customer["email"] in response.text
     assert customer["phone"] in response.text
     assert f'/admin/orders/{order["id"]}' in response.text
+
+
+def test_admin_customer_detail_contains_full_admin_navigation():
+    customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get(f'/admin/customers/{customer["id"]}')
+
+    assert response.status_code == 200
+    expected_links = [
+        ("Dashboard", "/admin"),
+        ("Products", "/admin/products"),
+        ("Categories", "/admin/categories"),
+        ("Customers", "/admin/customers"),
+        ("Orders", "/admin/orders"),
+        ("Low Stock", "/admin/low-stock"),
+        ("Swagger UI", "/docs"),
+        ("Logout", "/admin/logout"),
+    ]
+    for label, href in expected_links:
+        assert label in response.text
+        assert f'href="{href}"' in response.text
+    assert "Admin Customer Detail" in response.text
+    assert f"Customer #{customer['id']}" in response.text
+
+
+def test_admin_customer_detail_contains_back_to_customers_link():
+    customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get(f'/admin/customers/{customer["id"]}')
+
+    assert response.status_code == 200
+    assert "Back to Customers" in response.text
+    assert 'href="/admin/customers"' in response.text
 
 
 def test_admin_can_edit_customer_from_ui_with_valid_csrf():
