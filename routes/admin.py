@@ -12,8 +12,11 @@ from jose import jwt, JWTError
 from auth import verify_password, SECRET_KEY, ALGORITHM, is_production_environment
 from database import get_db
 from models import Product, Category, Customer, Order, User, OrderItem
+from routes.orders import update_order_status
 from routes.stats import calculate_total_revenue
 from utils.money import MoneyValidationError, format_money, parse_positive_money
+
+ORDER_STATUSES = ["new", "paid", "shipped", "cancelled"]
 
 router = APIRouter(
     prefix="/admin",
@@ -652,6 +655,108 @@ def admin_orders(
             "status": status
         }
     )
+
+
+@router.get("/orders/{order_id}")
+def admin_order_detail(
+    order_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    admin_user = require_admin_ui(request, db)
+
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
+    order = db.query(Order).filter(Order.id == order_id).first()
+
+    if order is None:
+        return RedirectResponse(
+            url="/admin/orders",
+            status_code=303
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_order_detail.html",
+        context={
+            "order": order,
+            "statuses": ORDER_STATUSES,
+            "error": None,
+            "csrf_token": get_admin_csrf_token(request)
+        }
+    )
+
+
+@router.post("/orders/{order_id}/status")
+def admin_order_status_update(
+    order_id: int,
+    request: Request,
+    status: str = Form(...),
+    csrf_token: str | None = Form(None),
+    db: Session = Depends(get_db)
+):
+    admin_user = require_admin_ui(request, db)
+
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
+    require_admin_csrf(request, csrf_token)
+
+    if status not in ORDER_STATUSES:
+        order = db.query(Order).filter(Order.id == order_id).first()
+
+        if order is None:
+            return RedirectResponse(
+                url="/admin/orders",
+                status_code=303
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_order_detail.html",
+            context={
+                "order": order,
+                "statuses": ORDER_STATUSES,
+                "error": "Invalid order status",
+                "csrf_token": get_admin_csrf_token(request)
+            },
+            status_code=400
+        )
+
+    try:
+        update_order_status(
+            order_id=order_id,
+            status=status,
+            db=db,
+            current_user=admin_user
+        )
+    except HTTPException as exc:
+        order = db.query(Order).filter(Order.id == order_id).first()
+
+        if order is None:
+            return RedirectResponse(
+                url="/admin/orders",
+                status_code=303
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_order_detail.html",
+            context={
+                "order": order,
+                "statuses": ORDER_STATUSES,
+                "error": exc.detail,
+                "csrf_token": get_admin_csrf_token(request)
+            },
+            status_code=exc.status_code
+        )
+
+    return RedirectResponse(
+        url=f"/admin/orders/{order_id}",
+        status_code=303
+    )
+
 
 @router.get("/categories")
 def admin_categories(

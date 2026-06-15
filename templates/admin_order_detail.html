@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Order Detail</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; color: #222; }
+        header { background: #111827; color: white; padding: 24px 40px; }
+        header h1 { margin: 0; font-size: 28px; }
+        header p { margin: 8px 0 0; color: #d1d5db; }
+        main { padding: 40px; }
+        .nav { margin-bottom: 24px; }
+        .nav a, button { display: inline-block; margin-right: 12px; padding: 10px 14px; background: #2563eb; color: white; text-decoration: none; border: 0; border-radius: 6px; cursor: pointer; }
+        .nav a:hover, button:hover { background: #1d4ed8; }
+        .card, .table-wrapper { background: white; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 24px; padding: 20px; }
+        .error { background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; }
+        dl { display: grid; grid-template-columns: 160px 1fr; gap: 12px; margin: 0; }
+        dt { font-weight: bold; color: #374151; }
+        dd { margin: 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 14px 16px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+        th { background: #f9fafb; color: #374151; font-size: 13px; text-transform: uppercase; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; }
+        select { padding: 10px 12px; margin-right: 12px; border: 1px solid #d1d5db; border-radius: 6px; }
+        .status { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: bold; background: #e5e7eb; color: #374151; }
+        .status-paid { background: #dcfce7; color: #166534; }
+        .status-shipped { background: #dbeafe; color: #1d4ed8; }
+        .status-cancelled { background: #fee2e2; color: #b91c1c; }
+        footer { padding: 20px 40px; color: #6b7280; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Admin Order Detail</h1>
+        <p>Review customer, items, prices and status for order #{{ order.id }}.</p>
+    </header>
+
+    <main>
+        <section class="nav">
+            <a href="/admin">Dashboard</a>
+            <a href="/admin/orders">Orders</a>
+            <a href="/admin/logout">Logout</a>
+        </section>
+
+        {% if error %}
+            <section class="error">{{ error }}</section>
+        {% endif %}
+
+        <section class="card">
+            <h2>Order #{{ order.id }}</h2>
+            <dl>
+                <dt>Order ID</dt>
+                <dd>{{ order.id }}</dd>
+                <dt>Status</dt>
+                <dd><span class="status status-{{ order.status }}">{{ order.status }}</span></dd>
+                <dt>Customer</dt>
+                <dd>{{ order.customer.name }} (ID {{ order.customer.id }}, {{ order.customer.email }})</dd>
+                <dt>Total Price</dt>
+                <dd>{{ order.total_price|money }}</dd>
+            </dl>
+        </section>
+
+        <section class="table-wrapper">
+            <h2>Items</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product ID</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items %}
+                        <tr>
+                            <td>{{ item.product_id }}</td>
+                            <td>{{ item.product.name }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.unit_price|money }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card">
+            <h2>Change Status</h2>
+            <form method="post" action="/admin/orders/{{ order.id }}/status">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    {% for status_option in statuses %}
+                        <option value="{{ status_option }}" {% if status_option == order.status %}selected{% endif %}>{{ status_option }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit">Update Status</button>
+            </form>
+        </section>
+    </main>
+
+    <footer>Online Shop Admin Dashboard — v4.0.0</footer>
+</body>
+</html>

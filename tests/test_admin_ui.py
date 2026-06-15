@@ -9,6 +9,7 @@ from auth import SECRET_KEY, ALGORITHM
 from routes.admin import (
     ADMIN_SESSION_COOKIE_NAME,
     ADMIN_SESSION_TOKEN_TYPE,
+    create_admin_session_token,
 )
 from tests.helpers import (
     app,
@@ -1136,3 +1137,172 @@ def test_admin_orders_page_displays_total_price_with_two_decimal_places():
 
     assert response.status_code == 200
     assert "19.90" in response.text
+
+
+def _create_admin_ui_order(quantity: int = 2, price: float = 19.9, stock: int = 10):
+    product = create_test_product(stock=stock, price=price)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=quantity,
+        headers=customer_headers,
+    )
+
+    return product, customer, order
+
+
+def test_admin_can_open_order_detail():
+    product, customer, order = _create_admin_ui_order()
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get(f"/admin/orders/{order['id']}")
+
+    assert response.status_code == 200
+    assert "Admin Order Detail" in response.text
+    assert f"Order #{order['id']}" in response.text
+
+
+def test_anonymous_and_non_admin_cannot_access_order_detail():
+    product, customer, order = _create_admin_ui_order()
+
+    anonymous_client = TestClient(app)
+    anonymous_response = anonymous_client.get(
+        f"/admin/orders/{order['id']}",
+        follow_redirects=False,
+    )
+
+    non_admin_user = create_registered_user(role="customer")
+    non_admin_client = TestClient(app)
+    non_admin_client.cookies.set(
+        ADMIN_SESSION_COOKIE_NAME,
+        create_admin_session_token(type("UserLike", (), non_admin_user)()),
+    )
+    non_admin_response = non_admin_client.get(
+        f"/admin/orders/{order['id']}",
+        follow_redirects=False,
+    )
+
+    assert anonymous_response.status_code == 303
+    assert anonymous_response.headers["location"] == "/admin/login"
+    assert non_admin_response.status_code == 303
+    assert non_admin_response.headers["location"] == "/admin/login"
+
+
+def test_admin_order_detail_shows_customer_items_and_money():
+    product, customer, order = _create_admin_ui_order(quantity=2, price=19.9)
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get(f"/admin/orders/{order['id']}")
+
+    assert response.status_code == 200
+    assert customer["name"] in response.text
+    assert customer["email"] in response.text
+    assert product["name"] in response.text
+    assert "19.90" in response.text
+    assert "39.80" in response.text
+
+
+def test_admin_orders_list_contains_order_detail_link():
+    product, customer, order = _create_admin_ui_order()
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/orders")
+
+    assert response.status_code == 200
+    assert f'/admin/orders/{order["id"]}' in response.text
+    assert "View Details" in response.text
+
+
+def test_admin_changes_new_to_paid_via_ui_with_csrf():
+    product, customer, order = _create_admin_ui_order()
+
+    admin_client = get_admin_ui_client()
+    csrf_token = get_admin_ui_csrf_token(
+        admin_client,
+        path=f"/admin/orders/{order['id']}",
+    )
+    response = admin_client.post(
+        f"/admin/orders/{order['id']}/status",
+        data={"status": "paid", "csrf_token": csrf_token},
+        follow_redirects=False,
+    )
+    detail_response = admin_client.get(f"/admin/orders/{order['id']}")
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/admin/orders/{order['id']}"
+    assert detail_response.status_code == 200
+    assert "status-paid" in detail_response.text
+
+
+def test_admin_changes_paid_to_shipped_via_ui_with_csrf():
+    product, customer, order = _create_admin_ui_order()
+
+    admin_client = get_admin_ui_client()
+    csrf_token = get_admin_ui_csrf_token(admin_client, path=f"/admin/orders/{order['id']}")
+    paid_response = admin_client.post(
+        f"/admin/orders/{order['id']}/status",
+        data={"status": "paid", "csrf_token": csrf_token},
+        follow_redirects=False,
+    )
+    csrf_token = get_admin_ui_csrf_token(admin_client, path=f"/admin/orders/{order['id']}")
+    shipped_response = admin_client.post(
+        f"/admin/orders/{order['id']}/status",
+        data={"status": "shipped", "csrf_token": csrf_token},
+        follow_redirects=False,
+    )
+    detail_response = admin_client.get(f"/admin/orders/{order['id']}")
+
+    assert paid_response.status_code == 303
+    assert shipped_response.status_code == 303
+    assert "status-shipped" in detail_response.text
+
+
+def test_admin_cancel_via_ui_restores_stock():
+    product, customer, order = _create_admin_ui_order(quantity=2, stock=5)
+
+    product_after_order = client.get(f"/products/{product['id']}")
+    admin_client = get_admin_ui_client()
+    csrf_token = get_admin_ui_csrf_token(admin_client, path=f"/admin/orders/{order['id']}")
+    cancel_response = admin_client.post(
+        f"/admin/orders/{order['id']}/status",
+        data={"status": "cancelled", "csrf_token": csrf_token},
+        follow_redirects=False,
+    )
+    product_after_cancel = client.get(f"/products/{product['id']}")
+
+    assert product_after_order.status_code == 200
+    assert product_after_order.json()["stock"] == 3
+    assert cancel_response.status_code == 303
+    assert product_after_cancel.status_code == 200
+    assert product_after_cancel.json()["stock"] == 5
+
+
+def test_admin_order_status_missing_csrf_returns_403():
+    product, customer, order = _create_admin_ui_order()
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.post(
+        f"/admin/orders/{order['id']}/status",
+        data={"status": "paid"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_admin_order_status_invalid_transition_does_not_500_or_change_status():
+    product, customer, order = _create_admin_ui_order()
+
+    admin_client = get_admin_ui_client()
+    csrf_token = get_admin_ui_csrf_token(admin_client, path=f"/admin/orders/{order['id']}")
+    response = admin_client.post(
+        f"/admin/orders/{order['id']}/status",
+        data={"status": "shipped", "csrf_token": csrf_token},
+    )
+    detail_response = admin_client.get(f"/admin/orders/{order['id']}")
+
+    assert response.status_code == 400
+    assert "Cannot change order status from &#39;new&#39; to &#39;shipped&#39;" in response.text
+    assert detail_response.status_code == 200
+    assert "status-new" in detail_response.text
