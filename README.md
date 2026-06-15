@@ -479,6 +479,16 @@ Reset
 
 The admin customers page includes search controls for easier customer profile inspection.
 
+Admin customer detail UI:
+
+```
+GET /admin/customers/{customer_id}
+POST /admin/customers/{customer_id}/edit
+POST /admin/customers/{customer_id}/delete
+```
+
+Admins can view customer fields, linked user ID, order links, and can edit name/email/phone with CSRF protection. Customer deletion is available only when the customer has no orders.
+
 Search works by:
 
 ```text
