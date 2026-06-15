@@ -1321,6 +1321,11 @@ Returns products where stock is less than or equal to the provided threshold.
 
 This endpoint is available only for admin users.
 
+Note: the admin UI uses each product's `low_stock_threshold` for dashboard
+counts, product table styling and the `/admin/low-stock` page. The
+`/products/low-stock` API endpoint remains backward-compatible and uses the
+caller-supplied `threshold` query parameter.
+
 
 ### Product Pagination
 
@@ -2771,5 +2776,4 @@ Possible future improvements:
 - Add admin dashboard UI
 - Add advanced analytics
 - Add PostgreSQL-specific integration tests
-
 

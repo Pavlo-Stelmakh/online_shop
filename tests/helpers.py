@@ -274,7 +274,10 @@ def cancel_order(order_id: int):
     return response.json()
 
 
-def build_isolated_admin_dashboard_response(order_totals_by_status):
+def build_isolated_admin_dashboard_response(
+    order_totals_by_status,
+    products=None,
+):
     dashboard_db_path = Path(tempfile.gettempdir()) / f"online_shop_admin_dashboard_{time.time_ns()}.db"
     dashboard_engine = create_engine(
         f"sqlite:///{dashboard_db_path}",
@@ -321,21 +324,35 @@ def build_isolated_admin_dashboard_response(order_totals_by_status):
         db.commit()
         db.refresh(category)
 
-        low_stock_product = Product(
-            name=f"Dashboard Low Stock Product {time.time_ns()}",
-            price=Decimal("1.00"),
-            description="Dashboard low stock product",
-            stock=2,
-            category_id=category.id,
-        )
-        in_stock_product = Product(
-            name=f"Dashboard Product {time.time_ns()}",
-            price=Decimal("2.00"),
-            description="Dashboard product",
-            stock=10,
-            category_id=category.id,
-        )
-        db.add_all([low_stock_product, in_stock_product])
+        if products is None:
+            products = [
+                {
+                    "name": f"Dashboard Low Stock Product {time.time_ns()}",
+                    "price": Decimal("1.00"),
+                    "description": "Dashboard low stock product",
+                    "stock": 2,
+                    "low_stock_threshold": 5,
+                },
+                {
+                    "name": f"Dashboard Product {time.time_ns()}",
+                    "price": Decimal("2.00"),
+                    "description": "Dashboard product",
+                    "stock": 10,
+                    "low_stock_threshold": 5,
+                },
+            ]
+
+        db.add_all([
+            Product(
+                name=product["name"],
+                price=product["price"],
+                description=product["description"],
+                stock=product["stock"],
+                low_stock_threshold=product["low_stock_threshold"],
+                category_id=category.id,
+            )
+            for product in products
+        ])
 
         customer = Customer(
             user_id=customer_user.id,
@@ -436,4 +453,3 @@ def build_isolated_stats_response(order_totals_by_status):
         Base.metadata.drop_all(bind=stats_engine)
         stats_engine.dispose()
         stats_db_path.unlink(missing_ok=True)
-
