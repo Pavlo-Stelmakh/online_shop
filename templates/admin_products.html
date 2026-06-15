@@ -277,7 +277,7 @@
                                 <td>{{ product.name }}</td>
                                 <td>{{ product.price|money }}</td>
                                 <td>
-                                    {% if product.stock <= 5 %}
+                                    {% if product.stock <= product.low_stock_threshold %}
                                         <span class="stock-low">{{ product.stock }}</span>
                                     {% else %}
                                         <span class="stock-ok">{{ product.stock }}</span>

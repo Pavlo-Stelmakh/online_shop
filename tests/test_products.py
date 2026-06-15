@@ -718,6 +718,93 @@ def test_low_stock_invalid_negative_threshold():
     assert response.status_code == 422
 
 
+def test_admin_can_update_product_low_stock_threshold():
+    product = create_test_product(stock=10, price=100, low_stock_threshold=5)
+    category = create_test_category()
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.put(
+        f"/products/{product['id']}",
+        json={
+            "name": "Updated Threshold Product",
+            "price": 150,
+            "description": "Updated threshold description",
+            "image_url": None,
+            "stock": 8,
+            "low_stock_threshold": 12,
+            "category_id": category["id"],
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["low_stock_threshold"] == 12
+
+
+def test_update_product_keeps_other_fields_correct_with_low_stock_threshold():
+    product = create_test_product(stock=10, price=100, low_stock_threshold=5)
+    category = create_test_category()
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.put(
+        f"/products/{product['id']}",
+        json={
+            "name": "Updated Complete Product",
+            "price": 175,
+            "description": "Updated complete description",
+            "image_url": "https://example.com/updated-product.jpg",
+            "stock": 14,
+            "low_stock_threshold": 9,
+            "category_id": category["id"],
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["name"] == "Updated Complete Product"
+    assert data["price"] == 175
+    assert data["description"] == "Updated complete description"
+    assert data["image_url"] == "https://example.com/updated-product.jpg"
+    assert data["stock"] == 14
+    assert data["low_stock_threshold"] == 9
+    assert data["category_id"] == category["id"]
+
+
+def test_low_stock_endpoint_keeps_query_threshold_behavior():
+    included_by_query_threshold = create_test_product(
+        stock=6,
+        price=100,
+        low_stock_threshold=2
+    )
+    excluded_by_query_threshold = create_test_product(
+        stock=8,
+        price=100,
+        low_stock_threshold=10
+    )
+    headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        "/products/low-stock",
+        params={
+            "threshold": 6
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 200
+
+    product_names = {product["name"] for product in response.json()}
+
+    assert included_by_query_threshold["name"] in product_names
+    assert excluded_by_query_threshold["name"] not in product_names
+
+
 def test_update_product_with_negative_stock_returns_422():
     product = create_test_product(stock=10, price=100)
     category = create_test_category()

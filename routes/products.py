@@ -331,6 +331,7 @@ def update_product(
     product.description = product_data.description
     product.image_url = product_data.image_url
     product.stock = product_data.stock
+    product.low_stock_threshold = product_data.low_stock_threshold
     product.category_id = product_data.category_id
 
     db.commit()
@@ -364,4 +365,3 @@ def delete_product(
     db.commit()
 
     return {"message": "Product deleted successfully"}
-

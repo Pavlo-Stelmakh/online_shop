@@ -330,6 +330,32 @@ def test_admin_dashboard_low_stock_count_is_displayed():
     assert response.status_code == 200
     assert "Low Stock Products" in response.text
 
+
+def test_admin_dashboard_low_stock_count_uses_product_specific_threshold():
+    response = build_isolated_admin_dashboard_response(
+        {},
+        products=[
+            {
+                "name": f"Dashboard Custom Low Stock {time.time_ns()}",
+                "price": Decimal("1.00"),
+                "description": "Uses product-specific threshold",
+                "stock": 8,
+                "low_stock_threshold": 10,
+            },
+            {
+                "name": f"Dashboard Hardcoded Five Regression {time.time_ns()}",
+                "price": Decimal("2.00"),
+                "description": "Would be low only with the old hardcoded rule",
+                "stock": 6,
+                "low_stock_threshold": 5,
+            },
+        ],
+    )
+
+    assert response.status_code == 200
+    assert "Low Stock Products" in response.text
+    assert "<h2>Low Stock Products</h2>\n                <p>1</p>" in response.text
+
 def test_admin_dashboard_final_polish_content():
     admin_client = get_admin_ui_client()
     response = admin_client.get("/admin")
@@ -548,6 +574,18 @@ def test_admin_products_page_displays_low_stock_threshold():
     assert response.status_code == 200
     assert "Low Stock Threshold" in response.text
     assert product["name"] in response.text
+
+
+def test_admin_products_page_stock_badge_uses_product_specific_threshold():
+    create_test_product(stock=88, price=100, low_stock_threshold=90)
+    create_test_product(stock=66, price=100, low_stock_threshold=65)
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert '<span class="stock-low">88</span>' in response.text
+    assert '<span class="stock-ok">66</span>' in response.text
 
 def test_admin_low_stock_page_includes_product_when_stock_is_below_custom_threshold():
     low_stock_product = create_test_product(
@@ -1098,4 +1136,3 @@ def test_admin_orders_page_displays_total_price_with_two_decimal_places():
 
     assert response.status_code == 200
     assert "19.90" in response.text
-

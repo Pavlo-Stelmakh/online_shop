@@ -272,7 +272,9 @@ def admin_dashboard(
     customers_count = db.query(Customer).count()
     orders_count = db.query(Order).count()
 
-    low_stock_count = db.query(Product).filter(Product.stock <= 5).count()
+    low_stock_count = db.query(Product).filter(
+        Product.stock <= Product.low_stock_threshold
+    ).count()
     new_orders_count = db.query(Order).filter(Order.status == "new").count()
     paid_orders_count = db.query(Order).filter(Order.status == "paid").count()
     shipped_orders_count = db.query(Order).filter(Order.status == "shipped").count()
@@ -755,4 +757,3 @@ def admin_low_stock(
             "products": products
         }
     )
-
