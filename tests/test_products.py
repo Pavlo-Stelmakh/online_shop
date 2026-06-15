@@ -1223,3 +1223,52 @@ def test_product_filters_continue_working_with_money_validation():
     for product in data:
         assert product["price"] >= 100
         assert product["price"] <= 500
+
+
+def test_create_product_returns_exact_price_amount_for_trailing_zero_money():
+    category = create_test_category()
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json=build_product_payload(category["id"], 19.90),
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["price"] == 19.9
+    assert data["price_amount"] == "19.90"
+
+
+def test_create_product_returns_exact_price_amount_for_cent_money():
+    category = create_test_category()
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json=build_product_payload(category["id"], 19.99),
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["price"] == 19.99
+    assert data["price_amount"] == "19.99"
+
+
+def test_openapi_money_response_fields_keep_legacy_numbers_and_add_amount_strings():
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 200
+
+    schemas = response.json()["components"]["schemas"]
+
+    assert schemas["ProductResponse"]["properties"]["price"]["type"] == "number"
+    assert schemas["ProductResponse"]["properties"]["price_amount"]["type"] == "string"
+    assert schemas["OrderItemResponse"]["properties"]["unit_price"]["type"] == "number"
+    assert schemas["OrderItemResponse"]["properties"]["unit_price_amount"]["type"] == "string"
+    assert schemas["OrderResponse"]["properties"]["total_price"]["type"] == "number"
+    assert schemas["OrderResponse"]["properties"]["total_price_amount"]["type"] == "string"
+    assert schemas["StatsSummaryResponse"]["properties"]["total_revenue"]["type"] == "number"
+    assert schemas["StatsSummaryResponse"]["properties"]["total_revenue_amount"]["type"] == "string"

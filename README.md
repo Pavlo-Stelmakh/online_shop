@@ -1947,9 +1947,14 @@ Example response:
   "products_count": 10,
   "customers_count": 3,
   "orders_count": 5,
-  "total_revenue": 2400
+  "total_revenue": 2400,
+  "total_revenue_amount": "2400.00"
 }
 ```
+
+### Money response fields
+
+Legacy money response fields (`price`, `unit_price`, `total_price`, and `total_revenue`) remain JSON numbers for backward compatibility. New companion `*_amount` fields (`price_amount`, `unit_price_amount`, `total_price_amount`, and `total_revenue_amount`) return exact decimal strings with exactly two decimal places. New API clients should prefer the `*_amount` fields for displaying or comparing money values.
 
 
 
