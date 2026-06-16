@@ -118,3 +118,84 @@ def test_register_user_cannot_create_admin():
     data = response.json()
 
     assert data["role"] == "customer"
+
+
+def test_register_rejects_blank_username():
+    response = client.post(
+        "/auth/register",
+        json={
+            "username": "",
+            "email": f"blank_username_{time.time()}@example.com",
+            "password": "123456"
+        }
+    )
+
+    assert response.status_code == 422
+
+
+def test_register_rejects_whitespace_only_username():
+    response = client.post(
+        "/auth/register",
+        json={
+            "username": "   ",
+            "email": f"space_username_{time.time()}@example.com",
+            "password": "123456"
+        }
+    )
+
+    assert response.status_code == 422
+
+
+def test_register_rejects_invalid_email():
+    response = client.post(
+        "/auth/register",
+        json={
+            "username": f"invalid_email_{time.time()}",
+            "email": "not-an-email",
+            "password": "123456"
+        }
+    )
+
+    assert response.status_code == 422
+
+
+def test_register_rejects_blank_or_short_password():
+    base_username = f"bad_password_{time.time()}"
+
+    blank_response = client.post(
+        "/auth/register",
+        json={
+            "username": f"{base_username}_blank",
+            "email": f"{base_username}_blank@example.com",
+            "password": "      "
+        }
+    )
+    short_response = client.post(
+        "/auth/register",
+        json={
+            "username": f"{base_username}_short",
+            "email": f"{base_username}_short@example.com",
+            "password": "12345"
+        }
+    )
+
+    assert blank_response.status_code == 422
+    assert short_response.status_code == 422
+
+
+def test_register_trims_username_and_email():
+    username = f"trim_user_{time.time()}"
+    email = f"{username}@example.com"
+
+    response = client.post(
+        "/auth/register",
+        json={
+            "username": f"  {username}  ",
+            "email": f"  {email}  ",
+            "password": "123456"
+        }
+    )
+
+    assert response.status_code == 200
+    assert response.json()["username"] == username
+    assert response.json()["email"] == email

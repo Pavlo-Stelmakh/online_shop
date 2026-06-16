@@ -244,3 +244,113 @@ def test_admin_can_update_customer_profiles_by_id():
     assert response.json()["email"] == updated_email
 
 
+
+
+def test_create_customer_rejects_blank_or_whitespace_fields():
+    for field, value in [
+        ("name", ""),
+        ("name", "   "),
+        ("email", ""),
+        ("email", "   "),
+        ("phone", ""),
+        ("phone", "   "),
+    ]:
+        headers = get_auth_headers(role="customer")
+        payload = {
+            "name": f"Validation Customer {time.time()}",
+            "email": f"validation_customer_{time.time()}@example.com",
+            "phone": "+380501112233"
+        }
+        payload[field] = value
+
+        response = client.post(
+            "/customers",
+            json=payload,
+            headers=headers
+        )
+
+        assert response.status_code == 422
+
+
+def test_create_customer_rejects_invalid_email():
+    headers = get_auth_headers(role="customer")
+
+    response = client.post(
+        "/customers",
+        json={
+            "name": "Invalid Email Customer",
+            "email": "not-an-email",
+            "phone": "+380501112233"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_customer_trims_valid_fields():
+    headers = get_auth_headers(role="customer")
+    email = f"trim_customer_{time.time()}@example.com"
+
+    response = client.post(
+        "/customers",
+        json={
+            "name": "  Trimmed Customer  ",
+            "email": f"  {email}  ",
+            "phone": "  +380501112233  "
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Trimmed Customer"
+    assert response.json()["email"] == email
+    assert response.json()["phone"] == "+380501112233"
+
+
+def test_update_customer_rejects_blank_or_whitespace_fields():
+    for field, value in [
+        ("name", ""),
+        ("name", "   "),
+        ("email", ""),
+        ("email", "   "),
+        ("phone", ""),
+        ("phone", "   "),
+    ]:
+        customer_headers = get_auth_headers(role="customer")
+        customer = create_test_customer(headers=customer_headers)
+        payload = {
+            "name": "Updated Customer",
+            "email": f"updated_customer_{time.time()}@example.com",
+            "phone": "+380501112266"
+        }
+        payload[field] = value
+
+        response = client.put(
+            f"/customers/{customer['id']}",
+            json=payload,
+            headers=customer_headers
+        )
+
+        assert response.status_code == 422
+
+
+def test_update_customer_trims_valid_fields():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    email = f"trim_update_{time.time()}@example.com"
+
+    response = client.put(
+        f"/customers/{customer['id']}",
+        json={
+            "name": "  Updated Trim Customer  ",
+            "email": f"  {email}  ",
+            "phone": "  +380501112266  "
+        },
+        headers=customer_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Updated Trim Customer"
+    assert response.json()["email"] == email
+    assert response.json()["phone"] == "+380501112266"

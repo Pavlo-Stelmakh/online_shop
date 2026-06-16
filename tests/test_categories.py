@@ -228,3 +228,65 @@ def test_delete_category_requires_auth():
     )
 
     assert response.status_code == 401
+
+
+def test_create_category_with_whitespace_only_name_returns_422():
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/categories",
+        json={
+            "name": "   "
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_category_with_whitespace_only_name_returns_422():
+    admin_headers = get_auth_headers(role="admin")
+    category = create_test_category()
+
+    response = client.put(
+        f"/categories/{category['id']}",
+        json={
+            "name": "   "
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_category_trims_valid_name():
+    admin_headers = get_auth_headers(role="admin")
+    name = f"Trimmed Category {time.time()}"
+
+    response = client.post(
+        "/categories",
+        json={
+            "name": f"  {name}  "
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == name
+
+
+def test_update_category_trims_valid_name():
+    admin_headers = get_auth_headers(role="admin")
+    category = create_test_category()
+    name = f"Updated Trimmed Category {time.time()}"
+
+    response = client.put(
+        f"/categories/{category['id']}",
+        json={
+            "name": f"  {name}  "
+        },
+        headers=admin_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == name

@@ -1,12 +1,42 @@
 from decimal import Decimal
+import re
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from utils.money import MoneyValidationError, format_money, parse_positive_money
 
 
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def trim_non_blank_string(value: str) -> str:
+    if not isinstance(value, str):
+        raise ValueError("Value must be a string")
+
+    trimmed_value = value.strip()
+
+    if not trimmed_value:
+        raise ValueError("Value cannot be blank")
+
+    return trimmed_value
+
+
+def validate_email_string(value: str) -> str:
+    trimmed_value = trim_non_blank_string(value)
+
+    if not _EMAIL_RE.fullmatch(trimmed_value):
+        raise ValueError("Value must be a valid email address")
+
+    return trimmed_value
+
+
 class CategoryCreate(BaseModel):
     name: str = Field(..., min_length=1)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value):
+        return trim_non_blank_string(value)
 
 
 class CategoryResponse(BaseModel):
@@ -72,8 +102,18 @@ class ProductCatalogOffsetResponse(BaseModel):
 
 class CustomerCreate(BaseModel):
     name: str
-    email: str
+    email: str = Field(..., json_schema_extra={"format": "email"})
     phone: str
+
+    @field_validator("name", "phone")
+    @classmethod
+    def validate_required_strings(cls, value):
+        return trim_non_blank_string(value)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value):
+        return validate_email_string(value)
 
 class CustomerResponse(BaseModel):
     id: int
@@ -159,9 +199,24 @@ class StatsSummaryResponse(BaseModel):
         return self
 
 class UserCreate(BaseModel):
-    username: str
-    email: str
-    password: str
+    username: str = Field(..., min_length=1)
+    email: str = Field(..., json_schema_extra={"format": "email"})
+    password: str = Field(..., min_length=6)
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value):
+        return trim_non_blank_string(value)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value):
+        return validate_email_string(value)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value):
+        return trim_non_blank_string(value)
 
 class UserResponse(BaseModel):
     id: int
