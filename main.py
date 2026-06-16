@@ -86,10 +86,3 @@ def get_db():
     finally:
         db.close()
 
-
-@app.get("/")
-def home():
-    return {"message": "Online shop API with SQLite is working"}
-
-
-
