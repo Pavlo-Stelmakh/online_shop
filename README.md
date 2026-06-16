@@ -1569,6 +1569,28 @@ Page-based catalog example:
 ```text
 GET /products/catalog/pages?page=1&limit=10
 ```
+
+#### Legacy Product Endpoints
+
+The following convenience endpoints are legacy endpoints kept for backward compatibility:
+
+```text
+GET /products/search
+GET /products/filter
+GET /products/sort
+GET /products/limited
+```
+
+They still work and are not being removed at this time. They return the original plain list response shape and intentionally keep their existing validation and query parameter behavior. Future cleanup may tighten legacy validation, but this compatibility note does not change those contracts.
+
+For new clients, prefer the current product endpoints instead:
+
+| Use case | Recommended endpoint |
+|---|---|
+| Simple product list, filtering or sorting | `GET /products` |
+| Product list with offset metadata (`total`, `skip`, `limit`, `items`) | `GET /products/catalog` |
+| Product list with page metadata (`total`, `page`, `limit`, `pages`, `items`) | `GET /products/catalog/pages` |
+
 #### Product Catalog Search
 
 ```text
