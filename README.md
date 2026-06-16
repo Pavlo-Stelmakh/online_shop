@@ -239,7 +239,6 @@ GET /products/{product_id}
 PUT /products/{product_id}
 DELETE /products/{product_id}
 GET /products/catalog
-GET /products/search
 GET /products/low-stock
 ```
 ### Orders
@@ -1351,10 +1350,6 @@ GET /products/{product_id}
 PUT /products/{product_id}
 DELETE /products/{product_id}
 GET /products/low-stock?threshold=5
-GET /products/search
-GET /products/filter
-GET /products/sort
-GET /products/limited
 GET /products/catalog
 GET /products/catalog?search=Product
 GET /products/catalog?search=Product&in_stock=true
@@ -1570,9 +1565,9 @@ Page-based catalog example:
 GET /products/catalog/pages?page=1&limit=10
 ```
 
-#### Legacy Product Endpoints
+#### Removed Legacy Product Endpoints
 
-The following convenience endpoints are legacy endpoints kept for backward compatibility:
+Breaking change: the legacy product convenience endpoints have been removed and now return `404 Not Found`:
 
 ```text
 GET /products/search
@@ -1581,9 +1576,16 @@ GET /products/sort
 GET /products/limited
 ```
 
-They still work and are not being removed at this time. They return the original plain list response shape and intentionally keep their existing validation and query parameter behavior. Future cleanup may tighten legacy validation, but this compatibility note does not change those contracts.
+Use the current product endpoints instead:
 
-For new clients, prefer the current product endpoints instead:
+| Removed endpoint | Replacement |
+|---|---|
+| `GET /products/search` | `GET /products/catalog?search=...` |
+| `GET /products/filter` | `GET /products?min_price=...&max_price=...` or `GET /products/catalog` |
+| `GET /products/sort` | `GET /products?sort_by=price&sort_order=...` |
+| `GET /products/limited` | `GET /products?limit=...` or `GET /products/catalog?limit=...` |
+
+For current clients, prefer these supported product endpoints:
 
 | Use case | Recommended endpoint |
 |---|---|
