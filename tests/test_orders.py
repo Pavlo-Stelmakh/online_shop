@@ -1908,3 +1908,46 @@ def test_order_returns_exact_total_amount_string_for_fractional_total():
 
     assert order["total_price"] == 0.3
     assert order["total_price_amount"] == "0.30"
+
+
+def test_order_response_status_openapi_schema_documents_allowed_enum():
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 200
+    status_schema = response.json()["components"]["schemas"]["OrderResponse"]["properties"]["status"]
+
+    assert status_schema["type"] == "string"
+    assert status_schema["enum"] == ["new", "paid", "shipped", "cancelled"]
+
+
+def test_get_orders_by_status_invalid_status_is_rejected():
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.get(
+        "/orders/by-status",
+        params={"status": "invalid"},
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_order_status_invalid_status_is_rejected():
+    product = create_test_product(stock=10, price=100)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers,
+    )
+    admin_headers = get_auth_headers(role="admin")
+
+    response = client.put(
+        f"/orders/{order['id']}/status",
+        params={"status": "invalid"},
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 422

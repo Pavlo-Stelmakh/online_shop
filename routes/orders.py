@@ -3,7 +3,14 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Order, OrderItem, Customer, Product, User
-from schemas import OrderCreate, OrderResponse, OrderListResponse
+from schemas import (
+    ORDER_STATUS_TRANSITIONS,
+    ORDER_STATUS_VALUES,
+    OrderCreate,
+    OrderListResponse,
+    OrderResponse,
+    OrderStatus,
+)
 from routes.auth import get_current_user, get_admin_user
 from datetime import date, time, datetime
 from decimal import Decimal
@@ -128,12 +135,10 @@ def get_orders(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
-    allowed_statuses = ["new", "paid", "shipped", "cancelled"]
-
     query = db.query(Order)
 
     if status is not None:
-        if status not in allowed_statuses:
+        if status not in ORDER_STATUS_VALUES:
             raise HTTPException(
                 status_code=400,
                 detail="Invalid order status"
@@ -167,7 +172,7 @@ def get_orders(
 
 @router.get("/by-status", response_model=list[OrderResponse])
 def get_orders_by_status(
-    status: str = Query(..., pattern="^(new|paid|shipped|cancelled)$"),
+    status: OrderStatus = Query(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
@@ -238,7 +243,7 @@ def get_order(
 @router.put("/{order_id}/status", response_model=OrderResponse)
 def update_order_status(
     order_id: int,
-    status: str = Query(..., pattern="^(new|paid|shipped|cancelled)$"),
+    status: OrderStatus = Query(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
@@ -247,20 +252,13 @@ def update_order_status(
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    allowed_transitions = {
-        "new": ["paid", "cancelled"],
-        "paid": ["shipped", "cancelled"],
-        "shipped": [],
-        "cancelled": []
-    }
-
     if status == order.status:
         raise HTTPException(
             status_code=400,
             detail=f"Order already has status '{status}'"
         )
 
-    if status not in allowed_transitions[order.status]:
+    if status not in ORDER_STATUS_TRANSITIONS[order.status]:
         raise HTTPException(
             status_code=400,
             detail=f"Cannot change order status from '{order.status}' to '{status}'"
@@ -269,7 +267,7 @@ def update_order_status(
     if status == "cancelled":
         rows_updated = db.query(Order).filter(
             Order.id == order_id,
-            Order.status.in_(["new", "paid"]),
+            Order.status.in_(("new", "paid")),
         ).update(
             {Order.status: "cancelled"},
             synchronize_session=False,
