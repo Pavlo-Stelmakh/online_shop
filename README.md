@@ -89,7 +89,7 @@ Tests are run with:
 ```bash
 python -m pytest
 ```
-GitHub Actions is used for CI checks on pull requests and main branch updates. CI runs `alembic upgrade head` on a temporary SQLite audit database, runs the data integrity audit against that migrated database, and then runs `python -m pytest`.
+GitHub Actions is used for CI checks on pull requests and main branch updates. CI runs `alembic upgrade head` on a temporary SQLite audit database, runs the data integrity audit against that migrated database, and then runs `python -m pytest`. CI also runs a focused PostgreSQL migration/audit job with a PostgreSQL service container to verify `alembic upgrade head`, the data integrity audit script, and application import compatibility against the same database engine family used by Render production.
 
 ## Data integrity audit
 
@@ -101,7 +101,7 @@ python scripts/audit_data_integrity.py
 
 Before running the audit, the target database must already be migrated with `alembic upgrade head`. The audit uses `DATABASE_URL`, prints a report, exits with code `0` when no problems are found, and exits with code `1` when integrity problems are detected. If the local SQLite database is empty or has not been migrated, the audit can fail with a `no such table` error.
 
-Production precondition for the `customers.user_id -> users.id` foreign key: the audit script must return `Result: PASS` before deploy, and the `customers_user_orphan` check must be `0`.
+Production precondition for the `customers.user_id -> users.id` foreign key: the audit script must return `Result: PASS` before deploy, and the `customers_user_orphan` check must be `0`. The PostgreSQL CI audit increases confidence for Render compatibility, but a production audit against the real target database is still required before deploy.
 
 
 ## Tech Stack
