@@ -736,6 +736,100 @@ If you configure Render manually, use this exact Start Command:
 ./scripts/start.sh
 ```
 
+### Render Production Deployment Checklist
+
+Use this checklist before a controlled Render production deployment. Do not skip the production audit against the target production database.
+
+Required Render environment variables:
+
+| Variable | Required | Notes |
+|---|---|---|
+| `DATABASE_URL` | Yes | Production PostgreSQL connection string used by the application runtime and Alembic migrations. |
+| `SECRET_KEY` | Yes | Strong non-default value used for JWT access tokens and admin UI sessions. Must not be `fallback_secret_key`. |
+
+Optional Render environment variables:
+
+| Variable | Notes |
+|---|---|
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT access token lifetime override. |
+| `ADMIN_SESSION_EXPIRE_SECONDS` | Admin UI session lifetime override. |
+| `APP_VERSION` | Version value exposed by `/version` when configured. |
+| `COMMIT_SHA` or `RENDER_GIT_COMMIT` | Commit identifier exposed by `/version` when configured. |
+| `APP_ENV` / `ENVIRONMENT` | Environment marker used to identify production-like runtime. |
+| `PORT` | Usually set by Render automatically; only set manually if needed. |
+
+Pre-deploy checklist:
+
+- Confirm Render `DATABASE_URL` points to the intended PostgreSQL database, not SQLite.
+- Confirm `SECRET_KEY` is set to a strong production value and is not `fallback_secret_key`.
+- Run the production data integrity audit against the target database before deploy.
+- Confirm the audit output includes `Result: PASS`.
+- Check the current Alembic head:
+
+```bash
+python -m alembic heads
+```
+
+- Confirm the Render Start Command is exactly:
+
+```bash
+./scripts/start.sh
+```
+
+Production audit command example:
+
+```bash
+DATABASE_URL="<production_database_url>" python scripts/audit_data_integrity.py
+```
+
+Run the production audit only from a trusted terminal and trusted logs because the command uses the production database URL. The audit is read-only, but the database must already be migrated enough for the script to run. If the audit returns `Result: FAIL`, do not deploy strict migrations until the data issues are fixed.
+
+Deploy checklist:
+
+- Configure Render Build Command as:
+
+```bash
+pip install -r requirements.txt
+```
+
+- Configure Render Start Command as:
+
+```bash
+./scripts/start.sh
+```
+
+- Watch Render logs during startup.
+- If `alembic upgrade head` fails, `uvicorn` will not start because `scripts/start.sh` exits on errors.
+
+Post-deploy smoke test checklist:
+
+- `GET /`
+- `GET /health`
+- `GET /health/db`
+- `GET /version`
+- `/docs` opens.
+- `POST /auth/login` works.
+- Admin UI login works at `/admin/login`.
+- Admin dashboard opens.
+- `/products` works.
+- `/products/catalog` works.
+- Removed legacy product endpoints return `404`:
+  - `/products/search`
+  - `/products/filter`
+  - `/products/sort`
+  - `/products/limited`
+- Basic order flow works if safe test data is available.
+
+Rollback and migration failure considerations:
+
+- If a migration fails during startup, the app may not start.
+- Check Render logs first to identify the failing migration or startup step.
+- A code rollback may not automatically roll back database changes.
+- If `SECRET_KEY` changes, existing JWTs and admin UI sessions become invalid.
+- Do not weaken production `SECRET_KEY` enforcement.
+- Do not skip the production audit.
+
+Current CI covers SQLite Alembic upgrade, the data integrity audit, and `python -m pytest`, but PostgreSQL-specific behavior still needs manual or staging verification unless a future PostgreSQL CI job is added.
 
 ### Deployment Status
 
