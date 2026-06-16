@@ -23,12 +23,6 @@ def create_order(
     current_user: User = Depends(get_current_user)
 ):
 
-    if not order_data.items:
-        raise HTTPException(
-            status_code=400,
-            detail="Order must contain at least one item"
-        )
-
     product_ids = [item.product_id for item in order_data.items]
 
     if len(product_ids) != len(set(product_ids)):
@@ -36,13 +30,6 @@ def create_order(
             status_code=400,
             detail="Duplicate product in order items"
         )
-
-    for item_data in order_data.items:
-        if item_data.quantity <= 0:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid quantity"
-            )
 
     customer = db.query(Customer).filter(
         Customer.id == order_data.customer_id

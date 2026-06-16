@@ -1860,12 +1860,14 @@ Response fields:
 
 #### Order Items Validation
 
-`POST /orders` validates order items before creating an order.
+`POST /orders` validates order items before creating an order. Basic request schema validation rejects empty `items`, non-positive `customer_id`, non-positive `product_id`, and non-positive `quantity` with `422 Unprocessable Entity`. Duplicate products remain business validation and return `400 Bad Request`.
 
 Validation rules:
 
 ```text
 items must not be empty
+customer_id must be greater than or equal to 1
+product_id must be greater than or equal to 1
 quantity must be greater than 0
 product_id must exist
 product_id must not be duplicated in the same order
@@ -1876,13 +1878,25 @@ Validation errors:
 
 ```json
 {
-  "detail": "Order must contain at least one item"
+  "detail": [
+    {
+      "type": "too_short",
+      "loc": ["body", "items"],
+      "msg": "List should have at least 1 item after validation, not 0"
+    }
+  ]
 }
 ```
 
 ```json
 {
-  "detail": "Invalid quantity"
+  "detail": [
+    {
+      "type": "greater_than",
+      "loc": ["body", "items", 0, "quantity"],
+      "msg": "Input should be greater than 0"
+    }
+  ]
 }
 ```
 
@@ -2379,7 +2393,7 @@ Example invalid order:
 }
 ```
 
-The API rejects this request because an order must contain at least one product.
+The API rejects this request with `422 Unprocessable Entity` because an order must contain at least one product. Duplicate products are still handled as business validation with `400 Bad Request`.
 
 ### Order Status
 
