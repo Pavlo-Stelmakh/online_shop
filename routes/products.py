@@ -130,62 +130,6 @@ def get_products(
 
 
 
-@router.get("/search", response_model=list[ProductResponse], deprecated=True)
-def search_products(
-    query: str,
-    db: Session = Depends(get_db)
-):
-    products = db.query(Product).filter(
-        Product.name.ilike(f"%{query}%")
-    ).all()
-
-    return products
-
-
-@router.get("/filter", response_model=list[ProductResponse], deprecated=True)
-def filter_products_by_price(
-    min_price: float | None = None,
-    max_price: float | None = None,
-    db: Session = Depends(get_db)
-):
-    query = db.query(Product)
-
-    if min_price is not None:
-        query = query.filter(Product.price >= min_price)
-
-    if max_price is not None:
-        query = query.filter(Product.price <= max_price)
-
-    products = query.all()
-
-    return products
-
-
-@router.get("/sort", response_model=list[ProductResponse], deprecated=True)
-def sort_products_by_price(
-    order: str = Query("asc", pattern="^(asc|desc)$"),
-    db: Session = Depends(get_db)
-):
-    query = db.query(Product)
-
-    if order == "desc":
-        products = query.order_by(Product.price.desc()).all()
-    else:
-        products = query.order_by(Product.price.asc()).all()
-
-    return products
-
-
-@router.get("/limited", response_model=list[ProductResponse], deprecated=True)
-def get_limited_products(
-    limit: int = Query(10, ge=1, le=100),
-    db: Session = Depends(get_db)
-):
-    products = db.query(Product).limit(limit).all()
-
-    return products
-
-
 @router.get("/catalog/pages", response_model=ProductCatalogPageResponse)
 def get_catalog_products_with_pages(
     search: str | None = None,
@@ -299,7 +243,7 @@ def get_low_stock_products(
     return products
 
 
-@router.get("/{product_id}", response_model=ProductResponse)
+@router.get("/{product_id:int}", response_model=ProductResponse)
 def get_product(product_id: int, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id).first()
 
@@ -309,7 +253,7 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     return product
 
 
-@router.put("/{product_id}", response_model=ProductResponse)
+@router.put("/{product_id:int}", response_model=ProductResponse)
 def update_product(
     product_id: int,
     product_data: ProductCreate,
@@ -340,7 +284,7 @@ def update_product(
     return product
 
 
-@router.delete("/{product_id}")
+@router.delete("/{product_id:int}")
 def delete_product(
     product_id: int,
     db: Session = Depends(get_db),
