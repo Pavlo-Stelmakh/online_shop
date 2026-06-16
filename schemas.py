@@ -71,7 +71,12 @@ class ProductCreate(BaseModel):
     image_url: str | None = None
     stock: int = Field(..., ge=0)
     low_stock_threshold: int = Field(5, ge=1, le=100)
-    category_id: int
+    category_id: int = Field(..., ge=1)
+
+    @field_validator("name", "description")
+    @classmethod
+    def validate_required_strings(cls, value):
+        return trim_non_blank_string(value)
 
 
 class ProductResponse(BaseModel):

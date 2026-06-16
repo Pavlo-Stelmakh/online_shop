@@ -38,6 +38,123 @@ def test_create_product():
     assert data["stock"] == 10
     assert data["category_id"] == category["id"]
 
+
+def test_create_product_rejects_whitespace_only_name():
+    category = create_test_category()
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json={
+            "name": "   ",
+            "price": 100,
+            "description": "Valid product description",
+            "stock": 10,
+            "category_id": category["id"],
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_product_rejects_whitespace_only_description():
+    category = create_test_category()
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json={
+            "name": f"Valid Product {time.time()}",
+            "price": 100,
+            "description": "   ",
+            "stock": 10,
+            "category_id": category["id"],
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_product_rejects_zero_category_id():
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json={
+            "name": f"Invalid Category Product {time.time()}",
+            "price": 100,
+            "description": "Valid product description",
+            "stock": 10,
+            "category_id": 0,
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_product_rejects_negative_category_id():
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json={
+            "name": f"Invalid Category Product {time.time()}",
+            "price": 100,
+            "description": "Valid product description",
+            "stock": 10,
+            "category_id": -1,
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_product_trims_valid_name_and_description():
+    category = create_test_category()
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json={
+            "name": "  Laptop  ",
+            "price": 100,
+            "description": "  Good product  ",
+            "stock": 10,
+            "category_id": category["id"],
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["name"] == "Laptop"
+    assert data["description"] == "Good product"
+
+
+def test_create_product_with_unknown_positive_category_returns_404():
+    headers = get_auth_headers(role="admin")
+
+    response = client.post(
+        "/products",
+        json={
+            "name": f"Unknown Category Product {time.time()}",
+            "price": 100,
+            "description": "Valid product description",
+            "stock": 10,
+            "category_id": 999999,
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Category not found"
+
 def test_create_product_requires_auth():
     category = create_test_category()
 
@@ -834,6 +951,91 @@ def test_low_stock_endpoint_keeps_query_threshold_behavior():
     assert included_by_query_threshold["name"] in product_names
     assert excluded_by_query_threshold["name"] not in product_names
 
+
+
+def test_update_product_rejects_whitespace_only_name():
+    product = create_test_product(stock=10, price=100)
+    headers = get_auth_headers(role="admin")
+
+    response = client.put(
+        f"/products/{product['id']}",
+        json={
+            "name": "   ",
+            "price": 100,
+            "description": "Updated product description",
+            "image_url": None,
+            "stock": 10,
+            "category_id": product["category_id"],
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_product_rejects_whitespace_only_description():
+    product = create_test_product(stock=10, price=100)
+    headers = get_auth_headers(role="admin")
+
+    response = client.put(
+        f"/products/{product['id']}",
+        json={
+            "name": "Updated Product",
+            "price": 100,
+            "description": "   ",
+            "image_url": None,
+            "stock": 10,
+            "category_id": product["category_id"],
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_product_rejects_zero_category_id():
+    product = create_test_product(stock=10, price=100)
+    headers = get_auth_headers(role="admin")
+
+    response = client.put(
+        f"/products/{product['id']}",
+        json={
+            "name": "Updated Product",
+            "price": 100,
+            "description": "Updated product description",
+            "image_url": None,
+            "stock": 10,
+            "category_id": 0,
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_product_trims_valid_name_and_description():
+    product = create_test_product(stock=10, price=100)
+    headers = get_auth_headers(role="admin")
+
+    response = client.put(
+        f"/products/{product['id']}",
+        json={
+            "name": "  Laptop  ",
+            "price": 100,
+            "description": "  Good product  ",
+            "image_url": None,
+            "stock": 10,
+            "category_id": product["category_id"],
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["name"] == "Laptop"
+    assert data["description"] == "Good product"
 
 def test_update_product_with_negative_stock_returns_422():
     product = create_test_product(stock=10, price=100)
