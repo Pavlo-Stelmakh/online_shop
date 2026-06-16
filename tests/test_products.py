@@ -521,7 +521,7 @@ def test_openapi_catalog_response_schemas_match_payload_shapes():
     )
 
 
-def test_legacy_product_endpoints_return_plain_lists():
+def test_legacy_product_endpoints_return_200_and_plain_lists():
     create_test_product(stock=10, price=100)
 
     endpoints = [
@@ -535,7 +535,42 @@ def test_legacy_product_endpoints_return_plain_lists():
         response = client.get(path, params=params)
 
         assert response.status_code == 200
-        assert isinstance(response.json(), list)
+        data = response.json()
+        assert isinstance(data, list)
+        assert not isinstance(data, dict)
+
+
+def test_openapi_marks_legacy_product_endpoints_deprecated():
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 200
+
+    openapi = response.json()
+    legacy_paths = [
+        "/products/search",
+        "/products/filter",
+        "/products/sort",
+        "/products/limited",
+    ]
+
+    for path in legacy_paths:
+        assert openapi["paths"][path]["get"].get("deprecated") is True
+
+
+def test_openapi_keeps_preferred_product_endpoints_not_deprecated():
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 200
+
+    openapi = response.json()
+    preferred_paths = [
+        "/products",
+        "/products/catalog",
+        "/products/catalog/pages",
+    ]
+
+    for path in preferred_paths:
+        assert openapi["paths"][path]["get"].get("deprecated", False) is False
 
 
 def test_get_products_invalid_negative_skip():

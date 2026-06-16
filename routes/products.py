@@ -130,7 +130,7 @@ def get_products(
 
 
 
-@router.get("/search", response_model=list[ProductResponse])
+@router.get("/search", response_model=list[ProductResponse], deprecated=True)
 def search_products(
     query: str,
     db: Session = Depends(get_db)
@@ -142,7 +142,7 @@ def search_products(
     return products
 
 
-@router.get("/filter", response_model=list[ProductResponse])
+@router.get("/filter", response_model=list[ProductResponse], deprecated=True)
 def filter_products_by_price(
     min_price: float | None = None,
     max_price: float | None = None,
@@ -161,7 +161,7 @@ def filter_products_by_price(
     return products
 
 
-@router.get("/sort", response_model=list[ProductResponse])
+@router.get("/sort", response_model=list[ProductResponse], deprecated=True)
 def sort_products_by_price(
     order: str = Query("asc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db)
@@ -176,7 +176,7 @@ def sort_products_by_price(
     return products
 
 
-@router.get("/limited", response_model=list[ProductResponse])
+@router.get("/limited", response_model=list[ProductResponse], deprecated=True)
 def get_limited_products(
     limit: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db)
