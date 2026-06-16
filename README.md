@@ -220,6 +220,7 @@ GET /auth/me
 ```text
 POST /customers
 GET /customers/me
+PUT /customers/me
 ```
 ### Categories
 
@@ -2321,6 +2322,9 @@ Authenticated users can create their own customer profile.
 |---|---|---|
 | POST | `/customers` | Create customer profile for current authenticated user |
 | GET | `/customers/me` | Get current user's customer profile |
+| PUT | `/customers/me` | Update current user's customer profile without knowing `customer_id` |
+
+`PUT /customers/me` uses the same customer profile request schema as profile creation. The `name`, `email`, and `phone` values are trimmed before saving; blank or whitespace-only values return `422`, and invalid email values return `422`.
 
 
 If the authenticated user does not have a customer profile, the API returns:
