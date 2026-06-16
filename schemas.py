@@ -1,9 +1,20 @@
 from decimal import Decimal
 import re
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from utils.money import MoneyValidationError, format_money, parse_positive_money
+
+
+ORDER_STATUS_VALUES = ("new", "paid", "shipped", "cancelled")
+OrderStatus = Literal["new", "paid", "shipped", "cancelled"]
+ORDER_STATUS_TRANSITIONS: dict[str, tuple[str, ...]] = {
+    "new": ("paid", "cancelled"),
+    "paid": ("shipped", "cancelled"),
+    "shipped": (),
+    "cancelled": (),
+}
 
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -157,7 +168,7 @@ class OrderItemResponse(BaseModel):
 class OrderResponse(BaseModel):
     id: int
     customer_id: int
-    status: str
+    status: OrderStatus
     total_price: float
     total_price_amount: str = Field(
         default="",

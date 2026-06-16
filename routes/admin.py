@@ -14,10 +14,11 @@ from auth import verify_password, SECRET_KEY, ALGORITHM, is_production_environme
 from database import get_db
 from models import Product, Category, Customer, Order, User, OrderItem
 from routes.orders import update_order_status
+from schemas import ORDER_STATUS_TRANSITIONS, ORDER_STATUS_VALUES
 from routes.stats import calculate_total_revenue
 from utils.money import MoneyValidationError, format_money, parse_positive_money
 
-ORDER_STATUSES = ["new", "paid", "shipped", "cancelled"]
+ORDER_STATUSES = ORDER_STATUS_VALUES
 
 router = APIRouter(
     prefix="/admin",
@@ -773,18 +774,25 @@ def admin_orders(
 
     query = db.query(Order)
 
-    if status is not None:
-        query = query.filter(Order.status == status)
+    error = None
 
-    orders = query.order_by(Order.id.desc()).all()
+    if status is not None:
+        if status not in ORDER_STATUSES:
+            error = "Invalid order status filter"
+        else:
+            query = query.filter(Order.status == status)
+
+    orders = [] if error else query.order_by(Order.id.desc()).all()
 
     return templates.TemplateResponse(
         request=request,
         name="admin_orders.html",
         context={
             "orders": orders,
-            "status": status
-        }
+            "status": status if error is None else None,
+            "error": error
+        },
+        status_code=400 if error else 200
     )
 
 
@@ -812,7 +820,7 @@ def admin_order_detail(
         name="admin_order_detail.html",
         context={
             "order": order,
-            "statuses": ORDER_STATUSES,
+            "statuses": ORDER_STATUS_TRANSITIONS[order.status],
             "error": None,
             "csrf_token": get_admin_csrf_token(request)
         }
@@ -848,7 +856,7 @@ def admin_order_status_update(
             name="admin_order_detail.html",
             context={
                 "order": order,
-                "statuses": ORDER_STATUSES,
+                "statuses": ORDER_STATUS_TRANSITIONS[order.status],
                 "error": "Invalid order status",
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -876,7 +884,7 @@ def admin_order_status_update(
             name="admin_order_detail.html",
             context={
                 "order": order,
-                "statuses": ORDER_STATUSES,
+                "statuses": ORDER_STATUS_TRANSITIONS[order.status],
                 "error": exc.detail,
                 "csrf_token": get_admin_csrf_token(request)
             },

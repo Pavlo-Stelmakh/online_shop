@@ -1755,9 +1755,7 @@ GET /orders?status=shipped
 GET /orders?status=cancelled
 ```
 
-Admin users can filter orders by status.
-
-Supported statuses:
+Admin users can filter orders by status. The allowed order status contract is shared by the database, API validation, response schemas, and admin UI:
 
 ```text
 new
@@ -1766,13 +1764,18 @@ shipped
 cancelled
 ```
 
-Invalid status values return:
+Invalid `GET /orders?status=...` values return `400 Bad Request`:
 
 ```json
 {
   "detail": "Invalid order status"
 }
 ```
+
+Invalid enum-constrained status values for `GET /orders/by-status` and `PUT /orders/{order_id}/status` return `422 Unprocessable Entity`.
+
+Invalid admin UI order filters such as `/admin/orders?status=invalid` return a controlled `400 Bad Request` page with an invalid status filter message instead of silently showing an arbitrary empty filter result.
+
 #### Order Customer Filtering
 
 ```text

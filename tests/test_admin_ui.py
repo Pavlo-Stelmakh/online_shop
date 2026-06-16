@@ -2114,3 +2114,41 @@ def test_admin_customer_delete_with_orders_returns_controlled_error():
 
     assert response.status_code == 400
     assert "Customer cannot be deleted because they have orders" in response.text
+
+
+def test_admin_orders_invalid_status_filter_returns_controlled_error():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/orders?status=invalid")
+
+    assert response.status_code == 400
+    assert "Invalid order status filter" in response.text
+    assert "Filtered by status: <strong>invalid</strong>" not in response.text
+
+
+def test_admin_order_detail_status_form_shows_valid_transitions_only():
+    product, customer, order = _create_admin_ui_order()
+    admin_client = get_admin_ui_client()
+
+    new_response = admin_client.get(f"/admin/orders/{order['id']}")
+
+    assert new_response.status_code == 200
+    assert '<option value="paid"' in new_response.text
+    assert '<option value="cancelled"' in new_response.text
+    assert '<option value="new"' not in new_response.text
+    assert '<option value="shipped"' not in new_response.text
+
+    csrf_token = get_admin_ui_csrf_token(admin_client, path=f"/admin/orders/{order['id']}")
+    paid_response = admin_client.post(
+        f"/admin/orders/{order['id']}/status",
+        data={"status": "paid", "csrf_token": csrf_token},
+        follow_redirects=False,
+    )
+    paid_detail_response = admin_client.get(f"/admin/orders/{order['id']}")
+
+    assert paid_response.status_code == 303
+    assert paid_detail_response.status_code == 200
+    assert '<option value="shipped"' in paid_detail_response.text
+    assert '<option value="cancelled"' in paid_detail_response.text
+    assert '<option value="new"' not in paid_detail_response.text
+    assert '<option value="paid"' not in paid_detail_response.text
