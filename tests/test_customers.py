@@ -246,6 +246,195 @@ def test_admin_can_update_customer_profiles_by_id():
 
 
 
+
+def test_customer_can_update_own_profile_via_me_and_persist_changes():
+    headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=headers)
+    updated_email = f"me_update_{time.time()}@example.com"
+
+    response = client.put(
+        "/customers/me",
+        json={
+            "name": "Updated Own Profile",
+            "email": updated_email,
+            "phone": "+380501119999"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["id"] == customer["id"]
+    assert data["user_id"] == customer["user_id"]
+    assert data["name"] == "Updated Own Profile"
+    assert data["email"] == updated_email
+    assert data["phone"] == "+380501119999"
+
+    db = TestingSessionLocal()
+
+    try:
+        persisted_customer = db.query(Customer).filter(
+            Customer.id == customer["id"]
+        ).first()
+    finally:
+        db.close()
+
+    assert persisted_customer.name == "Updated Own Profile"
+    assert persisted_customer.email == updated_email
+    assert persisted_customer.phone == "+380501119999"
+
+
+def test_update_customer_me_trims_valid_fields():
+    headers = get_auth_headers(role="customer")
+    create_test_customer(headers=headers)
+    email = f"trim_me_update_{time.time()}@example.com"
+
+    response = client.put(
+        "/customers/me",
+        json={
+            "name": "  Updated Me Trim Customer  ",
+            "email": f"  {email}  ",
+            "phone": "  +380501118888  "
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Updated Me Trim Customer"
+    assert response.json()["email"] == email
+    assert response.json()["phone"] == "+380501118888"
+
+
+def test_update_customer_me_requires_auth():
+    response = client.put(
+        "/customers/me",
+        json={
+            "name": "Anonymous Me Update",
+            "email": f"anonymous_me_update_{time.time()}@example.com",
+            "phone": "+380501117777"
+        }
+    )
+
+    assert response.status_code == 401
+
+
+def test_update_customer_me_without_profile_returns_404():
+    headers = get_auth_headers(role="customer")
+
+    response = client.put(
+        "/customers/me",
+        json={
+            "name": "Missing Profile Update",
+            "email": f"missing_profile_update_{time.time()}@example.com",
+            "phone": "+380501116666"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Customer profile not found"
+
+
+def test_update_customer_me_rejects_blank_or_whitespace_fields():
+    for field, value in [
+        ("name", ""),
+        ("name", "   "),
+        ("email", ""),
+        ("email", "   "),
+        ("phone", ""),
+        ("phone", "   "),
+    ]:
+        headers = get_auth_headers(role="customer")
+        create_test_customer(headers=headers)
+        payload = {
+            "name": "Updated Me Customer",
+            "email": f"updated_me_customer_{time.time()}@example.com",
+            "phone": "+380501115555"
+        }
+        payload[field] = value
+
+        response = client.put(
+            "/customers/me",
+            json=payload,
+            headers=headers
+        )
+
+        assert response.status_code == 422
+
+
+def test_update_customer_me_rejects_invalid_email():
+    headers = get_auth_headers(role="customer")
+    create_test_customer(headers=headers)
+
+    response = client.put(
+        "/customers/me",
+        json={
+            "name": "Invalid Me Email Customer",
+            "email": "not-an-email",
+            "phone": "+380501114444"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 422
+
+
+def test_customer_cannot_affect_another_customer_profile_through_me():
+    customer_1_headers = get_auth_headers(role="customer")
+    customer_1 = create_test_customer(headers=customer_1_headers)
+
+    customer_2_headers = get_auth_headers(role="customer")
+    customer_2 = create_test_customer(headers=customer_2_headers)
+
+    response = client.put(
+        "/customers/me",
+        json={
+            "name": "Only Current User Changes",
+            "email": f"only_current_user_{time.time()}@example.com",
+            "phone": "+380501113333"
+        },
+        headers=customer_1_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["id"] == customer_1["id"]
+
+    db = TestingSessionLocal()
+
+    try:
+        unchanged_customer = db.query(Customer).filter(
+            Customer.id == customer_2["id"]
+        ).first()
+    finally:
+        db.close()
+
+    assert unchanged_customer.name == customer_2["name"]
+    assert unchanged_customer.email == customer_2["email"]
+    assert unchanged_customer.phone == customer_2["phone"]
+
+
+def test_update_customer_me_duplicate_email_returns_409():
+    customer_1_headers = get_auth_headers(role="customer")
+    create_test_customer(headers=customer_1_headers)
+
+    customer_2_headers = get_auth_headers(role="customer")
+    customer_2 = create_test_customer(headers=customer_2_headers)
+
+    response = client.put(
+        "/customers/me",
+        json={
+            "name": "Duplicate Me Email Customer",
+            "email": customer_2["email"],
+            "phone": "+380501112222"
+        },
+        headers=customer_1_headers
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Customer email already exists"
+
 def test_create_customer_rejects_blank_or_whitespace_fields():
     for field, value in [
         ("name", ""),

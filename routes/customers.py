@@ -77,6 +77,43 @@ def get_my_customer_profile(
     return customer
 
 
+@router.put("/me", response_model=CustomerResponse)
+def update_my_customer_profile(
+    customer_data: CustomerCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    customer = db.query(Customer).filter(
+        Customer.user_id == current_user.id
+    ).first()
+
+    if customer is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Customer profile not found"
+        )
+
+    email_owner = db.query(Customer).filter(
+        Customer.email == customer_data.email,
+        Customer.id != customer.id
+    ).first()
+
+    if email_owner is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Customer email already exists"
+        )
+
+    customer.name = customer_data.name
+    customer.email = customer_data.email
+    customer.phone = customer_data.phone
+
+    db.commit()
+    db.refresh(customer)
+
+    return customer
+
+
 @router.get("/{customer_id}", response_model=CustomerResponse)
 def get_customer(
     customer_id: int,
