@@ -81,7 +81,7 @@ Current automated test status:
 
 ```text
 python -m pytest
-281 passed
+379 passed
 ```
 
 Tests are run with:
@@ -233,13 +233,14 @@ DELETE /categories/{category_id}
 ### Products
 
 ```text
-POST /products
 GET /products
+GET /products/catalog
+GET /products/catalog/pages
+GET /products/low-stock
+POST /products
 GET /products/{product_id}
 PUT /products/{product_id}
 DELETE /products/{product_id}
-GET /products/catalog
-GET /products/low-stock
 ```
 ### Orders
 
@@ -1357,7 +1358,7 @@ GET /products/catalog?category_id=1&min_price=100&max_price=500&in_stock=true&so
 GET /products/catalog/pages
 ```
 
-Products include name, price, description, optional image URL, stock and category. Product create/update requests trim accepted name and description values, require name and description to be non-blank, and require `category_id` to be positive. Invalid product request schema inputs return FastAPI `422 Unprocessable Entity` responses with validation details.
+Products include name, price, exact `price_amount`, description, optional image URL, stock, low-stock threshold and category. Product create/update requests trim accepted name and description values, require name and description to be non-blank, and require `category_id` to be positive. Invalid product request schema inputs return FastAPI `422 Unprocessable Entity` responses with validation details.
 
 Example product:
 
@@ -1517,7 +1518,7 @@ For clients that need page-based pagination metadata, use:
 GET /products/catalog/pages
 ```
 
-`GET /products/catalog/pages` returns `items`, `total`, `page`, `limit` and `pages` instead of `skip`.
+`GET /products/catalog/pages` returns page pagination metadata with `items`, `total`, `page`, `limit` and `pages` instead of the offset response's `skip`.
 
 Response example:
 
@@ -1531,16 +1532,22 @@ Response example:
       "id": 1,
       "name": "MacBook Air",
       "price": 1200,
-      "description": "Apple laptop", 
+      "price_amount": "1200.00",
+      "description": "Apple laptop",
       "image_url": "https://example.com/macbook-air.jpg",
       "stock": 5,
-      "category_id": 1
+      "low_stock_threshold": 5,
+      "category_id": 1,
+      "category": {
+        "id": 1,
+        "name": "Laptops"
+      }
     }
   ]
 }
 ```
 
-The catalog endpoint supports the same query parameters as `GET /products`:
+The catalog endpoint supports product list filters plus catalog text search. `search` trims the supplied value, matches product name or description case-insensitively, can be combined with the other catalog filters, and rejects blank input.
 
 | Parameter | Description |
 |---|---|
@@ -1552,6 +1559,7 @@ The catalog endpoint supports the same query parameters as `GET /products`:
 | `in_stock` | Return only products with stock greater than 0 |
 | `sort_by` | Sort field: `id`, `name`, `price`, `stock` |
 | `sort_order` | Sort direction: `asc`, `desc` |
+| `search` | Case-insensitive text search across product name and description; blank search values return `400 Bad Request` |
 
 Example:
 
@@ -1563,6 +1571,18 @@ Page-based catalog example:
 
 ```text
 GET /products/catalog/pages?page=1&limit=10
+```
+
+Page-based response shape:
+
+```json
+{
+  "items": [],
+  "total": 25,
+  "page": 1,
+  "limit": 10,
+  "pages": 3
+}
 ```
 
 #### Removed Legacy Product Endpoints
@@ -1600,7 +1620,7 @@ GET /products/catalog?search=Product
 GET /products/catalog?search=Product&in_stock=true
 ```
 
-The product catalog supports text search by product name and description.
+`GET /products/catalog` supports text search by product name and description. The `search` value is trimmed before matching, blank search values return `400 Bad Request`, and matches are case-insensitive substring matches against product names or descriptions.
 
 Search can be combined with existing catalog filters:
 
@@ -1887,7 +1907,7 @@ Response fields:
 
 #### Order Items Validation
 
-`POST /orders` validates order items before creating an order. Basic request schema validation rejects empty `items`, non-positive `customer_id`, non-positive `product_id`, and non-positive `quantity` with `422 Unprocessable Entity`. Duplicate products remain business validation and return `400 Bad Request`.
+`POST /orders` validates order items before creating an order. Basic request schema validation requires a non-empty `items` list and rejects non-positive `customer_id`, `product_id`, and `quantity` values with `422 Unprocessable Entity`. Duplicate products remain business validation and return `400 Bad Request`.
 
 Validation rules:
 
@@ -2378,9 +2398,11 @@ Example error:
 }
 ```
 
+Customer, authentication and category request schemas use stricter validation and return `422 Unprocessable Entity` for invalid schema input.
+
 ### Products
 
-Product stock cannot be negative.
+Product names and descriptions are trimmed and must be non-blank. Product `category_id` must be positive, product stock cannot be negative, and invalid product request schema inputs return `422 Unprocessable Entity`.
 
 Example invalid product:
 
@@ -2482,9 +2504,9 @@ python -m pytest
 Expected result:
 
 ```text
-281 passed
+379 passed
 ```
-Current test suite includes 281 automated tests covering authentication, roles, products, categories, customers, orders, stock logic, order status rules, deployment endpoints, admin UI authentication, security behavior, startup scripts, and data integrity checks.
+Current test suite includes 379 automated tests covering authentication, roles, products, categories, customers, orders, stock logic, order status rules, deployment endpoints, admin UI authentication, security behavior, startup scripts, and data integrity checks.
 
 The tests use a separate SQLite database:
 
@@ -2874,7 +2896,7 @@ Production-ready portfolio backend API
 Main quality checks:
 
 ```text
-281 automated tests passed
+379 automated tests passed
 GitHub Actions CI enabled
 Render deployment verified
 Swagger UI available
