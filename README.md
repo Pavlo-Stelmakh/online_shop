@@ -135,7 +135,7 @@ Production precondition for the `customers.user_id -> users.id` foreign key: the
 
 - Product CRUD
 - Product image URL support
-- Product update validation for name, price, stock and category
+- Product create/update validation trims product names and descriptions, requires them to be non-blank, validates positive category IDs and preserves price, stock and low-stock threshold validation
 - Product catalog with pagination, filtering, sorting and metadata response
 - Product catalog search by name and description
 - Product catalog empty search validation
@@ -1357,7 +1357,7 @@ GET /products/catalog?category_id=1&min_price=100&max_price=500&in_stock=true&so
 GET /products/catalog/pages
 ```
 
-Products include name, price, description, optional image URL, stock and category.
+Products include name, price, description, optional image URL, stock and category. Product create/update requests trim accepted name and description values, require name and description to be non-blank, and require `category_id` to be positive. Invalid product request schema inputs return FastAPI `422 Unprocessable Entity` responses with validation details.
 
 Example product:
 
