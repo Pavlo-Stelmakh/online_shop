@@ -829,7 +829,7 @@ Rollback and migration failure considerations:
 - Do not weaken production `SECRET_KEY` enforcement.
 - Do not skip the production audit.
 
-Current CI covers SQLite Alembic upgrade, the data integrity audit, and `python -m pytest`, but PostgreSQL-specific behavior still needs manual or staging verification unless a future PostgreSQL CI job is added.
+Current CI covers SQLite Alembic upgrade, the data integrity audit, `python -m pytest`, and a focused PostgreSQL migration/audit job that uses a GitHub Actions PostgreSQL service container. The PostgreSQL CI job verifies `alembic upgrade head`, the data integrity audit script, and application import compatibility against the same database engine family used by Render production. A production audit against the real Render/production database is still required before deploy.
 
 ### Deployment Status
 
@@ -1099,6 +1099,7 @@ Required environment variables:
 |---|---|
 | `SECRET_KEY` | Secret key used to sign JWT access tokens and admin UI session cookies. Required in production/Render; local fallback is only for development. |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT access token expiration time in minutes |
+| `DATABASE_URL` | PostgreSQL connection URL for production/Render. If absent, the app falls back to local SQLite, which is only for local development. |
 
 
 ## Admin Seed Script
