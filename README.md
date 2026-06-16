@@ -127,6 +127,7 @@ Production precondition for the `customers.user_id -> users.id` foreign key: the
 - Password hashing
 - Role-based access control: `admin` and `customer`
 - Secure user registration: public registration always creates `customer` users
+- Auth registration validates non-blank usernames, email-shaped addresses and minimum password length
 - Admin-only protected routes
 - User-to-customer ownership logic
 
@@ -145,9 +146,16 @@ Production precondition for the `customers.user_id -> users.id` foreign key: the
 ### Categories
 
 - Category CRUD
-- Category update validation
+- Category create/update validation rejects blank or whitespace-only names and trims accepted names
 - Category delete protection
 - Get products by category
+
+### Customer Profiles
+
+- Customer profile create/update validation rejects blank or whitespace-only name, email and phone values
+- Customer profile email inputs must be email-shaped
+- Accepted auth, customer and category string inputs are trimmed before persistence
+- Invalid request schema inputs return FastAPI `422 Unprocessable Entity` responses with validation details
 
 ### Orders
 
