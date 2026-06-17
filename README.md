@@ -3051,3 +3051,76 @@ Possible future improvements:
 - Add advanced analytics
 - Add PostgreSQL-specific integration tests
 
+
+## Demo data seed
+
+Use `scripts/seed_demo_data.py` to safely clean noisy demo/test records and seed a polished portfolio catalog. The script is intended **only for demo databases**. It is not a general production cleanup tool.
+
+Safety behavior:
+
+- The script connects to the database from `DATABASE_URL`.
+- It refuses to run unless `DEMO_MODE=true` is set or `--force-demo-reset` is passed.
+- It removes only records that match demo/test markers such as Swagger, Render, validation or test data, plus the curated demo products it recreates.
+- It deletes related demo data in dependency order: `order_items`, `orders`, `customers`, `products`, then empty demo/test `categories`.
+- It does not delete admin users.
+
+Seeded demo categories:
+
+```text
+Electronics
+Accessories
+Office
+Home
+```
+
+Seeded demo products:
+
+```text
+Wireless Mouse
+Mechanical Keyboard
+USB-C Hub
+Laptop Stand
+Noise Cancelling Headphones
+External SSD 1TB
+Office Desk Lamp
+Smart Plug
+Monitor 27 inch
+Backpack
+```
+
+### Run demo seed locally
+
+Run migrations first, point `DATABASE_URL` at the local demo database, and enable demo mode explicitly:
+
+```bash
+export DATABASE_URL="sqlite:///./shop.db"
+export DEMO_MODE=true
+python scripts/seed_demo_data.py
+```
+
+Alternatively, use the explicit reset flag for one manual run:
+
+```bash
+DATABASE_URL="sqlite:///./shop.db" python scripts/seed_demo_data.py --force-demo-reset
+```
+
+### Run demo seed manually on Render
+
+Run this only against the Render demo database, not against a real customer production database.
+
+1. Open the Render service dashboard.
+2. Go to the service shell or one-off job/manual command runner.
+3. Confirm `DATABASE_URL` points to the intended demo database.
+4. Run:
+
+```bash
+DEMO_MODE=true python scripts/seed_demo_data.py
+```
+
+If using a one-off manual command where environment variables are already configured on the service, the command can be:
+
+```bash
+python scripts/seed_demo_data.py --force-demo-reset
+```
+
+Review the printed deletion/creation counts after the command finishes.
