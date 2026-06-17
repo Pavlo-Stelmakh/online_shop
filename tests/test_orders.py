@@ -1951,3 +1951,150 @@ def test_update_order_status_invalid_status_is_rejected():
     )
 
     assert response.status_code == 422
+
+
+def _cancel_order_as_customer(order_id: int, headers):
+    return client.post(f"/orders/{order_id}/cancel", headers=headers)
+
+
+def test_customer_can_cancel_own_new_order():
+    product = create_test_product(stock=10, price=100)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers,
+    )
+
+    response = _cancel_order_as_customer(order["id"], customer_headers)
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "cancelled"
+    assert response.json()["customer_id"] == customer["id"]
+
+
+def test_customer_cancel_restores_stock():
+    product = create_test_product(stock=10, price=100)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=3,
+        headers=customer_headers,
+    )
+
+    assert _get_product_stock(product["id"]) == 7
+
+    response = _cancel_order_as_customer(order["id"], customer_headers)
+
+    assert response.status_code == 200
+    assert _get_product_stock(product["id"]) == 10
+
+
+def test_customer_double_cancel_does_not_restore_stock_twice():
+    product = create_test_product(stock=10, price=100)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=3,
+        headers=customer_headers,
+    )
+
+    first_response = _cancel_order_as_customer(order["id"], customer_headers)
+    second_response = _cancel_order_as_customer(order["id"], customer_headers)
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 409
+    assert second_response.json()["detail"] == (
+        "Cannot cancel order with status 'cancelled'"
+    )
+    assert _get_product_stock(product["id"]) == 10
+
+
+def test_customer_cannot_cancel_paid_shipped_or_cancelled_orders():
+    for status in ["paid", "shipped", "cancelled"]:
+        product = create_test_product(stock=10, price=100)
+        customer_headers = get_auth_headers(role="customer")
+        customer = create_test_customer(headers=customer_headers)
+        order = create_test_order(
+            product_id=product["id"],
+            customer_id=customer["id"],
+            quantity=2,
+            headers=customer_headers,
+        )
+
+        assert _update_order_status(order["id"], "paid").status_code == 200
+        if status == "shipped":
+            assert _update_order_status(order["id"], "shipped").status_code == 200
+        elif status == "cancelled":
+            assert _update_order_status(order["id"], "cancelled").status_code == 200
+
+        response = _cancel_order_as_customer(order["id"], customer_headers)
+
+        assert response.status_code == 409
+        assert response.json()["detail"] == (
+            f"Cannot cancel order with status '{status}'"
+        )
+
+
+def test_customer_cannot_cancel_another_customer_order():
+    product = create_test_product(stock=10, price=100)
+    owner_headers = get_auth_headers(role="customer")
+    owner = create_test_customer(headers=owner_headers)
+    other_headers = get_auth_headers(role="customer")
+    create_test_customer(headers=other_headers)
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=owner["id"],
+        quantity=1,
+        headers=owner_headers,
+    )
+
+    response = _cancel_order_as_customer(order["id"], other_headers)
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Access denied"
+    assert _get_order_status(order["id"], headers=owner_headers) == "new"
+    assert _get_product_stock(product["id"]) == 9
+
+
+def test_customer_cancel_requires_authentication():
+    response = client.post("/orders/1/cancel")
+
+    assert response.status_code == 401
+
+
+def test_customer_cancel_without_profile_returns_404():
+    headers = get_auth_headers(role="customer")
+
+    response = _cancel_order_as_customer(1, headers)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Customer profile not found"
+
+
+def test_customer_cancel_unknown_order_returns_404():
+    headers = get_auth_headers(role="customer")
+    create_test_customer(headers=headers)
+
+    response = _cancel_order_as_customer(999999, headers)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Order not found"
+
+
+def test_admin_paid_to_cancelled_still_works():
+    product, order = _create_order_for_stock_restore(initial_stock=10, quantity=3)
+
+    paid_response = _update_order_status(order["id"], "paid")
+    cancelled_response = _update_order_status(order["id"], "cancelled")
+
+    assert paid_response.status_code == 200
+    assert cancelled_response.status_code == 200
+    assert cancelled_response.json()["status"] == "cancelled"
+    assert _get_product_stock(product["id"]) == 10
