@@ -810,10 +810,7 @@ def admin_order_detail(
     order = db.query(Order).filter(Order.id == order_id).first()
 
     if order is None:
-        return RedirectResponse(
-            url="/admin/orders",
-            status_code=303
-        )
+        raise HTTPException(status_code=404, detail="Order not found")
 
     return templates.TemplateResponse(
         request=request,

@@ -297,6 +297,26 @@ created at
 items count
 ```
 
+Order IDs link to the admin order detail page:
+
+```text
+/admin/orders/{order_id}
+```
+
+The admin order detail page uses the existing admin session cookie authentication and shows:
+
+```text
+order id
+customer name
+customer email
+status
+created at
+total price
+order items with product name, quantity, unit price and line total
+```
+
+Unknown admin order detail URLs return `404 Not Found`. Anonymous users and non-admin users are redirected to the admin login page by the current admin UI session-auth logic.
+
 Admin order status badges:
 
 ```text
