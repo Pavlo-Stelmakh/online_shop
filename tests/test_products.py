@@ -357,8 +357,121 @@ def test_get_products_with_pagination():
 
     data = response.json()
 
-    assert isinstance(data, list)
-    assert len(data) <= 2
+    assert data["skip"] == 0
+    assert data["limit"] == 2
+    assert data["total"] >= len(data["items"])
+
+
+def test_get_products_default_sort_order_returns_newest_first():
+    older_product = create_test_product(stock=10, price=100)
+    newer_product = create_test_product(stock=10, price=200)
+
+    response = client.get("/products", params={"skip": 0, "limit": 10})
+
+    assert response.status_code == 200
+
+    data = response.json()
+    product_ids = [product["id"] for product in data["items"]]
+
+    assert data["sort_by"] == "id"
+    assert data["sort_order"] == "desc"
+    assert product_ids.index(newer_product["id"]) < product_ids.index(older_product["id"])
+
+
+def test_get_products_sort_order_asc_returns_oldest_first():
+    category = create_test_category()
+    headers = get_auth_headers(role="admin")
+
+    older_response = client.post(
+        "/products",
+        json={
+            "name": f"Ascending Older Product {time.time()}",
+            "price": 100,
+            "description": "Older product for ascending sort test",
+            "stock": 10,
+            "category_id": category["id"],
+        },
+        headers=headers,
+    )
+    newer_response = client.post(
+        "/products",
+        json={
+            "name": f"Ascending Newer Product {time.time()}",
+            "price": 200,
+            "description": "Newer product for ascending sort test",
+            "stock": 10,
+            "category_id": category["id"],
+        },
+        headers=headers,
+    )
+    assert older_response.status_code == 200
+    assert newer_response.status_code == 200
+    older_product = older_response.json()
+    newer_product = newer_response.json()
+
+    response = client.get(
+        "/products",
+        params={
+            "category_id": category["id"],
+            "sort_order": "asc",
+            "skip": 0,
+            "limit": 10,
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+    product_ids = [product["id"] for product in data["items"]]
+
+    assert data["sort_by"] == "id"
+    assert data["sort_order"] == "asc"
+    assert product_ids.index(older_product["id"]) < product_ids.index(newer_product["id"])
+
+
+def test_get_products_response_contains_pagination_and_sort_metadata():
+    create_test_product(stock=10, price=100)
+
+    response = client.get("/products")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert {"items", "total", "skip", "limit", "sort_by", "sort_order"}.issubset(data)
+    assert isinstance(data["items"], list)
+    assert isinstance(data["total"], int)
+
+
+def test_get_products_total_counts_filtered_items_before_pagination():
+    category = create_test_category()
+    headers = get_auth_headers(role="admin")
+
+    for index in range(3):
+        response = client.post(
+            "/products",
+            json={
+                "name": f"Total Count Product {time.time()} {index}",
+                "price": 100 + index,
+                "description": "Product for total count test",
+                "stock": 10,
+                "category_id": category["id"],
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+
+    response = client.get(
+        "/products",
+        params={"category_id": category["id"], "skip": 0, "limit": 2},
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["total"] == 3
+    assert len(data["items"]) == 2
 
 
 def test_get_products_filter_by_category():
@@ -408,10 +521,10 @@ def test_get_products_filter_by_category():
 
     data = response.json()
 
-    assert isinstance(data, list)
-    assert len(data) >= 1
+    assert isinstance(data["items"], list)
+    assert len(data["items"]) >= 1
 
-    for product in data:
+    for product in data["items"]:
         assert product["category_id"] == category_1["id"]
 
 
@@ -434,10 +547,10 @@ def test_get_products_filter_by_price():
 
     data = response.json()
 
-    assert isinstance(data, list)
-    assert len(data) >= 1
+    assert isinstance(data["items"], list)
+    assert len(data["items"]) >= 1
 
-    for product in data:
+    for product in data["items"]:
         assert product["price"] >= 100
         assert product["price"] <= 500
 
@@ -459,10 +572,10 @@ def test_get_products_filter_in_stock():
 
     data = response.json()
 
-    assert isinstance(data, list)
-    assert len(data) >= 1
+    assert isinstance(data["items"], list)
+    assert len(data["items"]) >= 1
 
-    for product in data:
+    for product in data["items"]:
         assert product["stock"] > 0
 
 
@@ -485,7 +598,7 @@ def test_get_products_sort_by_price_asc():
 
     data = response.json()
 
-    prices = [product["price"] for product in data]
+    prices = [product["price"] for product in data["items"]]
 
     assert prices == sorted(prices)
 
@@ -509,7 +622,7 @@ def test_get_products_sort_by_price_desc():
 
     data = response.json()
 
-    prices = [product["price"] for product in data]
+    prices = [product["price"] for product in data["items"]]
 
     assert prices == sorted(prices, reverse=True)
 
@@ -1449,10 +1562,10 @@ def test_product_filters_continue_working_with_money_validation():
 
     assert response.status_code == 200
     data = response.json()
-    assert data
-    prices = [product["price"] for product in data]
+    assert data["items"]
+    prices = [product["price"] for product in data["items"]]
     assert prices == sorted(prices)
-    for product in data:
+    for product in data["items"]:
         assert product["price"] >= 100
         assert product["price"] <= 500
 

@@ -8,6 +8,7 @@ from schemas import (
     ProductCatalogOffsetResponse,
     ProductCatalogPageResponse,
     ProductCreate,
+    ProductListResponse,
     ProductResponse,
 )
 
@@ -24,7 +25,7 @@ def apply_product_filters(
     max_price: float | None = None,
     in_stock: bool | None = None,
     sort_by: str | None = None,
-    sort_order: str = "asc"
+    sort_order: str = "desc"
 ):
     if category_id is not None:
         query = query.filter(Product.category_id == category_id)
@@ -100,7 +101,7 @@ def create_product(
 
     return product
 
-@router.get("", response_model=list[ProductResponse])
+@router.get("", response_model=ProductListResponse)
 def get_products(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
@@ -108,8 +109,8 @@ def get_products(
     min_price: float | None = Query(None, ge=0),
     max_price: float | None = Query(None, ge=0),
     in_stock: bool | None = None,
-    sort_by: str | None = None,
-    sort_order: str = "asc",
+    sort_by: str | None = "id",
+    sort_order: str = "desc",
     db: Session = Depends(get_db)
 ):
     query = db.query(Product)
@@ -124,9 +125,17 @@ def get_products(
         sort_order=sort_order
     )
 
+    total = query.count()
     products = query.offset(skip).limit(limit).all()
 
-    return products
+    return {
+        "items": products,
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "sort_by": sort_by,
+        "sort_order": sort_order,
+    }
 
 
 
@@ -214,19 +223,15 @@ def get_products_catalog(
         )
 
     total = query.count()
-
-    products = query.offset(skip).limit(limit).all()
-
-
-    total = query.count()
-
     products = query.offset(skip).limit(limit).all()
 
     return {
         "total": total,
         "skip": skip,
         "limit": limit,
-        "items": products
+        "sort_by": sort_by,
+        "sort_order": sort_order,
+        "items": products,
     }
 
 

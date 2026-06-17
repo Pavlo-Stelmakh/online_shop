@@ -1441,6 +1441,8 @@ GET /products?skip=0&limit=10
 GET /products?category_id=1
 GET /products?min_price=100&max_price=500
 GET /products?in_stock=true
+GET /products
+GET /products?sort_order=asc
 GET /products?sort_by=price&sort_order=asc
 GET /products?category_id=1&min_price=100&max_price=500&in_stock=true&sort_by=price&sort_order=asc&skip=0&limit=10
 POST /products
@@ -1501,6 +1503,37 @@ Example:
 ```text
 GET /products?skip=0&limit=10
 ```
+
+`GET /products` returns pagination metadata and wraps products in `items`:
+
+```json
+{
+  "items": [
+    {
+      "id": 42,
+      "name": "Wireless Mouse",
+      "price": 199.99,
+      "price_amount": "199.99",
+      "description": "Ergonomic wireless mouse",
+      "image_url": null,
+      "stock": 12,
+      "low_stock_threshold": 5,
+      "category_id": 1,
+      "category": {
+        "id": 1,
+        "name": "Electronics"
+      }
+    }
+  ],
+  "total": 125,
+  "skip": 0,
+  "limit": 10,
+  "sort_by": "id",
+  "sort_order": "desc"
+}
+```
+
+`total` is the number of matching products before `skip` and `limit` are applied.
 
 
 ### Product Query Parameter Validation
@@ -1569,12 +1602,14 @@ Available query parameters:
 
 | Parameter | Description | Allowed values | Default |
 |---|---|---|---|
-| `sort_by` | Field used for sorting | `id`, `name`, `price`, `stock` | None |
-| `sort_order` | Sorting direction | `asc`, `desc` | `asc` |
+| `sort_by` | Field used for sorting | `id`, `name`, `price`, `stock` | `id` |
+| `sort_order` | Sorting direction | `asc`, `desc` | `desc` |
 
 Examples:
 
 ```text
+GET /products
+GET /products?sort_order=asc
 GET /products?sort_by=price&sort_order=asc
 GET /products?sort_by=price&sort_order=desc
 GET /products?sort_by=name&sort_order=asc
@@ -1607,7 +1642,7 @@ The project provides an extended product catalog endpoint:
 GET /products/catalog
 ```
 
-Unlike `GET /products`, this endpoint returns offset pagination metadata together with product items (`total`, `skip`, `limit`, `items`).
+`GET /products/catalog` follows the same offset pagination envelope style as `GET /products` and returns product items with metadata (`total`, `skip`, `limit`, `items`). It also supports catalog search.
 
 For clients that need page-based pagination metadata, use:
 

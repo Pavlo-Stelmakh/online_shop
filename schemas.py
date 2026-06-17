@@ -109,10 +109,21 @@ class ProductCatalogPageResponse(BaseModel):
     pages: int
 
 
+class ProductListResponse(BaseModel):
+    items: list[ProductResponse]
+    total: int
+    skip: int
+    limit: int
+    sort_by: str | None
+    sort_order: str
+
+
 class ProductCatalogOffsetResponse(BaseModel):
     total: int
     skip: int
     limit: int
+    sort_by: str | None = None
+    sort_order: str = "asc"
     items: list[ProductResponse]
 
 
