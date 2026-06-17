@@ -25,6 +25,19 @@ def validate_order_transition(order: Order, status: OrderStatus) -> None:
         )
 
 
+def get_available_order_status_actions(order: Order) -> tuple[dict[str, str], ...]:
+    action_labels = {
+        "paid": "Mark as paid",
+        "shipped": "Mark as shipped",
+        "cancelled": "Cancel order",
+    }
+
+    return tuple(
+        {"status": status, "label": action_labels[status]}
+        for status in ORDER_STATUS_TRANSITIONS[order.status]
+    )
+
+
 def _raise_failed_transition_error(db: Session, order_id: int, status: OrderStatus) -> None:
     db.rollback()
 

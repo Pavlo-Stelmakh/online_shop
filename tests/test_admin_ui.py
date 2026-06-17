@@ -1550,7 +1550,7 @@ def test_admin_customer_detail_embedded_orders_use_status_badges_for_all_statuse
         assert f">{status}</span>" in response.text
         assert f"<td>{status}</td>" not in response.text
 
-def test_admin_changes_new_to_paid_via_ui_with_csrf():
+def test_admin_can_mark_new_order_as_paid_from_admin_ui():
     product, customer, order = _create_admin_ui_order()
 
     admin_client = get_admin_ui_client()
@@ -1571,7 +1571,7 @@ def test_admin_changes_new_to_paid_via_ui_with_csrf():
     assert "status-paid" in detail_response.text
 
 
-def test_admin_changes_paid_to_shipped_via_ui_with_csrf():
+def test_admin_can_mark_paid_order_as_shipped_from_admin_ui():
     product, customer, order = _create_admin_ui_order()
 
     admin_client = get_admin_ui_client()
@@ -1594,7 +1594,7 @@ def test_admin_changes_paid_to_shipped_via_ui_with_csrf():
     assert "status-shipped" in detail_response.text
 
 
-def test_admin_cancel_via_ui_restores_stock():
+def test_status_action_uses_existing_stock_restore_logic_when_cancelling():
     product, customer, order = _create_admin_ui_order(quantity=2, stock=5)
 
     product_after_order = client.get(f"/products/{product['id']}")
@@ -1614,6 +1614,68 @@ def test_admin_cancel_via_ui_restores_stock():
     assert product_after_cancel.json()["stock"] == 5
 
 
+
+def test_admin_can_cancel_new_and_paid_order_from_admin_ui():
+    admin_client = get_admin_ui_client()
+
+    product, customer, new_order = _create_admin_ui_order()
+    csrf_token = get_admin_ui_csrf_token(admin_client, path=f"/admin/orders/{new_order['id']}")
+    new_cancel_response = admin_client.post(
+        f"/admin/orders/{new_order['id']}/status",
+        data={"status": "cancelled", "csrf_token": csrf_token},
+        follow_redirects=False,
+    )
+
+    product, customer, paid_order = _create_admin_ui_order()
+    csrf_token = get_admin_ui_csrf_token(admin_client, path=f"/admin/orders/{paid_order['id']}")
+    paid_response = admin_client.post(
+        f"/admin/orders/{paid_order['id']}/status",
+        data={"status": "paid", "csrf_token": csrf_token},
+        follow_redirects=False,
+    )
+    csrf_token = get_admin_ui_csrf_token(admin_client, path=f"/admin/orders/{paid_order['id']}")
+    paid_cancel_response = admin_client.post(
+        f"/admin/orders/{paid_order['id']}/status",
+        data={"status": "cancelled", "csrf_token": csrf_token},
+        follow_redirects=False,
+    )
+    paid_detail_response = admin_client.get(f"/admin/orders/{paid_order['id']}")
+
+    assert new_cancel_response.status_code == 303
+    assert paid_response.status_code == 303
+    assert paid_cancel_response.status_code == 303
+    assert "status-cancelled" in paid_detail_response.text
+
+
+def test_anonymous_and_customer_cannot_change_status_from_admin_ui():
+    product, customer, order = _create_admin_ui_order()
+
+    anonymous_client = TestClient(app)
+    anonymous_response = anonymous_client.post(
+        f"/admin/orders/{order['id']}/status",
+        data={"status": "paid", "csrf_token": "irrelevant"},
+        follow_redirects=False,
+    )
+
+    customer_user = create_registered_user(role="customer")
+    customer_client = TestClient(app)
+    customer_client.cookies.set(
+        ADMIN_SESSION_COOKIE_NAME,
+        create_admin_session_token(type("UserLike", (), customer_user)()),
+    )
+    customer_response = customer_client.post(
+        f"/admin/orders/{order['id']}/status",
+        data={"status": "paid", "csrf_token": "irrelevant"},
+        follow_redirects=False,
+    )
+    detail_response = get_admin_ui_client().get(f"/admin/orders/{order['id']}")
+
+    assert anonymous_response.status_code == 303
+    assert anonymous_response.headers["location"] == "/admin/login"
+    assert customer_response.status_code == 303
+    assert customer_response.headers["location"] == "/admin/login"
+    assert "status-new" in detail_response.text
+
 def test_admin_order_status_missing_csrf_returns_403():
     product, customer, order = _create_admin_ui_order()
 
@@ -1626,7 +1688,7 @@ def test_admin_order_status_missing_csrf_returns_403():
     assert response.status_code == 403
 
 
-def test_admin_order_status_invalid_transition_does_not_500_or_change_status():
+def test_admin_order_status_invalid_transition_is_rejected():
     product, customer, order = _create_admin_ui_order()
 
     admin_client = get_admin_ui_client()
@@ -2142,10 +2204,12 @@ def test_admin_order_detail_status_form_shows_valid_transitions_only():
     new_response = admin_client.get(f"/admin/orders/{order['id']}")
 
     assert new_response.status_code == 200
-    assert '<option value="paid"' in new_response.text
-    assert '<option value="cancelled"' in new_response.text
-    assert '<option value="new"' not in new_response.text
-    assert '<option value="shipped"' not in new_response.text
+    assert 'Mark as paid' in new_response.text
+    assert 'Cancel order' in new_response.text
+    assert 'value="paid"' in new_response.text
+    assert 'value="cancelled"' in new_response.text
+    assert 'Mark as shipped' not in new_response.text
+    assert 'value="shipped"' not in new_response.text
 
     csrf_token = get_admin_ui_csrf_token(admin_client, path=f"/admin/orders/{order['id']}")
     paid_response = admin_client.post(
@@ -2157,7 +2221,9 @@ def test_admin_order_detail_status_form_shows_valid_transitions_only():
 
     assert paid_response.status_code == 303
     assert paid_detail_response.status_code == 200
-    assert '<option value="shipped"' in paid_detail_response.text
-    assert '<option value="cancelled"' in paid_detail_response.text
-    assert '<option value="new"' not in paid_detail_response.text
-    assert '<option value="paid"' not in paid_detail_response.text
+    assert 'Mark as shipped' in paid_detail_response.text
+    assert 'Cancel order' in paid_detail_response.text
+    assert 'value="shipped"' in paid_detail_response.text
+    assert 'value="cancelled"' in paid_detail_response.text
+    assert 'value="new"' not in paid_detail_response.text
+    assert 'value="paid"' not in paid_detail_response.text

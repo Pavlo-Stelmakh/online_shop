@@ -13,9 +13,9 @@ from jose import jwt, JWTError
 from auth import verify_password, SECRET_KEY, ALGORITHM, is_production_environment
 from database import get_db
 from models import Product, Category, Customer, Order, User, OrderItem
-from routes.orders import update_order_status
-from schemas import ORDER_STATUS_TRANSITIONS, ORDER_STATUS_VALUES
+from schemas import ORDER_STATUS_VALUES
 from routes.stats import calculate_total_revenue
+from services.orders import get_available_order_status_actions, transition_order_status
 from utils.money import MoneyValidationError, format_money, parse_positive_money
 
 ORDER_STATUSES = ORDER_STATUS_VALUES
@@ -817,7 +817,7 @@ def admin_order_detail(
         name="admin_order_detail.html",
         context={
             "order": order,
-            "statuses": ORDER_STATUS_TRANSITIONS[order.status],
+            "status_actions": get_available_order_status_actions(order),
             "error": None,
             "csrf_token": get_admin_csrf_token(request)
         }
@@ -853,7 +853,7 @@ def admin_order_status_update(
             name="admin_order_detail.html",
             context={
                 "order": order,
-                "statuses": ORDER_STATUS_TRANSITIONS[order.status],
+                "status_actions": get_available_order_status_actions(order),
                 "error": "Invalid order status",
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -861,11 +861,10 @@ def admin_order_status_update(
         )
 
     try:
-        update_order_status(
-            order_id=order_id,
-            status=status,
+        transition_order_status(
             db=db,
-            current_user=admin_user
+            order_id=order_id,
+            status=status
         )
     except HTTPException as exc:
         order = db.query(Order).filter(Order.id == order_id).first()
@@ -881,7 +880,7 @@ def admin_order_status_update(
             name="admin_order_detail.html",
             context={
                 "order": order,
-                "statuses": ORDER_STATUS_TRANSITIONS[order.status],
+                "status_actions": get_available_order_status_actions(order),
                 "error": exc.detail,
                 "csrf_token": get_admin_csrf_token(request)
             },

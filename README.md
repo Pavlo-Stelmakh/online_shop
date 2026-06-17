@@ -254,6 +254,8 @@ GET /orders/{order_id}
 PUT /orders/{order_id}/status
 ```
 
+Admin order detail status actions are also available in the admin UI at `/admin/orders/{order_id}`. The page shows only valid admin-only actions for the current order status: `Mark as paid` and `Cancel order` for `new` orders; `Mark as shipped` and `Cancel order` for `paid` orders; and no actions for `shipped` or `cancelled` orders. Successful status changes redirect back to the order detail page, while invalid transitions are rejected with a clear page error. Cancelling from the admin UI uses the same stock restoration logic as the order status API.
+
 ## Admin Dashboard
 
 The project includes a basic admin dashboard UI available at:
@@ -2445,7 +2447,7 @@ shipped → final status
 cancelled → final status
 ```
 
-Invalid status transitions are rejected by the API.
+Invalid status transitions are rejected by the API and by the admin order detail UI. The admin UI delegates status changes to the same order status service used by `PUT /orders/{order_id}/status`, including stock restoration when an order is cancelled.
 
 Examples of invalid transitions:
 
