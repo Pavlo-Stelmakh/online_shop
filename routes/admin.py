@@ -450,7 +450,15 @@ def admin_products(
 
 
 @router.get("/products/create")
-def admin_product_create_page(
+def admin_product_create_legacy_page(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    return admin_product_new_page(request=request, db=db)
+
+
+@router.get("/products/new")
+def admin_product_new_page(
     request: Request,
     db: Session = Depends(get_db)
 ):
@@ -471,6 +479,33 @@ def admin_product_create_page(
 
 
 @router.post("/products/create")
+def admin_product_create_legacy(
+    request: Request,
+    name: str = Form(...),
+    price: str = Form(...),
+    description: str = Form(...),
+    image_url: str | None = Form(None),
+    stock: int = Form(...),
+    low_stock_threshold: int = Form(...),
+    category_id: int = Form(...),
+    csrf_token: str | None = Form(None),
+    db: Session = Depends(get_db)
+):
+    return admin_product_create(
+        request=request,
+        name=name,
+        price=price,
+        description=description,
+        image_url=image_url,
+        stock=stock,
+        low_stock_threshold=low_stock_threshold,
+        category_id=category_id,
+        csrf_token=csrf_token,
+        db=db
+    )
+
+
+@router.post("/products/new")
 def admin_product_create(
     request: Request,
     name: str = Form(...),
@@ -499,6 +534,30 @@ def admin_product_create(
         low_stock_threshold,
         category_id
     )
+
+    if not name.strip():
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_product_create.html",
+            context={
+                "error": "Product name is required",
+                "form_values": form_values,
+                "csrf_token": get_admin_csrf_token(request)
+            },
+            status_code=400
+        )
+
+    if not description.strip():
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_product_create.html",
+            context={
+                "error": "Product description is required",
+                "form_values": form_values,
+                "csrf_token": get_admin_csrf_token(request)
+            },
+            status_code=400
+        )
 
     try:
         price_amount = parse_positive_money(price)
@@ -641,6 +700,32 @@ def admin_product_edit(
         category_id
     )
 
+    if not name.strip():
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_product_edit.html",
+            context={
+                "product": product,
+                "error": "Product name is required",
+                "form_values": form_values,
+                "csrf_token": get_admin_csrf_token(request)
+            },
+            status_code=400
+        )
+
+    if not description.strip():
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_product_edit.html",
+            context={
+                "product": product,
+                "error": "Product description is required",
+                "form_values": form_values,
+                "csrf_token": get_admin_csrf_token(request)
+            },
+            status_code=400
+        )
+
     try:
         price_amount = parse_positive_money(price)
     except MoneyValidationError as exc:
@@ -713,7 +798,22 @@ def admin_product_edit(
     )
 
 @router.post("/products/{product_id}/delete")
-def admin_product_delete(
+def admin_product_delete_legacy(
+    product_id: int,
+    request: Request,
+    csrf_token: str | None = Form(None),
+    db: Session = Depends(get_db)
+):
+    return admin_product_archive(
+        product_id=product_id,
+        request=request,
+        csrf_token=csrf_token,
+        db=db
+    )
+
+
+@router.post("/products/{product_id}/archive")
+def admin_product_archive(
     product_id: int,
     request: Request,
     csrf_token: str | None = Form(None),
@@ -746,7 +846,7 @@ def admin_product_delete(
                 "products": db.query(Product).order_by(Product.id.desc()).all(),
                 "search": "",
                 "in_stock": None,
-                "error": "Product cannot be deleted because it is used in orders.",
+                "error": "Product cannot be archived because it is used in orders.",
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400

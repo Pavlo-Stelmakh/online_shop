@@ -775,13 +775,13 @@ def test_admin_ui_client_can_access_dashboard():
     assert response.status_code == 200
     assert "Online Shop Admin Dashboard" in response.text
 
-def test_admin_product_create_page_returns_200_for_admin():
+def test_admin_can_open_new_product_form():
     admin_client = get_admin_ui_client()
 
-    response = admin_client.get("/admin/products/create")
+    response = admin_client.get("/admin/products/new")
 
     assert response.status_code == 200
-    assert "Create Product" in response.text
+    assert "Add product" in response.text
     assert "Low Stock Threshold" in response.text
     assert "Category ID" in response.text
 
@@ -789,7 +789,7 @@ def test_admin_product_create_page_redirects_without_login():
     anonymous_client = TestClient(app)
 
     response = anonymous_client.get(
-        "/admin/products/create",
+        "/admin/products/new",
         follow_redirects=False
     )
 
@@ -803,7 +803,7 @@ def test_admin_can_create_product_from_ui():
     product_name = f"Admin UI Product {time.time()}"
 
     response = admin_client.post(
-        "/admin/products/create",
+        "/admin/products/new",
         data={
             "name": product_name,
             "price": 150,
@@ -831,7 +831,7 @@ def test_admin_product_create_without_csrf_fails():
     category = create_test_category()
 
     response = admin_client.post(
-        "/admin/products/create",
+        "/admin/products/new",
         data={
             "name": f"Missing CSRF Product {time.time()}",
             "price": 150,
@@ -866,12 +866,12 @@ def test_admin_product_edit_without_csrf_fails():
     assert response.status_code == 403
 
 
-def test_admin_product_delete_without_csrf_fails():
+def test_admin_product_archive_without_csrf_fails():
     admin_client = get_admin_ui_client()
     product = create_test_product(stock=5, price=100)
 
     response = admin_client.post(
-        f"/admin/products/{product['id']}/delete",
+        f"/admin/products/{product['id']}/archive",
         follow_redirects=False,
     )
 
@@ -881,7 +881,7 @@ def test_admin_product_create_rejects_invalid_category():
     admin_client = get_admin_ui_client()
 
     response = admin_client.post(
-        "/admin/products/create",
+        "/admin/products/new",
         data={
             "name": f"Invalid Category Product {time.time()}",
             "price": 150,
@@ -904,7 +904,7 @@ def test_admin_product_create_invalid_price_preserves_submitted_values():
     admin_client = get_admin_ui_client()
 
     response = admin_client.post(
-        "/admin/products/create",
+        "/admin/products/new",
         data={
             "name": "Attempted Create Product",
             "price": "19.999",
@@ -930,7 +930,7 @@ def test_admin_product_create_invalid_category_preserves_submitted_fields():
     admin_client = get_admin_ui_client()
 
     response = admin_client.post(
-        "/admin/products/create",
+        "/admin/products/new",
         data={
             "name": "Invalid Category Attempt",
             "price": "29.99",
@@ -1127,8 +1127,8 @@ def test_admin_products_page_contains_create_product_link():
     response = admin_client.get("/admin/products")
 
     assert response.status_code == 200
-    assert "Create Product" in response.text
-    assert "/admin/products/create" in response.text
+    assert "Add product" in response.text
+    assert "/admin/products/new" in response.text
 
 def test_admin_product_edit_page_returns_200_for_admin():
     admin_client = get_admin_ui_client()
@@ -1216,17 +1216,17 @@ def test_admin_products_page_contains_edit_product_link():
     assert "Edit" in response.text
     assert f"/admin/products/{product['id']}/edit" in response.text
 
-def test_admin_products_page_contains_delete_button_and_modal():
+def test_admin_products_page_contains_archive_button_and_modal():
     admin_client = get_admin_ui_client()
     product = create_test_product(stock=5, price=100)
 
     response = admin_client.get("/admin/products")
 
     assert response.status_code == 200
-    assert "Delete" in response.text
-    assert f"/admin/products/{product['id']}/delete" in response.text
-    assert "Delete product?" in response.text
-    assert "Are you sure you want to delete this product?" in response.text
+    assert "Archive" in response.text
+    assert f"/admin/products/{product['id']}/archive" in response.text
+    assert "Archive product?" in response.text
+    assert "Archive is unavailable for products used in existing orders. Continue?" in response.text
     assert "Cancel" in response.text
 
 def test_admin_product_edit_page_contains_update_confirmation_modal():
@@ -1241,24 +1241,24 @@ def test_admin_product_edit_page_contains_update_confirmation_modal():
     assert "Cancel" in response.text
     assert "Update" in response.text
 
-def test_admin_product_delete_redirects_without_login():
+def test_admin_product_archive_redirects_without_login():
     product = create_test_product(stock=5, price=100)
     anonymous_client = TestClient(app)
 
     response = anonymous_client.post(
-        f"/admin/products/{product['id']}/delete",
+        f"/admin/products/{product['id']}/archive",
         follow_redirects=False
     )
 
     assert response.status_code == 303
     assert response.headers["location"] == "/admin/login"
 
-def test_admin_can_delete_product_without_orders():
+def test_admin_can_archive_product_without_orders():
     admin_client = get_admin_ui_client()
     product = create_test_product(stock=5, price=100)
 
     response = admin_client.post(
-        f"/admin/products/{product['id']}/delete",
+        f"/admin/products/{product['id']}/archive",
         data={"csrf_token": get_admin_ui_csrf_token(admin_client, "/admin/products")},
         follow_redirects=False
     )
@@ -1271,7 +1271,7 @@ def test_admin_can_delete_product_without_orders():
     assert products_response.status_code == 200
     assert product["name"] not in products_response.text
 
-def test_admin_product_delete_blocked_when_product_is_used_in_orders():
+def test_admin_product_archive_blocked_when_product_is_used_in_orders():
     admin_client = get_admin_ui_client()
 
     product = create_test_product(stock=10, price=100)
@@ -1287,19 +1287,79 @@ def test_admin_product_delete_blocked_when_product_is_used_in_orders():
     )
 
     response = admin_client.post(
-        f"/admin/products/{product['id']}/delete",
+        f"/admin/products/{product['id']}/archive",
         data={"csrf_token": get_admin_ui_csrf_token(admin_client, "/admin/products")}
     )
 
     assert response.status_code == 400
-    assert "Product cannot be deleted because it is used in orders." in response.text
+    assert "Product cannot be archived because it is used in orders." in response.text
+
+def test_anonymous_and_customer_cannot_access_product_management_pages():
+    product = create_test_product(stock=5, price=100)
+    anonymous_client = TestClient(app)
+
+    anonymous_response = anonymous_client.get(
+        "/admin/products/new",
+        follow_redirects=False,
+    )
+
+    assert anonymous_response.status_code == 303
+    assert anonymous_response.headers["location"] == "/admin/login"
+
+    customer_user = create_registered_user(role="customer")
+    customer_client = TestClient(app)
+    customer_client.cookies.set(
+        ADMIN_SESSION_COOKIE_NAME,
+        create_admin_session_token(type("SessionUser", (), customer_user)()),
+    )
+
+    customer_new_response = customer_client.get(
+        "/admin/products/new",
+        follow_redirects=False,
+    )
+    customer_edit_response = customer_client.get(
+        f"/admin/products/{product['id']}/edit",
+        follow_redirects=False,
+    )
+    customer_archive_response = customer_client.post(
+        f"/admin/products/{product['id']}/archive",
+        follow_redirects=False,
+    )
+
+    assert customer_new_response.status_code == 303
+    assert customer_new_response.headers["location"] == "/admin/login"
+    assert customer_edit_response.status_code == 303
+    assert customer_edit_response.headers["location"] == "/admin/login"
+    assert customer_archive_response.status_code == 303
+    assert customer_archive_response.headers["location"] == "/admin/login"
+
+
+def test_admin_product_create_shows_clear_validation_errors():
+    admin_client = get_admin_ui_client()
+    category = create_test_category()
+
+    response = admin_client.post(
+        "/admin/products/new",
+        data={
+            "name": "   ",
+            "price": "19.99",
+            "description": "Valid description",
+            "stock": "5",
+            "low_stock_threshold": "2",
+            "category_id": str(category["id"]),
+            "csrf_token": get_admin_ui_csrf_token(admin_client),
+        },
+    )
+
+    assert response.status_code == 400
+    assert "Product name is required" in response.text
 
 def test_admin_product_create_rejects_more_than_two_decimal_places():
     category = create_test_category()
     admin_client = get_admin_ui_client()
 
     response = admin_client.post(
-        "/admin/products/create",
+        "/admin/products/new",
         data={
             "name": f"Admin Money Product {time.time()}",
             "price": "19.999",

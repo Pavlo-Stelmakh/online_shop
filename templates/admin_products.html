@@ -199,12 +199,12 @@
             cursor: pointer;
         }
 
-        .cancel-delete-button {
+        .cancel-archive-button {
             background: #e5e7eb;
             color: #374151;
         }
 
-        .confirm-delete-button {
+        .confirm-archive-button {
             background: #dc2626;
             color: white;
         }
@@ -220,7 +220,7 @@
     <main>
         <section class="nav">
             <a href="/admin">Dashboard</a>
-            <a href="/admin/products/create">Create Product</a>
+            <a href="/admin/products/new">Add product</a>
             <a href="/admin/products">Products</a>
             <a href="/admin/orders">Orders</a>
             <a href="/admin/categories">Categories</a>
@@ -297,12 +297,12 @@
                                     <a href="/admin/products/{{ product.id }}/edit">Edit</a>
                                     <form
                                         method="post"
-                                        action="/admin/products/{{ product.id }}/delete"
+                                        action="/admin/products/{{ product.id }}/archive"
                                         style="display:inline;"
-                                        class="delete-form"
+                                        class="archive-form"
                                     >
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                        <button type="button" class="delete-button">Delete</button>
+                                        <button type="button" class="archive-button">Archive</button>
                                     </form>
                                 </td>
                             </tr>
@@ -319,51 +319,51 @@
     <footer>
         Online Shop Admin Dashboard — v4.0.0
     </footer>
-    <div id="deleteModal" class="modal-backdrop">
+    <div id="archiveModal" class="modal-backdrop">
         <div class="modal">
-            <h2>Delete product?</h2>
-            <p>Are you sure you want to delete this product? This action cannot be undone.</p>
+            <h2>Archive product?</h2>
+            <p>Archive is unavailable for products used in existing orders. Continue?</p>
 
             <div class="modal-actions">
-                <button type="button" class="cancel-delete-button" id="cancelDeleteButton">
+                <button type="button" class="cancel-archive-button" id="cancelArchiveButton">
                     Cancel
                 </button>
-                <button type="button" class="confirm-delete-button" id="confirmDeleteButton">
-                    Delete
+                <button type="button" class="confirm-archive-button" id="confirmArchiveButton">
+                    Archive
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        let selectedDeleteForm = null;
+        let selectedArchiveForm = null;
 
-        const deleteModal = document.getElementById("deleteModal");
-        const cancelDeleteButton = document.getElementById("cancelDeleteButton");
-        const confirmDeleteButton = document.getElementById("confirmDeleteButton");
+        const archiveModal = document.getElementById("archiveModal");
+        const cancelArchiveButton = document.getElementById("cancelArchiveButton");
+        const confirmArchiveButton = document.getElementById("confirmArchiveButton");
 
-        document.querySelectorAll(".delete-button").forEach((button) => {
+        document.querySelectorAll(".archive-button").forEach((button) => {
             button.addEventListener("click", () => {
-                selectedDeleteForm = button.closest("form");
-                deleteModal.classList.add("active");
+                selectedArchiveForm = button.closest("form");
+                archiveModal.classList.add("active");
             });
         });
 
-        cancelDeleteButton.addEventListener("click", () => {
-            selectedDeleteForm = null;
-            deleteModal.classList.remove("active");
+        cancelArchiveButton.addEventListener("click", () => {
+            selectedArchiveForm = null;
+            archiveModal.classList.remove("active");
         });
 
-        confirmDeleteButton.addEventListener("click", () => {
-            if (selectedDeleteForm) {
-                selectedDeleteForm.submit();
+        confirmArchiveButton.addEventListener("click", () => {
+            if (selectedArchiveForm) {
+                selectedArchiveForm.submit();
             }
         });
 
-        deleteModal.addEventListener("click", (event) => {
-            if (event.target === deleteModal) {
-                selectedDeleteForm = null;
-                deleteModal.classList.remove("active");
+        archiveModal.addEventListener("click", (event) => {
+            if (event.target === archiveModal) {
+                selectedArchiveForm = null;
+                archiveModal.classList.remove("active");
             }
         });
     </script>
