@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Create Product</title>
+    <title>Add product</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -109,7 +109,7 @@
 </head>
 <body>
     <header>
-        <h1>Create Product</h1>
+        <h1>Add product</h1>
         <p>Create a new product from the admin dashboard.</p>
     </header>
 
@@ -130,7 +130,7 @@
                 <div class="error">{{ error }}</div>
             {% endif %}
 
-            <form method="post" action="/admin/products/create">
+            <form method="post" action="/admin/products/new">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <label for="name">Name</label>
                 <input id="name" type="text" name="name" value="{{ form_values.get('name', '') }}" required>
@@ -153,7 +153,7 @@
                 <label for="category_id">Category ID</label>
                 <input id="category_id" type="number" name="category_id" min="1" value="{{ form_values.get('category_id', '') }}" required>
 
-                <button type="submit">Create Product</button>
+                <button type="submit">Add product</button>
             </form>
         </section>
     </main>

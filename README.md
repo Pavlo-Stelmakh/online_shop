@@ -14,7 +14,7 @@ The API supports two main roles:
 admin
 customer
 ```
-Admin users can manage products, categories and orders. Customer users can create orders, manage their customer profile and access their own order history.
+Admin users can manage products, categories and orders. The admin product UI supports listing products, opening the Add product form, creating products, editing existing products, and archiving products when they are not referenced by order items. Customer users can create orders, manage their customer profile and access their own order history.
 
 ## Live Demo
 Production API:
@@ -40,6 +40,12 @@ Admin Products Page:
 
 ```text
 https://online-shop-api-z9y4.onrender.com/admin/products
+```
+
+Admin Add product page:
+
+```text
+https://online-shop-api-z9y4.onrender.com/admin/products/new
 ```
 
 
@@ -134,6 +140,7 @@ Production precondition for the `customers.user_id -> users.id` foreign key: the
 ### Products
 
 - Product CRUD
+- Admin UI product management at `/admin/products`, `/admin/products/new`, and `/admin/products/{product_id}/edit`; admin session authentication is required, validation errors are shown on the form, and Archive refuses products already used in `order_items` when no soft-delete field is available.
 - Product image URL support
 - Product create/update validation trims product names and descriptions, requires them to be non-blank, validates positive category IDs and preserves price, stock and low-stock threshold validation
 - Product catalog with pagination, filtering, sorting and metadata response
