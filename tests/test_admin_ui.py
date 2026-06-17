@@ -1425,6 +1425,15 @@ def test_anonymous_and_non_admin_cannot_access_order_detail():
     assert non_admin_response.headers["location"] == "/admin/login"
 
 
+def test_unknown_admin_order_detail_returns_404():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/orders/999999")
+
+    assert response.status_code == 404
+    assert "Order not found" in response.text
+
+
 def test_admin_order_detail_shows_customer_items_and_money():
     product, customer, order = _create_admin_ui_order(quantity=2, price=19.9)
 
@@ -1481,7 +1490,7 @@ def test_admin_orders_list_contains_order_detail_link():
     response = admin_client.get("/admin/orders")
 
     assert response.status_code == 200
-    assert f'/admin/orders/{order["id"]}' in response.text
+    assert f'<a href="/admin/orders/{order["id"]}">{order["id"]}</a>' in response.text
     assert "View Details" in response.text
 
 

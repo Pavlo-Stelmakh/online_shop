@@ -77,6 +77,7 @@
                         <th>Product</th>
                         <th>Quantity</th>
                         <th>Unit Price</th>
+                        <th>Line Total</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -86,6 +87,7 @@
                             <td>{{ item.product.name }}</td>
                             <td>{{ item.quantity }}</td>
                             <td>{{ item.unit_price|money }}</td>
+                            <td>{{ (item.unit_price * item.quantity)|money }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
