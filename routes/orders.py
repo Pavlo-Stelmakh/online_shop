@@ -11,7 +11,7 @@ from schemas import (
     OrderStatus,
 )
 from routes.auth import get_current_user, get_admin_user
-from services.orders import transition_order_status
+from services.orders import cancel_order_with_stock_restore, transition_order_status
 from datetime import date, time, datetime
 from decimal import Decimal
 
@@ -238,6 +238,51 @@ def get_order(
 
     return order
 
+
+
+@router.post("/{order_id}/cancel", response_model=OrderResponse)
+def cancel_own_new_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "customer":
+        raise HTTPException(
+            status_code=403,
+            detail="Customer access required"
+        )
+
+    customer = db.query(Customer).filter(
+        Customer.user_id == current_user.id
+    ).first()
+
+    if customer is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Customer profile not found"
+        )
+
+    order = db.query(Order).filter(Order.id == order_id).first()
+
+    if order is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found"
+        )
+
+    if order.customer_id != customer.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
+
+    if order.status != "new":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot cancel order with status '{order.status}'"
+        )
+
+    return cancel_order_with_stock_restore(db, order_id)
 
 
 @router.put("/{order_id}/status", response_model=OrderResponse)

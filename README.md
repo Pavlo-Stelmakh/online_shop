@@ -164,6 +164,7 @@ Production precondition for the `customers.user_id -> users.id` foreign key: the
 - Duplicate product validation in order items
 - Order transaction safety for multi-item orders
 - Order status management with stock return on cancellation
+- Customer self-service cancellation for the customer's own `new` orders via `POST /orders/{order_id}/cancel`; non-new statuses return `409 Conflict`, unknown orders return `404 Not Found`, and orders owned by another customer return `403 Forbidden`
 - Customer order history
 - Protected single order access
 - Admin order status filtering
