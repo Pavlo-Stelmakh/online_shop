@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import Order, OrderItem, Customer, Product, User
 from schemas import (
-    ORDER_STATUS_TRANSITIONS,
     ORDER_STATUS_VALUES,
     OrderCreate,
     OrderListResponse,
@@ -12,6 +11,7 @@ from schemas import (
     OrderStatus,
 )
 from routes.auth import get_current_user, get_admin_user
+from services.orders import transition_order_status
 from datetime import date, time, datetime
 from decimal import Decimal
 
@@ -247,94 +247,7 @@ def update_order_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
-    order = db.query(Order).filter(Order.id == order_id).first()
-
-    if order is None:
-        raise HTTPException(status_code=404, detail="Order not found")
-
-    if status == order.status:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Order already has status '{status}'"
-        )
-
-    if status not in ORDER_STATUS_TRANSITIONS[order.status]:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Cannot change order status from '{order.status}' to '{status}'"
-        )
-
-    if status == "cancelled":
-        rows_updated = db.query(Order).filter(
-            Order.id == order_id,
-            Order.status.in_(("new", "paid")),
-        ).update(
-            {Order.status: "cancelled"},
-            synchronize_session=False,
-        )
-
-        if rows_updated == 1:
-            items = db.query(OrderItem).filter(OrderItem.order_id == order_id).all()
-
-            for item in items:
-                db.query(Product).filter(Product.id == item.product_id).update(
-                    {Product.stock: Product.stock + item.quantity},
-                    synchronize_session=False,
-                )
-
-            db.commit()
-
-            cancelled_order = db.query(Order).filter(Order.id == order_id).first()
-
-            if cancelled_order is None:
-                raise HTTPException(status_code=404, detail="Order not found")
-
-            return cancelled_order
-    else:
-        expected_current_status_by_target = {
-            "paid": "new",
-            "shipped": "paid",
-        }
-        expected_current_status = expected_current_status_by_target[status]
-
-        rows_updated = db.query(Order).filter(
-            Order.id == order_id,
-            Order.status == expected_current_status,
-        ).update(
-            {Order.status: status},
-            synchronize_session=False,
-        )
-
-        if rows_updated == 1:
-            db.commit()
-
-            updated_order = db.query(Order).filter(Order.id == order_id).first()
-
-            if updated_order is None:
-                raise HTTPException(status_code=404, detail="Order not found")
-
-            return updated_order
-
-    db.rollback()
-
-    current_order = db.query(Order).filter(Order.id == order_id).first()
-
-    if current_order is None:
-        raise HTTPException(status_code=404, detail="Order not found")
-
-    if current_order.status == status:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Order already has status '{status}'"
-        )
-
-    raise HTTPException(
-        status_code=400,
-        detail=(
-            f"Cannot change order status from '{current_order.status}' "
-            f"to '{status}'"
-        )
-    )
+    return transition_order_status(db, order_id, status)
 
 
 @router.delete("/{order_id}")
