@@ -95,17 +95,18 @@
         </section>
 
         <section class="card">
-            <h2>Change Status</h2>
-            <form method="post" action="/admin/orders/{{ order.id }}/status">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <label for="status">Status</label>
-                <select id="status" name="status">
-                    {% for status_option in statuses %}
-                        <option value="{{ status_option }}" {% if status_option == order.status %}selected{% endif %}>{{ status_option }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit">Update Status</button>
-            </form>
+            <h2>Order Actions</h2>
+            {% if status_actions %}
+                {% for action in status_actions %}
+                    <form method="post" action="/admin/orders/{{ order.id }}/status" style="display: inline-block;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="status" value="{{ action.status }}">
+                        <button type="submit">{{ action.label }}</button>
+                    </form>
+                {% endfor %}
+            {% else %}
+                <p>No status actions are available for this order.</p>
+            {% endif %}
         </section>
     </main>
 
