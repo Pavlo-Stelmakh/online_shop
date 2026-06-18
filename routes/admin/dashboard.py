@@ -1,5 +1,6 @@
 from fastapi import Depends, Request
 from fastapi.responses import RedirectResponse
+from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -12,11 +13,6 @@ def admin_dashboard(
     request: Request,
     db: Session = Depends(get_db)
 ):
-
-    admin_user = require_admin_ui(request, db)
-
-    if isinstance(admin_user, RedirectResponse):
-        return admin_user
 
     admin_user = require_admin_ui(request, db)
 
@@ -36,6 +32,18 @@ def admin_dashboard(
     shipped_orders_count = db.query(Order).filter(Order.status == "shipped").count()
     cancelled_orders_count = db.query(Order).filter(Order.status == "cancelled").count()
     total_revenue = calculate_total_revenue(db)
+    recent_orders = db.query(Order).order_by(Order.created_at.desc(), Order.id.desc()).limit(5).all()
+
+    customer_columns = {column.key for column in inspect(Customer).columns}
+    if "created_at" in customer_columns:
+        recent_customers = (
+            db.query(Customer)
+            .order_by(Customer.created_at.desc(), Customer.id.desc())
+            .limit(5)
+            .all()
+        )
+    else:
+        recent_customers = db.query(Customer).order_by(Customer.id.desc()).limit(5).all()
 
     return templates.TemplateResponse(
         request=request,
@@ -50,6 +58,8 @@ def admin_dashboard(
             "paid_orders_count": paid_orders_count,
             "shipped_orders_count": shipped_orders_count,
             "cancelled_orders_count": cancelled_orders_count,
-            "total_revenue": total_revenue
+            "total_revenue": total_revenue,
+            "recent_orders": recent_orders,
+            "recent_customers": recent_customers
         }
     )

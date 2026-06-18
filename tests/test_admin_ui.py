@@ -2482,3 +2482,90 @@ def test_admin_order_detail_status_form_shows_valid_transitions_only():
     assert 'value="cancelled"' in paid_detail_response.text
     assert 'value="new"' not in paid_detail_response.text
     assert 'value="paid"' not in paid_detail_response.text
+
+def test_admin_dashboard_shows_overview_counts():
+    response = build_isolated_admin_dashboard_response(
+        {
+            "new": ["1.00", "2.00"],
+            "paid": ["3.00"],
+        }
+    )
+
+    assert response.status_code == 200
+    assert "<h2>Products</h2>\n                <p>2</p>" in response.text
+    assert "<h2>Categories</h2>\n                <p>1</p>" in response.text
+    assert "<h2>Customers</h2>\n                <p>1</p>" in response.text
+    assert "<h2>Orders</h2>\n                <p>3</p>" in response.text
+    assert "<h2>Low Stock Products</h2>\n                <p>1</p>" in response.text
+
+
+def test_admin_dashboard_shows_orders_by_status():
+    response = build_isolated_admin_dashboard_response(
+        {
+            "new": ["1.00", "2.00"],
+            "paid": ["3.00"],
+            "shipped": ["4.00", "5.00", "6.00"],
+            "cancelled": ["7.00"],
+        }
+    )
+
+    assert response.status_code == 200
+    assert "<h2>New Orders</h2>\n                <p>2</p>" in response.text
+    assert "<h2>Paid Orders</h2>\n                <p>1</p>" in response.text
+    assert "<h2>Shipped Orders</h2>\n                <p>3</p>" in response.text
+    assert "<h2>Cancelled Orders</h2>\n                <p>1</p>" in response.text
+
+
+def test_admin_dashboard_recent_orders_link_to_order_detail():
+    product = create_test_product(stock=10, price=100)
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=1,
+        headers=customer_headers,
+    )
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Recent Orders" in response.text
+    assert f'href="/admin/orders/{order["id"]}"' in response.text
+
+
+def test_admin_dashboard_recent_customers_link_to_customer_detail():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+
+    admin_client = get_admin_ui_client()
+    response = admin_client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Recent Customers" in response.text
+    assert f'href="/admin/customers/{customer["id"]}"' in response.text
+    assert customer["name"] in response.text
+
+
+def test_anonymous_and_customer_cannot_access_admin_dashboard():
+    anonymous_client = TestClient(app)
+    anonymous_response = anonymous_client.get("/admin", follow_redirects=False)
+
+    assert anonymous_response.status_code == 303
+    assert anonymous_response.headers["location"] == "/admin/login"
+
+    customer_user = create_registered_user(role="customer")
+    customer_client = TestClient(app)
+    customer_client.cookies.set(
+        ADMIN_SESSION_COOKIE_NAME,
+        create_admin_session_token(User(
+            id=customer_user["id"],
+            username=customer_user["username"],
+            role="customer",
+        )),
+    )
+    customer_response = customer_client.get("/admin", follow_redirects=False)
+
+    assert customer_response.status_code == 303
+    assert customer_response.headers["location"] == "/admin/login"
