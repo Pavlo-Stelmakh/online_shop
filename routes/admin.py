@@ -797,14 +797,14 @@ def admin_product_edit(
         status_code=303
     )
 
-@router.post("/products/{product_id}/delete")
-def admin_product_delete_legacy(
+@router.post("/products/{product_id}/archive")
+def admin_product_archive_legacy(
     product_id: int,
     request: Request,
     csrf_token: str | None = Form(None),
     db: Session = Depends(get_db)
 ):
-    return admin_product_archive(
+    return admin_product_delete(
         product_id=product_id,
         request=request,
         csrf_token=csrf_token,
@@ -812,8 +812,8 @@ def admin_product_delete_legacy(
     )
 
 
-@router.post("/products/{product_id}/archive")
-def admin_product_archive(
+@router.post("/products/{product_id}/delete")
+def admin_product_delete(
     product_id: int,
     request: Request,
     csrf_token: str | None = Form(None),
@@ -846,7 +846,7 @@ def admin_product_archive(
                 "products": db.query(Product).order_by(Product.id.desc()).all(),
                 "search": "",
                 "in_stock": None,
-                "error": "Product cannot be archived because it is used in orders.",
+                "error": "Cannot delete product because it is used in existing orders.",
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
