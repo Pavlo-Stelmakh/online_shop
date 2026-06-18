@@ -14,7 +14,7 @@ The API supports two main roles:
 admin
 customer
 ```
-Admin users can manage products, categories and orders. The admin product UI supports listing products, opening the Add product form, creating products, editing existing products, and archiving products when they are not referenced by order items. Customer users can create orders, manage their customer profile and access their own order history.
+Admin users can manage products, categories and orders. The admin product UI supports listing products, opening the Add product form, creating products, editing existing products, and archiving products when they are not referenced by order items. The admin category UI supports listing categories, opening the Add category form, creating categories, editing categories, and safely deleting categories that are not used by products. Customer users can create orders, manage their customer profile and access their own order history.
 
 ## Live Demo
 Production API:
@@ -59,6 +59,12 @@ Admin Categories Page:
 
 ```text
 https://online-shop-api-z9y4.onrender.com/admin/categories
+```
+
+Admin Add category page:
+
+```text
+https://online-shop-api-z9y4.onrender.com/admin/categories/new
 ```
 
 Admin Customers Page:
@@ -153,8 +159,9 @@ Production precondition for the `customers.user_id -> users.id` foreign key: the
 ### Categories
 
 - Category CRUD
+- Admin UI category management at `/admin/categories`, `/admin/categories/new`, and `/admin/categories/{category_id}/edit`; admin session authentication is required, validation errors are shown on the form, and admins can create, edit, and safely delete unused categories
 - Category create/update validation rejects blank or whitespace-only names and trims accepted names
-- Category delete protection
+- Category delete protection prevents deleting categories used by existing products
 - Get products by category
 
 ### Customer Profiles
@@ -197,6 +204,9 @@ Production precondition for the `customers.user_id -> users.id` foreign key: the
 - Admin orders filter UI
 - Admin products search/filter UI
 - Admin categories search UI
+- Admin category create form
+- Admin category update form
+- Admin category delete action
 - Admin customers search UI
 - Product-specific low stock threshold
 - Admin dashboard login authentication

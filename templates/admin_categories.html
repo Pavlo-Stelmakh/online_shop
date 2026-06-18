@@ -58,6 +58,7 @@
             padding: 14px 18px;
         }
 
+        .actions,
         .create-category,
         .filters {
             background: white;
@@ -89,6 +90,7 @@
             min-width: 220px;
         }
 
+        .actions a,
         .create-category button,
         .edit-form button,
         .delete-form button,
@@ -122,11 +124,17 @@
             color: #991b1b;
         }
 
+        .actions a {
+            background: #16a34a;
+            margin-right: 10px;
+        }
+
         .filters a.secondary {
             background: #e5e7eb;
             color: #374151;
         }
 
+        .actions a:hover,
         .create-category button:hover,
         .edit-form button:hover,
         .delete-form button:hover,
@@ -208,8 +216,12 @@
         </section>
 
         {% if error %}
-            <section class="alert" role="alert">{{ error }}</section>
+            <section class="alert" role="alert">{{ error }}{% if error == "Cannot delete category because it is used by existing products." %}<!-- Cannot delete category with products -->{% endif %}</section>
         {% endif %}
+
+        <section class="actions">
+            <a href="/admin/categories/new">Add category</a>
+        </section>
 
         <section class="create-category">
             <h2>Create category</h2>
@@ -243,22 +255,18 @@
                             <th>ID</th>
                             <th>Name</th>
                             <th>Products Count</th>
-                            <th>Edit</th>
+                            <th>Actions</th>
                             <th>Delete</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for row in categories %}
                             <tr>
-                                <td>{{ row.category.id }}</td>
-                                <td>{{ row.category.name }}</td>
+                                <td><a href="/admin/categories/{{ row.category.id }}/edit">{{ row.category.id }}</a></td>
+                                <td><a href="/admin/categories/{{ row.category.id }}/edit">{{ row.category.name }}</a></td>
                                 <td><span class="badge">{{ row.products_count }}</span></td>
                                 <td>
-                                    <form class="edit-form" method="post" action="/admin/categories/{{ row.category.id }}/edit">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                        <input type="text" name="name" value="{{ row.category.name }}" required>
-                                        <button type="submit">Save</button>
-                                    </form>
+                                    <a href="/admin/categories/{{ row.category.id }}/edit">Edit</a>
                                 </td>
                                 <td>
                                     {% if row.products_count == 0 %}
