@@ -203,7 +203,7 @@
                 <textarea id="description" name="description" required>{{ form_values.get('description', product.description) }}</textarea>
 
                 <label for="image_url">Image URL</label>
-                <input id="image_url" type="url" name="image_url" value="{{ form_values.get('image_url', product.image_url or '') }}">
+                <input id="image_url" type="text" name="image_url" value="{{ form_values.get('image_url', product.image_url or '') }}">
 
                 <label for="stock">Stock</label>
                 <input id="stock" type="number" name="stock" min="0" value="{{ form_values.get('stock', product.stock) }}" required>

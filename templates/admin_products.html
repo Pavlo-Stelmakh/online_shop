@@ -146,6 +146,20 @@
             font-weight: bold;
         }
 
+        .product-image-preview {
+            width: 56px;
+            height: 56px;
+            object-fit: cover;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: #f9fafb;
+        }
+
+        .image-fallback {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
         footer {
             padding: 20px 40px;
             color: #6b7280;
@@ -266,7 +280,7 @@
                             <th>Stock</th>
                             <th>Low Stock Threshold</th>
                             <th>Category ID</th>
-                            <th>Image URL</th>
+                            <th>Image</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -287,9 +301,20 @@
                                 <td>{{ product.category_id }}</td>
                                 <td>
                                     {% if product.image_url %}
-                                        {{ product.image_url }}
+                                        {% if product.image_url.startswith('http://') or product.image_url.startswith('https://') %}
+                                            <img
+                                                class="product-image-preview"
+                                                src="{{ product.image_url }}"
+                                                alt="{{ product.name }} preview"
+                                                loading="lazy"
+                                                onerror="this.style.display='none'; this.nextElementSibling.hidden=false;"
+                                            >
+                                            <span class="image-fallback" hidden>Image unavailable</span>
+                                        {% else %}
+                                            <span class="image-fallback">Image unavailable</span>
+                                        {% endif %}
                                     {% else %}
-                                        —
+                                        <span class="image-fallback">No image</span>
                                     {% endif %}
                                 </td>
 

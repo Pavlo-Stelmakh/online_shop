@@ -826,6 +826,92 @@ def test_admin_can_create_product_from_ui():
     assert product_name in products_response.text
 
 
+def test_admin_products_page_shows_product_image_preview():
+    admin_client = get_admin_ui_client()
+    category = create_test_category()
+    image_url = f"https://example.com/admin-preview-{time.time()}.jpg"
+    product_name = f"Image Preview Product {time.time()}"
+
+    create_response = admin_client.post(
+        "/admin/products/new",
+        data={
+            "name": product_name,
+            "price": 150,
+            "description": "Product with preview image",
+            "image_url": image_url,
+            "stock": 7,
+            "low_stock_threshold": 10,
+            "category_id": category["id"],
+            "csrf_token": get_admin_ui_csrf_token(admin_client),
+        },
+        follow_redirects=False,
+    )
+
+    assert create_response.status_code == 303
+
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert 'class="product-image-preview"' in response.text
+    assert f'src="{image_url}"' in response.text
+    assert f'alt="{product_name} preview"' in response.text
+
+
+def test_admin_products_page_shows_no_image_fallback_for_missing_image_url():
+    admin_client = get_admin_ui_client()
+    create_test_product(stock=10, price=100)
+
+    response = admin_client.get("/admin/products")
+
+    assert response.status_code == 200
+    assert "No image" in response.text
+
+
+def test_admin_product_create_rejects_invalid_image_url():
+    admin_client = get_admin_ui_client()
+    category = create_test_category()
+
+    response = admin_client.post(
+        "/admin/products/new",
+        data={
+            "name": f"Invalid Image Create {time.time()}",
+            "price": 150,
+            "description": "Invalid image URL",
+            "image_url": "ftp://example.com/image.jpg",
+            "stock": 7,
+            "low_stock_threshold": 10,
+            "category_id": category["id"],
+            "csrf_token": get_admin_ui_csrf_token(admin_client),
+        },
+    )
+
+    assert response.status_code == 400
+    assert "Image URL must start with http:// or https://" in response.text
+    assert 'value="ftp://example.com/image.jpg"' in response.text
+
+
+def test_admin_product_edit_rejects_invalid_image_url():
+    admin_client = get_admin_ui_client()
+    product = create_test_product(stock=5, price=100)
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/edit",
+        data={
+            "name": product["name"],
+            "price": 250,
+            "description": "Invalid image update",
+            "image_url": "example.com/image.jpg",
+            "stock": 12,
+            "low_stock_threshold": 20,
+            "category_id": product["category_id"],
+            "csrf_token": get_admin_ui_csrf_token(admin_client, f"/admin/products/{product['id']}/edit"),
+        },
+    )
+
+    assert response.status_code == 400
+    assert "Image URL must start with http:// or https://" in response.text
+    assert 'value="example.com/image.jpg"' in response.text
+
 def test_admin_product_create_without_csrf_fails():
     admin_client = get_admin_ui_client()
     category = create_test_category()

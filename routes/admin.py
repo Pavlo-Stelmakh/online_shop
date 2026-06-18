@@ -190,6 +190,24 @@ def build_product_form_values(
     }
 
 
+
+def validate_admin_product_image_url(image_url: str | None) -> str | None:
+    if image_url is None:
+        return None
+
+    cleaned_image_url = image_url.strip()
+
+    if not cleaned_image_url:
+        return None
+
+    if not (
+        cleaned_image_url.startswith("http://")
+        or cleaned_image_url.startswith("https://")
+    ):
+        return "Image URL must start with http:// or https://"
+
+    return None
+
 def build_customer_form_values(
     name: str,
     email: str,
@@ -496,7 +514,7 @@ def admin_product_create_legacy(
         name=name,
         price=price,
         description=description,
-        image_url=image_url,
+        image_url=(image_url.strip() or None) if image_url else None,
         stock=stock,
         low_stock_threshold=low_stock_threshold,
         category_id=category_id,
@@ -534,6 +552,20 @@ def admin_product_create(
         low_stock_threshold,
         category_id
     )
+
+    image_url_error = validate_admin_product_image_url(image_url)
+
+    if image_url_error:
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_product_create.html",
+            context={
+                "error": image_url_error,
+                "form_values": form_values,
+                "csrf_token": get_admin_csrf_token(request)
+            },
+            status_code=400
+        )
 
     if not name.strip():
         return templates.TemplateResponse(
@@ -615,7 +647,7 @@ def admin_product_create(
         name=name,
         price=price_amount,
         description=description,
-        image_url=image_url,
+        image_url=(image_url.strip() or None) if image_url else None,
         stock=stock,
         low_stock_threshold=low_stock_threshold,
         category_id=category_id
@@ -699,6 +731,21 @@ def admin_product_edit(
         low_stock_threshold,
         category_id
     )
+
+    image_url_error = validate_admin_product_image_url(image_url)
+
+    if image_url_error:
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_product_edit.html",
+            context={
+                "product": product,
+                "error": image_url_error,
+                "form_values": form_values,
+                "csrf_token": get_admin_csrf_token(request)
+            },
+            status_code=400
+        )
 
     if not name.strip():
         return templates.TemplateResponse(
@@ -785,7 +832,7 @@ def admin_product_edit(
     product.name = name
     product.price = price_amount
     product.description = description
-    product.image_url = image_url
+    product.image_url = (image_url.strip() or None) if image_url else None
     product.stock = stock
     product.low_stock_threshold = low_stock_threshold
     product.category_id = category_id
