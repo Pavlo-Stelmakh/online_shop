@@ -477,20 +477,6 @@ def admin_product_edit(
         status_code=303
     )
 
-@router.post("/products/{product_id}/archive")
-def admin_product_archive_legacy(
-    product_id: int,
-    request: Request,
-    csrf_token: str | None = Form(None),
-    db: Session = Depends(get_db)
-):
-    return admin_product_delete(
-        product_id=product_id,
-        request=request,
-        csrf_token=csrf_token,
-        db=db
-    )
-
 
 @router.post("/products/{product_id}/delete")
 def admin_product_delete(

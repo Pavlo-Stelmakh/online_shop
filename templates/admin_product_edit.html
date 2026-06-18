@@ -181,7 +181,7 @@
             <a href="/admin/orders">Orders</a>
             <a href="/admin/categories">Categories</a>
             <a href="/admin/customers">Customers</a>
-            <a href="/admin/low-stock">Low Stock</a>
+            <a href="/admin/low-stock">Low stock</a>
             <a href="/docs">Swagger UI</a>
             <a href="/admin/logout">Logout</a>
         </section>
@@ -208,7 +208,7 @@
                 <label for="stock">Stock</label>
                 <input id="stock" type="number" name="stock" min="0" value="{{ form_values.get('stock', product.stock) }}" required>
 
-                <label for="low_stock_threshold">Low Stock Threshold</label>
+                <label for="low_stock_threshold">Low stock threshold</label>
                 <input id="low_stock_threshold" type="number" name="low_stock_threshold" min="1" max="100" value="{{ form_values.get('low_stock_threshold', product.low_stock_threshold) }}" required>
 
                 <label for="category_id">Category ID</label>
