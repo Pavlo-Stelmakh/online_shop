@@ -86,16 +86,16 @@ https://online-shop-api-z9y4.onrender.com/health
 Current automated test status:
 
 ```text
-python -m pytest
-379 passed
+pytest -q
+417 passed
 ```
 
 Tests are run with:
 
 ```bash
-python -m pytest
+pytest -q
 ```
-GitHub Actions is used for CI checks on pull requests and main branch updates. CI runs `alembic upgrade head` on a temporary SQLite audit database, runs the data integrity audit against that migrated database, and then runs `python -m pytest`. CI also runs a focused PostgreSQL migration/audit job with a PostgreSQL service container to verify `alembic upgrade head`, the data integrity audit script, and application import compatibility against the same database engine family used by Render production.
+GitHub Actions is used for CI checks on pull requests and main branch updates. CI runs `alembic upgrade head` on a temporary SQLite audit database, runs the data integrity audit against that migrated database, and then runs `pytest -q`. CI also runs a focused PostgreSQL migration/audit job with a PostgreSQL service container to verify `alembic upgrade head`, the data integrity audit script, and application import compatibility against the same database engine family used by Render production.
 
 ## Data integrity audit
 
@@ -208,7 +208,7 @@ Production precondition for the `customers.user_id -> users.id` foreign key: the
 - Docker support
 - GitHub Actions CI
 - Render production deployment
-- Automated test suite runnable with `python -m pytest`
+- Automated test suite runnable with `pytest -q`
 
 
 ## API Overview
