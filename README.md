@@ -140,9 +140,9 @@ Production precondition for the `customers.user_id -> users.id` foreign key: the
 ### Products
 
 - Product CRUD
-- Admin UI product management at `/admin/products`, `/admin/products/new`, and `/admin/products/{product_id}/edit`; admin session authentication is required, validation errors are shown on the form, and admins can create, edit, and safely delete products. Products used in existing orders cannot be deleted.
+- Admin UI product management at `/admin/products`, `/admin/products/new`, and `/admin/products/{product_id}/edit`; admin session authentication is required, validation errors are shown on the form, and admins can create, edit, and safely delete products. The products list shows a small preview for HTTP(S) image URLs and a fallback when no image is available. Products used in existing orders cannot be deleted.
 - Product image URL support
-- Product create/update validation trims product names and descriptions, requires them to be non-blank, validates positive category IDs and preserves price, stock and low-stock threshold validation
+- Product create/update validation trims product names and descriptions, requires them to be non-blank, validates positive category IDs, allows empty image URLs, requires provided image URLs to start with `http://` or `https://`, and preserves price, stock and low-stock threshold validation
 - Product catalog with pagination, filtering, sorting and metadata response
 - Product catalog search by name and description
 - Product catalog empty search validation
