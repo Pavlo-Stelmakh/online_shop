@@ -362,15 +362,13 @@ Admin customers page:
 /admin/customers
 ```
 
-The admin customers page displays a customers table with:
+The admin customers page requires the existing admin session authentication and lists customer profiles. Customer IDs, customer names, and the View Details action link to the admin customer detail page:
 
 ```text
-customer id
-user id
-name
-email
-phone
+/admin/customers/{customer_id}
 ```
+
+The admin customer detail page shows the customer id, user id, name, email, phone, optional created_at value when the customer record has one, and the customer's related orders. Related orders include order id, status, total price, created_at, items count, and links to `/admin/orders/{order_id}`. Unknown customer detail URLs return `404 Customer not found`, while anonymous users and non-admin users are redirected to the admin login page by the admin UI session-auth logic.
 
 Admin low stock page:
 

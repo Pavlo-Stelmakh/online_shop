@@ -191,9 +191,9 @@
                     <tbody>
                         {% for customer in customers %}
                             <tr>
-                                <td>{{ customer.id }}</td>
+                                <td><a href="/admin/customers/{{ customer.id }}">{{ customer.id }}</a></td>
                                 <td>{{ customer.user_id }}</td>
-                                <td>{{ customer.name }}</td>
+                                <td><a href="/admin/customers/{{ customer.id }}">{{ customer.name }}</a></td>
                                 <td>{{ customer.email }}</td>
                                 <td>{{ customer.phone }}</td>
                                 <td><a href="/admin/customers/{{ customer.id }}">View Details</a></td>

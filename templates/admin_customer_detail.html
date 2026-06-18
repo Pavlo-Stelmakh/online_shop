@@ -76,6 +76,10 @@
                     <dd>{{ customer.email }}</dd>
                     <dt>Phone</dt>
                     <dd>{{ customer.phone }}</dd>
+                    {% if customer.created_at is defined and customer.created_at %}
+                        <dt>Created At</dt>
+                        <dd>{{ customer.created_at|datetime }}</dd>
+                    {% endif %}
                 </dl>
             </section>
 
@@ -103,6 +107,7 @@
                                 <th>Status</th>
                                 <th>Total Price</th>
                                 <th>Created At</th>
+                                <th>Items Count</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -113,6 +118,7 @@
                                     <td><span class="status status-{{ order.status }}">{{ order.status }}</span></td>
                                     <td>{{ order.total_price|money }}</td>
                                     <td>{{ order.created_at|datetime }}</td>
+                                    <td>{{ order.items|length }}</td>
                                     <td><a href="/admin/orders/{{ order.id }}">View Details</a></td>
                                 </tr>
                             {% endfor %}
