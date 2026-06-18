@@ -327,7 +327,7 @@ def build_isolated_admin_dashboard_response(
         if products is None:
             products = [
                 {
-                    "name": f"Dashboard Low Stock Product {time.time_ns()}",
+                    "name": f"Dashboard Low stock Product {time.time_ns()}",
                     "price": Decimal("1.00"),
                     "description": "Dashboard low stock product",
                     "stock": 2,

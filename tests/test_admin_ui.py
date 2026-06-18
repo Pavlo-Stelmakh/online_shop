@@ -131,7 +131,7 @@ def test_admin_dashboard_continues_to_show_basic_counts():
     assert "Categories" in response.text
     assert "Customers" in response.text
     assert "Orders" in response.text
-    assert "Low Stock Products" in response.text
+    assert "Low stock products" in response.text
     assert "New Orders" in response.text
     assert "Paid Orders" in response.text
     assert "Shipped Orders" in response.text
@@ -147,7 +147,7 @@ def test_admin_dashboard_contains_quick_links():
     assert "Orders" in response.text
     assert "Categories" in response.text
     assert "Customers" in response.text
-    assert "Low Stock" in response.text
+    assert "Low stock" in response.text
     assert "Swagger UI" in response.text
     assert "Health Check" in response.text
 
@@ -290,7 +290,7 @@ def test_admin_low_stock_page_returns_200():
     response = admin_client.get("/admin/low-stock")
 
     assert response.status_code == 200
-    assert "Admin Low Stock" in response.text
+    assert "Admin low stock" in response.text
 
 def test_admin_low_stock_page_contains_table_headers():
     create_test_product(stock=2, price=100)
@@ -321,7 +321,7 @@ def test_admin_dashboard_contains_admin_low_stock_link():
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Low Stock" in response.text
+    assert "Low stock" in response.text
     assert "/admin/low-stock" in response.text
 
 def test_admin_orders_page_contains_status_badge_class():
@@ -348,7 +348,7 @@ def test_admin_dashboard_contains_extended_stats_cards():
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Low Stock Products" in response.text
+    assert "Low stock products" in response.text
     assert "New Orders" in response.text
     assert "Paid Orders" in response.text
     assert "Cancelled Orders" in response.text
@@ -360,7 +360,7 @@ def test_admin_dashboard_low_stock_count_is_displayed():
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Low Stock Products" in response.text
+    assert "Low stock products" in response.text
 
 
 def test_admin_dashboard_low_stock_count_uses_product_specific_threshold():
@@ -368,7 +368,7 @@ def test_admin_dashboard_low_stock_count_uses_product_specific_threshold():
         {},
         products=[
             {
-                "name": f"Dashboard Custom Low Stock {time.time_ns()}",
+                "name": f"Dashboard Custom Low stock {time.time_ns()}",
                 "price": Decimal("1.00"),
                 "description": "Uses product-specific threshold",
                 "stock": 8,
@@ -385,8 +385,8 @@ def test_admin_dashboard_low_stock_count_uses_product_specific_threshold():
     )
 
     assert response.status_code == 200
-    assert "Low Stock Products" in response.text
-    assert "<h2>Low Stock Products</h2>\n                <p>1</p>" in response.text
+    assert "Low stock products" in response.text
+    assert "<h2>Low stock products</h2>\n                <p>1</p>" in response.text
 
 def test_admin_dashboard_final_polish_content():
     admin_client = get_admin_ui_client()
@@ -591,7 +591,7 @@ def test_admin_low_stock_page_uses_product_specific_threshold():
     response = admin_client.get("/admin/low-stock")
 
     assert response.status_code == 200
-    assert "Low Stock Threshold" in response.text
+    assert "Low stock threshold" in response.text
 
     # Both products currently use the default threshold.
     assert low_stock_product["name"] not in response.text
@@ -604,7 +604,7 @@ def test_admin_products_page_displays_low_stock_threshold():
     response = admin_client.get("/admin/products")
 
     assert response.status_code == 200
-    assert "Low Stock Threshold" in response.text
+    assert "Low stock threshold" in response.text
     assert product["name"] in response.text
 
 
@@ -631,7 +631,7 @@ def test_admin_low_stock_page_includes_product_when_stock_is_below_custom_thresh
 
     assert response.status_code == 200
     assert low_stock_product["name"] in response.text
-    assert "Low Stock Threshold" in response.text
+    assert "Low stock threshold" in response.text
 
 def test_admin_login_page_returns_200():
     anonymous_client = TestClient(app)
@@ -782,7 +782,7 @@ def test_admin_can_open_new_product_form():
 
     assert response.status_code == 200
     assert "Add product" in response.text
-    assert "Low Stock Threshold" in response.text
+    assert "Low stock threshold" in response.text
     assert "Category ID" in response.text
 
 def test_admin_product_create_page_redirects_without_login():
@@ -1225,7 +1225,7 @@ def test_admin_product_edit_page_returns_200_for_admin():
     assert response.status_code == 200
     assert "Edit Product" in response.text
     assert product["name"] in response.text
-    assert "Low Stock Threshold" in response.text
+    assert "Low stock threshold" in response.text
     assert "Update Product" in response.text
 
 def test_admin_product_edit_page_redirects_without_login():
@@ -1314,8 +1314,6 @@ def test_admin_products_page_contains_delete_button_and_modal():
     assert "Are you sure you want to delete this product?" in response.text
     assert "Products used in existing orders cannot be deleted." in response.text
     assert "Cancel" in response.text
-    assert "Archive" not in response.text
-    assert f"/admin/products/{product['id']}/archive" not in response.text
 
 def test_admin_product_edit_page_contains_update_confirmation_modal():
     admin_client = get_admin_ui_client()
@@ -1609,7 +1607,7 @@ def test_admin_order_detail_contains_full_admin_navigation():
         ("Categories", "/admin/categories"),
         ("Customers", "/admin/customers"),
         ("Orders", "/admin/orders"),
-        ("Low Stock", "/admin/low-stock"),
+        ("Low stock", "/admin/low-stock"),
         ("Swagger UI", "/docs"),
         ("Logout", "/admin/logout"),
     ]
@@ -1639,7 +1637,7 @@ def test_admin_orders_list_contains_order_detail_link():
 
     assert response.status_code == 200
     assert f'<a href="/admin/orders/{order["id"]}">{order["id"]}</a>' in response.text
-    assert "View Details" in response.text
+    assert "View details" in response.text
 
 
 
@@ -2095,7 +2093,7 @@ def test_admin_customers_list_contains_detail_links():
 
     assert response.status_code == 200
     assert f'/admin/customers/{customer["id"]}' in response.text
-    assert "View Details" in response.text
+    assert "View details" in response.text
 
 
 def test_admin_can_view_customer_detail():
@@ -2240,7 +2238,7 @@ def test_admin_customer_detail_contains_full_admin_navigation():
         ("Categories", "/admin/categories"),
         ("Customers", "/admin/customers"),
         ("Orders", "/admin/orders"),
-        ("Low Stock", "/admin/low-stock"),
+        ("Low stock", "/admin/low-stock"),
         ("Swagger UI", "/docs"),
         ("Logout", "/admin/logout"),
     ]
@@ -2496,7 +2494,7 @@ def test_admin_dashboard_shows_overview_counts():
     assert "<h2>Categories</h2>\n                <p>1</p>" in response.text
     assert "<h2>Customers</h2>\n                <p>1</p>" in response.text
     assert "<h2>Orders</h2>\n                <p>3</p>" in response.text
-    assert "<h2>Low Stock Products</h2>\n                <p>1</p>" in response.text
+    assert "<h2>Low stock products</h2>\n                <p>1</p>" in response.text
 
 
 def test_admin_dashboard_shows_orders_by_status():

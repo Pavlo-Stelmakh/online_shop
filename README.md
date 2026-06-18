@@ -14,7 +14,7 @@ The API supports two main roles:
 admin
 customer
 ```
-Admin users can manage products, categories and orders. The admin product UI supports listing products, opening the Add product form, creating products, editing existing products, and archiving products when they are not referenced by order items. The admin category UI supports listing categories, opening the Add category form, creating categories, editing categories, and safely deleting categories that are not used by products. Customer users can create orders, manage their customer profile and access their own order history.
+Admin users can manage products, categories and orders. The admin product UI supports listing products, opening the Add product form, creating products, editing existing products, and safely deleting products when they are not referenced by order items. The admin category UI supports listing categories, opening the Add category form, creating categories, editing categories, and safely deleting categories that are not used by products. Customer users can create orders, manage their customer profile and access their own order history.
 
 ## Live Demo
 Production API:
@@ -372,7 +372,7 @@ Admin customers page:
 /admin/customers
 ```
 
-The admin customers page requires the existing admin session authentication and lists customer profiles. Customer IDs, customer names, and the View Details action link to the admin customer detail page:
+The admin customers page requires the existing admin session authentication and lists customer profiles. Customer IDs, customer names, and the View details action link to the admin customer detail page:
 
 ```text
 /admin/customers/{customer_id}
@@ -405,7 +405,7 @@ Products
 Orders
 Categories
 Customers
-Low Stock
+Low stock
 Swagger UI
 ```
 
@@ -418,7 +418,7 @@ Products
 Categories
 Customers
 Orders
-Low Stock Products
+Low stock products
 New Orders
 Paid Orders
 Shipped Orders
@@ -452,7 +452,7 @@ Products -> /admin/products
 Categories -> /admin/categories
 Customers -> /admin/customers
 Orders -> /admin/orders
-Low Stock Products -> /admin/low-stock
+Low stock products -> /admin/low-stock
 New Orders -> /admin/orders?status=new
 Paid Orders -> /admin/orders?status=paid
 Shipped Orders -> /admin/orders?status=shipped
@@ -596,9 +596,15 @@ Admin pages require an authenticated admin session:
 ```text
 /admin
 /admin/products
+/admin/products/new
+/admin/products/{product_id}/edit
 /admin/orders
+/admin/orders/{order_id}
 /admin/categories
+/admin/categories/new
+/admin/categories/{category_id}/edit
 /admin/customers
+/admin/customers/{customer_id}
 /admin/low-stock
 ```
 
@@ -1515,7 +1521,7 @@ Example product:
 ```
 
 
-#### Low Stock Products
+#### Low stock products
 
 ```text
 GET /products/low-stock?threshold=5
@@ -1783,8 +1789,8 @@ For current clients, prefer these supported product endpoints:
 
 | Use case | Recommended endpoint |
 |---|---|
-| Simple product list, filtering or sorting | `GET /products` |
-| Product list with offset metadata (`total`, `skip`, `limit`, `items`) | `GET /products/catalog` |
+| Simple product list, filtering, sorting, or offset metadata (`total`, `skip`, `limit`, `items`) | `GET /products` |
+| Catalog product list with offset metadata (`total`, `skip`, `limit`, `items`) | `GET /products/catalog` |
 | Product list with page metadata (`total`, `page`, `limit`, `pages`, `items`) | `GET /products/catalog/pages` |
 
 #### Product Catalog Search
