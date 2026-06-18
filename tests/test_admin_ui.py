@@ -26,7 +26,7 @@ from tests.helpers import (
     get_auth_headers,
     TestingSessionLocal,
 )
-from models import Order
+from models import Order, User
 
 
 
@@ -2096,6 +2096,113 @@ def test_admin_customers_list_contains_detail_links():
     assert response.status_code == 200
     assert f'/admin/customers/{customer["id"]}' in response.text
     assert "View Details" in response.text
+
+
+def test_admin_can_view_customer_detail():
+    customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get(f'/admin/customers/{customer["id"]}')
+
+    assert response.status_code == 200
+    assert "Admin Customer Detail" in response.text
+    assert f"Customer #{customer['id']}" in response.text
+    assert str(customer["user_id"]) in response.text
+    assert customer["name"] in response.text
+    assert customer["email"] in response.text
+    assert customer["phone"] in response.text
+
+
+def test_anonymous_and_customer_cannot_access_customer_detail():
+    customer = create_test_customer()
+
+    anonymous_client = TestClient(app)
+    anonymous_response = anonymous_client.get(
+        f'/admin/customers/{customer["id"]}',
+        follow_redirects=False,
+    )
+
+    db = TestingSessionLocal()
+    try:
+        customer_user = db.query(User).filter(User.id == customer["user_id"]).first()
+        assert customer_user is not None
+        customer_client = TestClient(app)
+        customer_client.cookies.set(
+            ADMIN_SESSION_COOKIE_NAME,
+            create_admin_session_token(customer_user),
+        )
+    finally:
+        db.close()
+
+    customer_response = customer_client.get(
+        f'/admin/customers/{customer["id"]}',
+        follow_redirects=False,
+    )
+
+    assert anonymous_response.status_code == 303
+    assert anonymous_response.headers["location"] == "/admin/login"
+    assert customer_response.status_code == 303
+    assert customer_response.headers["location"] == "/admin/login"
+
+
+def test_unknown_customer_detail_returns_404():
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get('/admin/customers/999999')
+
+    assert response.status_code == 404
+    assert "Customer not found" in response.text
+
+
+def test_customer_list_links_to_detail_page_from_id_and_name():
+    customer = create_test_customer()
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get("/admin/customers")
+
+    assert response.status_code == 200
+    assert f'<a href="/admin/customers/{customer["id"]}">{customer["id"]}</a>' in response.text
+    assert f'<a href="/admin/customers/{customer["id"]}">{customer["name"]}</a>' in response.text
+
+
+def test_customer_detail_shows_related_orders_with_items_count():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    product = create_test_product()
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        quantity=3,
+        headers=customer_headers,
+    )
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get(f'/admin/customers/{customer["id"]}')
+
+    assert response.status_code == 200
+    assert "Orders" in response.text
+    assert "Items Count" in response.text
+    assert f'<td>{order["id"]}</td>' in response.text
+    assert f'<td>{order["status"]}</td>' not in response.text
+    assert f'>{order["status"]}</span>' in response.text
+    assert '<td>1</td>' in response.text
+
+
+def test_customer_detail_order_links_point_to_admin_order_detail():
+    customer_headers = get_auth_headers(role="customer")
+    customer = create_test_customer(headers=customer_headers)
+    product = create_test_product()
+    order = create_test_order(
+        product_id=product["id"],
+        customer_id=customer["id"],
+        headers=customer_headers,
+    )
+    admin_client = get_admin_ui_client()
+
+    response = admin_client.get(f'/admin/customers/{customer["id"]}')
+
+    assert response.status_code == 200
+    assert f'href="/admin/orders/{order["id"]}"' in response.text
 
 
 def test_admin_customer_detail_page_shows_fields_and_orders():
