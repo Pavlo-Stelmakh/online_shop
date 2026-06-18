@@ -421,10 +421,15 @@ Orders
 Low Stock Products
 New Orders
 Paid Orders
+Shipped Orders
 Cancelled Orders
 ```
 
-The main admin dashboard provides overview cards for core entities, stock monitoring and order status analytics.
+The main admin dashboard provides overview cards for total products, categories, customers, orders, low-stock products, and order status analytics for new, paid, shipped, and cancelled orders.
+
+The dashboard also includes recent activity sections for the latest five orders and latest five customers. Recent order IDs link to `/admin/orders/{order_id}`, and recent customer IDs/names link to `/admin/customers/{customer_id}`.
+
+Quick action links are available for adding a product, adding a category, viewing orders, and viewing low-stock products.
 
 Admin dashboard UI final polish:
 
