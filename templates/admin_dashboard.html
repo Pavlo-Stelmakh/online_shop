@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Online Shop Admin Dashboard</title>
+    <title>Адмін-панель Online Shop</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -182,69 +182,69 @@
 </head>
 <body>
     <header>
-        <h1>Online Shop Admin Dashboard</h1>
-        <p>FastAPI backend portfolio project</p>
+        <h1>Адмін-панель Online Shop</h1>
+        <p>Портфоліо-проєкт бекенду FastAPI</p>
     </header>
 
     <main>
         <section class="status">
-            <p>Status: <strong>Production API is running</strong></p>
-            <p>Version: <strong>v4.0.0</strong></p>
+            <p>Стан: <strong>Production API працює</strong></p>
+            <p>Версія: <strong>v4.0.0</strong></p>
             <p>
-                This dashboard provides a visual overview of products, categories,
-                customers, orders, stock status and order analytics.
+                Ця панель надає візуальний огляд товарів, категорій,
+                клієнтів, замовлень, стану запасів та аналітики замовлень.
             </p>
         </section>
 
         <section class="cards">
 
             <a class="card card-link" href="/admin/products">
-                <h2>Products</h2>
+                <h2>Товари</h2>
                 <p>{{ products_count }}</p>
             </a>
 
             <a class="card card-link" href="/admin/categories">
-                <h2>Categories</h2>
+                <h2>Категорії</h2>
                 <p>{{ categories_count }}</p>
             </a>
 
             <a class="card card-link" href="/admin/customers">
-                <h2>Customers</h2>
+                <h2>Клієнти</h2>
                 <p>{{ customers_count }}</p>
             </a>
 
             <a class="card card-link" href="/admin/orders">
-                <h2>Orders</h2>
+                <h2>Замовлення</h2>
                 <p>{{ orders_count }}</p>
             </a>
 
             <a class="card card-link" href="/admin/low-stock">
-                <h2>Low stock products</h2>
+                <h2>Товари з низьким залишком</h2>
                 <p>{{ low_stock_count }}</p>
             </a>
 
             <a class="card card-link" href="/admin/orders?status=new">
-                <h2>New Orders</h2>
+                <h2>Нові замовлення</h2>
                 <p>{{ new_orders_count }}</p>
             </a>
 
             <a class="card card-link" href="/admin/orders?status=paid">
-                <h2>Paid Orders</h2>
+                <h2>Оплачені замовлення</h2>
                 <p>{{ paid_orders_count }}</p>
             </a>
 
             <a class="card card-link" href="/admin/orders?status=shipped">
-                <h2>Shipped Orders</h2>
+                <h2>Відправлені замовлення</h2>
                 <p>{{ shipped_orders_count }}</p>
             </a>
 
             <a class="card card-link" href="/admin/orders?status=cancelled">
-                <h2>Cancelled Orders</h2>
+                <h2>Скасовані замовлення</h2>
                 <p>{{ cancelled_orders_count }}</p>
             </a>
 
             <article class="card">
-                <h2>Total Revenue</h2>
+                <h2>Загальний дохід</h2>
                 <p>{{ total_revenue|money }}</p>
             </article>
 
@@ -252,23 +252,23 @@
 
         <section class="activity-grid">
             <article class="panel">
-                <h2>Recent Orders</h2>
+                <h2>Останні замовлення</h2>
                 {% if recent_orders %}
                     <ul class="activity-list">
                         {% for order in recent_orders %}
                             <li>
-                                <a href="/admin/orders/{{ order.id }}">Order #{{ order.id }}</a>
-                                <span class="activity-meta">{{ order.status }} · {{ order.total_price|money }} · {{ order.created_at|datetime }}</span>
+                                <a href="/admin/orders/{{ order.id }}">Замовлення №{{ order.id }}</a>
+                                <span class="activity-meta">{{ order.status|order_status_uk }} · {{ order.total_price|money }} · {{ order.created_at|datetime }}</span>
                             </li>
                         {% endfor %}
                     </ul>
                 {% else %}
-                    <p>No recent orders found.</p>
+                    <p>Останніх замовлень не знайдено.</p>
                 {% endif %}
             </article>
 
             <article class="panel">
-                <h2>Recent Customers</h2>
+                <h2>Останні клієнти</h2>
                 {% if recent_customers %}
                     <ul class="activity-list">
                         {% for customer in recent_customers %}
@@ -279,13 +279,13 @@
                         {% endfor %}
                     </ul>
                 {% else %}
-                    <p>No recent customers found.</p>
+                    <p>Останніх клієнтів не знайдено.</p>
                 {% endif %}
             </article>
         </section>
 
         <section class="status">
-            <p><strong>Admin pages:</strong></p>
+            <p><strong>Сторінки адміністратора:</strong></p>
             <p>
                 Use Products, Orders, Categories, Customers and Low stock pages
                 to inspect the main e-commerce entities.
@@ -293,22 +293,22 @@
         </section>
         
         <section class="links">
-            <h2>Quick Actions</h2>
-            <a href="/admin/products/new">Add product</a>
-            <a href="/admin/categories/new">Add category</a>
-            <a href="/admin/orders">View orders</a>
-            <a href="/admin/low-stock">View low stock</a>
+            <h2>Швидкі дії</h2>
+            <a href="/admin/products/new">Додати товар</a>
+            <a href="/admin/categories/new">Додати категорію</a>
+            <a href="/admin/orders">Переглянути замовлення</a>
+            <a href="/admin/low-stock">Переглянути низькі залишки</a>
 
-            <h2>Quick Links</h2>
-            <a href="/admin">Dashboard</a>
-            <a href="/admin/products">Products</a>
-            <a href="/admin/orders">Orders</a>
-            <a href="/admin/categories">Categories</a>
-            <a href="/admin/customers">Customers</a>
-            <a href="/admin/low-stock">Low stock</a>
+            <h2>Швидкі посилання</h2>
+            <a href="/admin">Панель</a>
+            <a href="/admin/products">Товари</a>
+            <a href="/admin/orders">Замовлення</a>
+            <a href="/admin/categories">Категорії</a>
+            <a href="/admin/customers">Клієнти</a>
+            <a href="/admin/low-stock">Низькі залишки</a>
             <a href="/docs">Swagger UI</a>
-            <a href="/admin/logout">Logout</a>
-            <a href="/health">Health Check</a>
+            <a href="/admin/logout">Вийти</a>
+            <a href="/health">Перевірка стану</a>
         </section>
     </main>
 

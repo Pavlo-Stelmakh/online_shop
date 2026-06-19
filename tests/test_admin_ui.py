@@ -29,6 +29,15 @@ from tests.helpers import (
 from models import Order, User
 
 
+def format_order_status_uk_for_test(status):
+    return {
+        "new": "Нове",
+        "paid": "Оплачено",
+        "shipped": "Відправлено",
+        "cancelled": "Скасовано",
+    }[status]
+
+
 
 def _set_order_admin_display_fields(order_id, created_at=None, status=None):
     db = TestingSessionLocal()
@@ -62,23 +71,23 @@ def test_admin_dashboard_returns_200():
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Online Shop Admin Dashboard" in response.text
+    assert "Адмін-панель Online Shop" in response.text
 
 def test_admin_dashboard_contains_dashboard_cards():
     admin_client = get_admin_ui_client()
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Products" in response.text
-    assert "Categories" in response.text
-    assert "Customers" in response.text
-    assert "Orders" in response.text
+    assert "Товари" in response.text
+    assert "Категорії" in response.text
+    assert "Клієнти" in response.text
+    assert "Замовлення" in response.text
 
 def test_admin_dashboard_displays_total_revenue():
     response = build_isolated_admin_dashboard_response({"paid": ["200.00"]})
 
     assert response.status_code == 200
-    assert "Total Revenue" in response.text
+    assert "Загальний дохід" in response.text
     assert "200.00" in response.text
 
 def test_admin_dashboard_revenue_includes_paid_and_shipped_orders():
@@ -127,29 +136,29 @@ def test_admin_dashboard_continues_to_show_basic_counts():
     )
 
     assert response.status_code == 200
-    assert "Products" in response.text
-    assert "Categories" in response.text
-    assert "Customers" in response.text
-    assert "Orders" in response.text
-    assert "Low stock products" in response.text
-    assert "New Orders" in response.text
-    assert "Paid Orders" in response.text
-    assert "Shipped Orders" in response.text
-    assert "Cancelled Orders" in response.text
+    assert "Товари" in response.text
+    assert "Категорії" in response.text
+    assert "Клієнти" in response.text
+    assert "Замовлення" in response.text
+    assert "Товари з низьким залишком" in response.text
+    assert "Нові замовлення" in response.text
+    assert "Оплачені замовлення" in response.text
+    assert "Відправлені замовлення" in response.text
+    assert "Скасовані замовлення" in response.text
 
 def test_admin_dashboard_contains_quick_links():
     admin_client = get_admin_ui_client()
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Dashboard" in response.text
-    assert "Products" in response.text
-    assert "Orders" in response.text
-    assert "Categories" in response.text
-    assert "Customers" in response.text
-    assert "Low stock" in response.text
+    assert "Панель" in response.text
+    assert "Товари" in response.text
+    assert "Замовлення" in response.text
+    assert "Категорії" in response.text
+    assert "Клієнти" in response.text
+    assert "Низькі залишки" in response.text
     assert "Swagger UI" in response.text
-    assert "Health Check" in response.text
+    assert "Перевірка стану" in response.text
 
     assert "/admin" in response.text
     assert "/admin/products" in response.text
@@ -165,7 +174,7 @@ def test_admin_products_page_returns_200():
     response = admin_client.get("/admin/products")
 
     assert response.status_code == 200
-    assert "Admin Products" in response.text
+    assert "Адмін: товари" in response.text
 
 def test_admin_products_page_contains_product_table():
     create_test_product(stock=10, price=100)
@@ -175,17 +184,17 @@ def test_admin_products_page_contains_product_table():
 
     assert response.status_code == 200
     assert "ID" in response.text
-    assert "Name" in response.text
-    assert "Price" in response.text
-    assert "Stock" in response.text
-    assert "Category ID" in response.text
+    assert "Назва" in response.text
+    assert "Ціна" in response.text
+    assert "Залишок" in response.text
+    assert "ID категорії" in response.text
 
 def test_admin_dashboard_contains_admin_products_link():
     admin_client = get_admin_ui_client()
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Products" in response.text
+    assert "Товари" in response.text
     assert "/admin/products" in response.text
     
 
@@ -196,7 +205,7 @@ def test_admin_orders_page_returns_200():
     response = admin_client.get("/admin/orders")
 
     assert response.status_code == 200
-    assert "Admin Orders" in response.text
+    assert "Адмін: замовлення" in response.text
 
 def test_admin_orders_page_contains_orders_table_headers():
     product = create_test_product(stock=10, price=100)
@@ -216,18 +225,18 @@ def test_admin_orders_page_contains_orders_table_headers():
 
     assert response.status_code == 200
     assert "ID" in response.text
-    assert "Customer ID" in response.text
-    assert "Status" in response.text
-    assert "Total Price" in response.text
-    assert "Created At" in response.text
-    assert "Items Count" in response.text
+    assert "ID клієнта" in response.text
+    assert "Статус" in response.text
+    assert "Загальна сума" in response.text
+    assert "Створено" in response.text
+    assert "Кількість позицій" in response.text
 
 def test_admin_dashboard_contains_admin_orders_link():
     admin_client = get_admin_ui_client()
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Orders" in response.text
+    assert "Замовлення" in response.text
     assert "/admin/orders" in response.text
 
 def test_admin_categories_page_returns_200():
@@ -235,7 +244,7 @@ def test_admin_categories_page_returns_200():
     response = admin_client.get("/admin/categories")
 
     assert response.status_code == 200
-    assert "Admin Categories" in response.text
+    assert "Адмін: категорії" in response.text
 
 def test_admin_categories_page_contains_categories_table_headers():
     create_test_category()
@@ -245,15 +254,15 @@ def test_admin_categories_page_contains_categories_table_headers():
 
     assert response.status_code == 200
     assert "ID" in response.text
-    assert "Name" in response.text
-    assert "Products Count" in response.text
+    assert "Назва" in response.text
+    assert "Кількість товарів" in response.text
 
 def test_admin_dashboard_contains_admin_categories_link():
     admin_client = get_admin_ui_client()
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Categories" in response.text
+    assert "Категорії" in response.text
     assert "/admin/categories" in response.text
 
 def test_admin_customers_page_returns_200():
@@ -261,7 +270,7 @@ def test_admin_customers_page_returns_200():
     response = admin_client.get("/admin/customers")
 
     assert response.status_code == 200
-    assert "Admin Customers" in response.text
+    assert "Адмін: клієнти" in response.text
 
 def test_admin_customers_page_contains_customers_table_headers():
     customer_headers = get_auth_headers(role="customer")
@@ -272,17 +281,17 @@ def test_admin_customers_page_contains_customers_table_headers():
 
     assert response.status_code == 200
     assert "ID" in response.text
-    assert "User ID" in response.text
-    assert "Name" in response.text
+    assert "ID користувача" in response.text
+    assert "Назва" in response.text
     assert "Email" in response.text
-    assert "Phone" in response.text
+    assert "Телефон" in response.text
 
 def test_admin_dashboard_contains_admin_customers_link():
     admin_client = get_admin_ui_client()
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Customers" in response.text
+    assert "Клієнти" in response.text
     assert "/admin/customers" in response.text
 
 def test_admin_low_stock_page_returns_200():
@@ -290,7 +299,7 @@ def test_admin_low_stock_page_returns_200():
     response = admin_client.get("/admin/low-stock")
 
     assert response.status_code == 200
-    assert "Admin low stock" in response.text
+    assert "Адмін: низькі залишки" in response.text
 
 def test_admin_low_stock_page_contains_table_headers():
     create_test_product(stock=2, price=100)
@@ -300,10 +309,10 @@ def test_admin_low_stock_page_contains_table_headers():
 
     assert response.status_code == 200
     assert "ID" in response.text
-    assert "Name" in response.text
-    assert "Price" in response.text
-    assert "Stock" in response.text
-    assert "Category ID" in response.text
+    assert "Назва" in response.text
+    assert "Ціна" in response.text
+    assert "Залишок" in response.text
+    assert "ID категорії" in response.text
 
 def test_admin_low_stock_page_shows_only_low_stock_products():
     low_stock_product = create_test_product(stock=2, price=100)
@@ -321,7 +330,7 @@ def test_admin_dashboard_contains_admin_low_stock_link():
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Low stock" in response.text
+    assert "Низькі залишки" in response.text
     assert "/admin/low-stock" in response.text
 
 def test_admin_orders_page_contains_status_badge_class():
@@ -348,10 +357,10 @@ def test_admin_dashboard_contains_extended_stats_cards():
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Low stock products" in response.text
-    assert "New Orders" in response.text
-    assert "Paid Orders" in response.text
-    assert "Cancelled Orders" in response.text
+    assert "Товари з низьким залишком" in response.text
+    assert "Нові замовлення" in response.text
+    assert "Оплачені замовлення" in response.text
+    assert "Скасовані замовлення" in response.text
 
 def test_admin_dashboard_low_stock_count_is_displayed():
     create_test_product(stock=2, price=100)
@@ -360,7 +369,7 @@ def test_admin_dashboard_low_stock_count_is_displayed():
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Low stock products" in response.text
+    assert "Товари з низьким залишком" in response.text
 
 
 def test_admin_dashboard_low_stock_count_uses_product_specific_threshold():
@@ -368,14 +377,14 @@ def test_admin_dashboard_low_stock_count_uses_product_specific_threshold():
         {},
         products=[
             {
-                "name": f"Dashboard Custom Low stock {time.time_ns()}",
+                "name": f"Панель Custom Низькі залишки {time.time_ns()}",
                 "price": Decimal("1.00"),
                 "description": "Uses product-specific threshold",
                 "stock": 8,
                 "low_stock_threshold": 10,
             },
             {
-                "name": f"Dashboard Hardcoded Five Regression {time.time_ns()}",
+                "name": f"Панель Hardcoded Five Regression {time.time_ns()}",
                 "price": Decimal("2.00"),
                 "description": "Would be low only with the old hardcoded rule",
                 "stock": 6,
@@ -385,17 +394,17 @@ def test_admin_dashboard_low_stock_count_uses_product_specific_threshold():
     )
 
     assert response.status_code == 200
-    assert "Low stock products" in response.text
-    assert "<h2>Low stock products</h2>\n                <p>1</p>" in response.text
+    assert "Товари з низьким залишком" in response.text
+    assert "<h2>Товари з низьким залишком</h2>\n                <p>1</p>" in response.text
 
 def test_admin_dashboard_final_polish_content():
     admin_client = get_admin_ui_client()
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Version: <strong>v4.0.0</strong>" in response.text
-    assert "This dashboard provides a visual overview" in response.text
-    assert "Admin pages:" in response.text
+    assert "Версія: <strong>v4.0.0</strong>" in response.text
+    assert "Ця панель надає візуальний огляд" in response.text
+    assert "Сторінки адміністратора:" in response.text
 
 def test_admin_pages_have_final_footer():
     admin_client = get_admin_ui_client()
@@ -412,7 +421,7 @@ def test_admin_pages_have_final_footer():
         response = admin_client.get(url)
 
         assert response.status_code == 200
-        assert "Online Shop Admin Dashboard — v4.0.0" in response.text
+        assert "Адмін-панель Online Shop — v4.0.0" in response.text
 
 def test_admin_dashboard_order_status_cards_have_filtered_links():
     admin_client = get_admin_ui_client()
@@ -420,10 +429,10 @@ def test_admin_dashboard_order_status_cards_have_filtered_links():
 
     assert response.status_code == 200
 
-    assert "New Orders" in response.text
-    assert "Paid Orders" in response.text
-    assert "Shipped Orders" in response.text
-    assert "Cancelled Orders" in response.text
+    assert "Нові замовлення" in response.text
+    assert "Оплачені замовлення" in response.text
+    assert "Відправлені замовлення" in response.text
+    assert "Скасовані замовлення" in response.text
 
     assert "/admin/orders?status=new" in response.text
     assert "/admin/orders?status=paid" in response.text
@@ -450,7 +459,7 @@ def test_admin_orders_page_can_filter_by_status():
     response = admin_client.get("/admin/orders?status=new")
 
     assert response.status_code == 200
-    assert "Filtered by status" in response.text
+    assert "Відфільтровано за статусом" in response.text
     assert "new" in response.text
 
 def test_admin_orders_page_contains_status_filter_links():
@@ -458,7 +467,7 @@ def test_admin_orders_page_contains_status_filter_links():
     response = admin_client.get("/admin/orders")
 
     assert response.status_code == 200
-    assert "Filter by status" in response.text
+    assert "Фільтр за статусом" in response.text
 
     assert "/admin/orders" in response.text
     assert "/admin/orders?status=new" in response.text
@@ -466,11 +475,11 @@ def test_admin_orders_page_contains_status_filter_links():
     assert "/admin/orders?status=shipped" in response.text
     assert "/admin/orders?status=cancelled" in response.text
 
-    assert "All" in response.text
-    assert "New" in response.text
-    assert "Paid" in response.text
-    assert "Shipped" in response.text
-    assert "Cancelled" in response.text
+    assert "Усі" in response.text
+    assert "Нове" in response.text
+    assert "Оплачено" in response.text
+    assert "Відправлено" in response.text
+    assert "Скасовано" in response.text
 
 def test_admin_orders_status_filter_marks_active_status():
     admin_client = get_admin_ui_client()
@@ -483,7 +492,7 @@ def test_admin_orders_status_filter_marks_active_status():
 
     assert response.status_code == 200
     assert 'class="active"' in response.text
-    assert "Filtered by status" in response.text
+    assert "Відфільтровано за статусом" in response.text
     assert "paid" in response.text
 
 def test_admin_products_page_contains_filter_ui():
@@ -491,8 +500,8 @@ def test_admin_products_page_contains_filter_ui():
     response = admin_client.get("/admin/products")
 
     assert response.status_code == 200
-    assert "Product filters" in response.text
-    assert "Search by name or description" in response.text
+    assert "Фільтри товарів" in response.text
+    assert "Пошук за назвою або описом" in response.text
     assert "/admin/products?in_stock=true" in response.text
     assert "/admin/products?in_stock=false" in response.text
 
@@ -535,9 +544,9 @@ def test_admin_categories_page_contains_search_ui():
     response = admin_client.get("/admin/categories")
 
     assert response.status_code == 200
-    assert "Category search" in response.text
-    assert "Search by category name" in response.text
-    assert "Reset" in response.text
+    assert "Пошук категорій" in response.text
+    assert "Пошук за назвою категорії" in response.text
+    assert "Скинути" in response.text
 
 def test_admin_categories_page_can_filter_by_search():
     searchable_category = create_test_category()
@@ -562,9 +571,9 @@ def test_admin_customers_page_contains_search_ui():
     response = admin_client.get("/admin/customers")
 
     assert response.status_code == 200
-    assert "Customer search" in response.text
-    assert "Search by name, email or phone" in response.text
-    assert "Reset" in response.text
+    assert "Пошук клієнтів" in response.text
+    assert "Пошук за іменем, email або телефоном" in response.text
+    assert "Скинути" in response.text
 
 def test_admin_customers_page_can_filter_by_search():
     customer_headers = get_auth_headers(role="customer")
@@ -591,7 +600,7 @@ def test_admin_low_stock_page_uses_product_specific_threshold():
     response = admin_client.get("/admin/low-stock")
 
     assert response.status_code == 200
-    assert "Low stock threshold" in response.text
+    assert "Поріг низького залишку" in response.text
 
     # Both products currently use the default threshold.
     assert low_stock_product["name"] not in response.text
@@ -604,7 +613,7 @@ def test_admin_products_page_displays_low_stock_threshold():
     response = admin_client.get("/admin/products")
 
     assert response.status_code == 200
-    assert "Low stock threshold" in response.text
+    assert "Поріг низького залишку" in response.text
     assert product["name"] in response.text
 
 
@@ -631,7 +640,7 @@ def test_admin_low_stock_page_includes_product_when_stock_is_below_custom_thresh
 
     assert response.status_code == 200
     assert low_stock_product["name"] in response.text
-    assert "Low stock threshold" in response.text
+    assert "Поріг низького залишку" in response.text
 
 def test_admin_login_page_returns_200():
     anonymous_client = TestClient(app)
@@ -639,9 +648,9 @@ def test_admin_login_page_returns_200():
     response = anonymous_client.get("/admin/login")
 
     assert response.status_code == 200
-    assert "Admin Login" in response.text
-    assert "Username" in response.text
-    assert "Password" in response.text
+    assert "Вхід адміністратора" in response.text
+    assert "Ім’я користувача" in response.text
+    assert "Пароль" in response.text
 
 def test_admin_pages_redirect_to_login_without_cookie():
     anonymous_client = TestClient(app)
@@ -674,7 +683,7 @@ def test_admin_login_rejects_invalid_credentials():
     )
 
     assert response.status_code == 401
-    assert "Invalid username or password" in response.text
+    assert "Недійсне ім’я користувача або пароль" in response.text
 
 def test_admin_can_login_through_admin_ui():
     admin_user = create_registered_user(role="admin")
@@ -719,7 +728,7 @@ def test_customer_cannot_login_to_admin_ui():
     )
 
     assert response.status_code == 403
-    assert "Admin access required" in response.text
+    assert "Потрібен доступ адміністратора" in response.text
 
 def test_admin_logout_deletes_admin_session_cookie():
     admin_client = get_admin_ui_client()
@@ -773,7 +782,7 @@ def test_admin_ui_client_can_access_dashboard():
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Online Shop Admin Dashboard" in response.text
+    assert "Адмін-панель Online Shop" in response.text
 
 def test_admin_can_open_new_product_form():
     admin_client = get_admin_ui_client()
@@ -781,9 +790,9 @@ def test_admin_can_open_new_product_form():
     response = admin_client.get("/admin/products/new")
 
     assert response.status_code == 200
-    assert "Add product" in response.text
-    assert "Low stock threshold" in response.text
-    assert "Category ID" in response.text
+    assert "Додати товар" in response.text
+    assert "Поріг низького залишку" in response.text
+    assert "ID категорії" in response.text
 
 def test_admin_product_create_page_redirects_without_login():
     anonymous_client = TestClient(app)
@@ -864,7 +873,7 @@ def test_admin_products_page_shows_no_image_fallback_for_missing_image_url():
     response = admin_client.get("/admin/products")
 
     assert response.status_code == 200
-    assert "No image" in response.text
+    assert "Немає зображення" in response.text
 
 
 def test_admin_product_create_rejects_invalid_image_url():
@@ -886,7 +895,7 @@ def test_admin_product_create_rejects_invalid_image_url():
     )
 
     assert response.status_code == 400
-    assert "Image URL must start with http:// or https://" in response.text
+    assert "URL зображення має починатися з http:// або https://" in response.text
     assert 'value="ftp://example.com/image.jpg"' in response.text
 
 
@@ -909,7 +918,7 @@ def test_admin_product_edit_rejects_invalid_image_url():
     )
 
     assert response.status_code == 400
-    assert "Image URL must start with http:// or https://" in response.text
+    assert "URL зображення має починатися з http:// або https://" in response.text
     assert 'value="example.com/image.jpg"' in response.text
 
 def test_admin_product_create_without_csrf_fails():
@@ -981,7 +990,7 @@ def test_admin_product_create_rejects_invalid_category():
     )
 
     assert response.status_code == 404
-    assert "Category not found" in response.text
+    assert "Категорію не знайдено" in response.text
 
 
 
@@ -1047,7 +1056,7 @@ def test_admin_product_edit_invalid_price_shows_attempted_values_not_persisted_v
     response = admin_client.post(
         f"/admin/products/{product['id']}/edit",
         data={
-            "name": "Attempted Edit Product",
+            "name": "Attempted Редагувати товар",
             "price": "12.999",
             "description": "Attempted edit description",
             "image_url": "https://example.com/attempted-edit.jpg",
@@ -1059,7 +1068,7 @@ def test_admin_product_edit_invalid_price_shows_attempted_values_not_persisted_v
     )
 
     assert response.status_code == 400
-    assert 'value="Attempted Edit Product"' in response.text
+    assert 'value="Attempted Редагувати товар"' in response.text
     assert 'value="12.999"' in response.text
     assert "Attempted edit description" in response.text
     assert 'value="https://example.com/attempted-edit.jpg"' in response.text
@@ -1079,7 +1088,7 @@ def test_admin_product_edit_invalid_stock_or_threshold_preserves_attempted_field
     stock_response = admin_client.post(
         path,
         data={
-            "name": "Negative Stock Attempt",
+            "name": "Negative Залишок Attempt",
             "price": "45.50",
             "description": "Negative stock description",
             "image_url": "https://example.com/negative-stock.jpg",
@@ -1104,7 +1113,7 @@ def test_admin_product_edit_invalid_stock_or_threshold_preserves_attempted_field
     )
 
     assert stock_response.status_code == 400
-    assert 'value="Negative Stock Attempt"' in stock_response.text
+    assert 'value="Negative Залишок Attempt"' in stock_response.text
     assert 'value="45.50"' in stock_response.text
     assert "Negative stock description" in stock_response.text
     assert 'value="-1"' in stock_response.text
@@ -1213,7 +1222,7 @@ def test_admin_products_page_contains_create_product_link():
     response = admin_client.get("/admin/products")
 
     assert response.status_code == 200
-    assert "Add product" in response.text
+    assert "Додати товар" in response.text
     assert "/admin/products/new" in response.text
 
 def test_admin_product_edit_page_returns_200_for_admin():
@@ -1223,10 +1232,10 @@ def test_admin_product_edit_page_returns_200_for_admin():
     response = admin_client.get(f"/admin/products/{product['id']}/edit")
 
     assert response.status_code == 200
-    assert "Edit Product" in response.text
+    assert "Редагувати товар" in response.text
     assert product["name"] in response.text
-    assert "Low stock threshold" in response.text
-    assert "Update Product" in response.text
+    assert "Поріг низького залишку" in response.text
+    assert "Оновити товар" in response.text
 
 def test_admin_product_edit_page_redirects_without_login():
     product = create_test_product(stock=5, price=100)
@@ -1290,7 +1299,7 @@ def test_admin_product_edit_rejects_invalid_category():
     )
 
     assert response.status_code == 404
-    assert "Category not found" in response.text
+    assert "Категорію не знайдено" in response.text
 
 def test_admin_products_page_contains_edit_product_link():
     admin_client = get_admin_ui_client()
@@ -1299,7 +1308,7 @@ def test_admin_products_page_contains_edit_product_link():
     response = admin_client.get("/admin/products")
 
     assert response.status_code == 200
-    assert "Edit" in response.text
+    assert "Редагувати" in response.text
     assert f"/admin/products/{product['id']}/edit" in response.text
 
 def test_admin_products_page_contains_delete_button_and_modal():
@@ -1309,11 +1318,11 @@ def test_admin_products_page_contains_delete_button_and_modal():
     response = admin_client.get("/admin/products")
 
     assert response.status_code == 200
-    assert "Delete" in response.text
+    assert "Видалити" in response.text
     assert f"/admin/products/{product['id']}/delete" in response.text
-    assert "Are you sure you want to delete this product?" in response.text
-    assert "Products used in existing orders cannot be deleted." in response.text
-    assert "Cancel" in response.text
+    assert "Ви впевнені, що хочете видалити цей товар?" in response.text
+    assert "Товари, використані в наявних замовленнях, не можна видалити." in response.text
+    assert "Скасувати" in response.text
 
 def test_admin_product_edit_page_contains_update_confirmation_modal():
     admin_client = get_admin_ui_client()
@@ -1322,9 +1331,9 @@ def test_admin_product_edit_page_contains_update_confirmation_modal():
     response = admin_client.get(f"/admin/products/{product['id']}/edit")
 
     assert response.status_code == 200
-    assert "Update product?" in response.text
-    assert "Are you sure you want to save these product changes?" in response.text
-    assert "Cancel" in response.text
+    assert "Оновити товар?" in response.text
+    assert "Ви впевнені, що хочете зберегти ці зміни товару?" in response.text
+    assert "Скасувати" in response.text
     assert "Update" in response.text
 
 def test_admin_product_delete_redirects_without_login():
@@ -1378,7 +1387,7 @@ def test_admin_product_delete_blocked_when_product_is_used_in_orders():
     )
 
     assert response.status_code == 400
-    assert "Cannot delete product because it is used in existing orders." in response.text
+    assert "Неможливо видалити товар, оскільки він використовується в наявних замовленнях." in response.text
 
 def test_anonymous_and_customer_cannot_access_product_management_pages():
     product = create_test_product(stock=5, price=100)
@@ -1438,7 +1447,7 @@ def test_admin_product_create_shows_clear_validation_errors():
     )
 
     assert response.status_code == 400
-    assert "Product name is required" in response.text
+    assert "Назва товару не може бути порожньою" in response.text
 
 def test_admin_product_create_rejects_more_than_two_decimal_places():
     category = create_test_category()
@@ -1460,7 +1469,7 @@ def test_admin_product_create_rejects_more_than_two_decimal_places():
     )
 
     assert response.status_code == 400
-    assert "more than 2 decimal places" in response.text
+    assert "більше ніж 2 десяткові знаки" in response.text
 
 def test_admin_product_edit_rejects_more_than_two_decimal_places():
     admin_client = get_admin_ui_client()
@@ -1482,7 +1491,7 @@ def test_admin_product_edit_rejects_more_than_two_decimal_places():
     )
 
     assert response.status_code == 400
-    assert "more than 2 decimal places" in response.text
+    assert "більше ніж 2 десяткові знаки" in response.text
 
 def test_admin_products_page_displays_money_with_two_decimal_places():
     create_test_product(stock=10, price=19.9)
@@ -1541,8 +1550,8 @@ def test_admin_can_open_order_detail():
     response = admin_client.get(f"/admin/orders/{order['id']}")
 
     assert response.status_code == 200
-    assert "Admin Order Detail" in response.text
-    assert f"Order #{order['id']}" in response.text
+    assert "Адмін: деталі замовлення" in response.text
+    assert f"Замовлення №{order['id']}" in response.text
 
 
 def test_anonymous_and_non_admin_cannot_access_order_detail():
@@ -1577,7 +1586,7 @@ def test_unknown_admin_order_detail_returns_404():
     response = admin_client.get("/admin/orders/999999")
 
     assert response.status_code == 404
-    assert "Order not found" in response.text
+    assert "Замовлення не знайдено" in response.text
 
 
 def test_admin_order_detail_shows_customer_items_and_money():
@@ -1602,20 +1611,20 @@ def test_admin_order_detail_contains_full_admin_navigation():
 
     assert response.status_code == 200
     expected_links = [
-        ("Dashboard", "/admin"),
-        ("Products", "/admin/products"),
-        ("Categories", "/admin/categories"),
-        ("Customers", "/admin/customers"),
-        ("Orders", "/admin/orders"),
-        ("Low stock", "/admin/low-stock"),
+        ("Панель", "/admin"),
+        ("Товари", "/admin/products"),
+        ("Категорії", "/admin/categories"),
+        ("Клієнти", "/admin/customers"),
+        ("Замовлення", "/admin/orders"),
+        ("Низькі залишки", "/admin/low-stock"),
         ("Swagger UI", "/docs"),
-        ("Logout", "/admin/logout"),
+        ("Вийти", "/admin/logout"),
     ]
     for label, href in expected_links:
         assert label in response.text
         assert f'href="{href}"' in response.text
-    assert "Admin Order Detail" in response.text
-    assert f"Order #{order['id']}" in response.text
+    assert "Адмін: деталі замовлення" in response.text
+    assert f"Замовлення №{order['id']}" in response.text
 
 
 def test_admin_order_detail_contains_back_to_orders_link():
@@ -1625,7 +1634,7 @@ def test_admin_order_detail_contains_back_to_orders_link():
     response = admin_client.get(f"/admin/orders/{order['id']}")
 
     assert response.status_code == 200
-    assert "Back to Orders" in response.text
+    assert "Повернутися до замовлень" in response.text
     assert 'href="/admin/orders"' in response.text
 
 
@@ -1637,7 +1646,7 @@ def test_admin_orders_list_contains_order_detail_link():
 
     assert response.status_code == 200
     assert f'<a href="/admin/orders/{order["id"]}">{order["id"]}</a>' in response.text
-    assert "View details" in response.text
+    assert "Переглянути деталі" in response.text
 
 
 
@@ -1663,7 +1672,7 @@ def test_admin_order_detail_displays_formatted_created_at():
     response = admin_client.get(f"/admin/orders/{order['id']}")
 
     assert response.status_code == 200
-    assert "Created At" in response.text
+    assert "Створено" in response.text
     assert "2026-06-15 10:08" in response.text
     assert "2026-06-15 10:08:44" not in response.text
 
@@ -1693,7 +1702,7 @@ def test_admin_customer_detail_embedded_orders_use_status_badges_for_all_statuse
 
         assert response.status_code == 200
         assert f'class="status status-{status}"' in response.text
-        assert f">{status}</span>" in response.text
+        assert f">{format_order_status_uk_for_test(status)}</span>" in response.text
         assert f"<td>{status}</td>" not in response.text
 
 def test_admin_can_mark_new_order_as_paid_from_admin_ui():
@@ -1846,7 +1855,7 @@ def test_admin_order_status_invalid_transition_is_rejected():
     detail_response = admin_client.get(f"/admin/orders/{order['id']}")
 
     assert response.status_code == 400
-    assert "Cannot change order status from &#39;new&#39; to &#39;shipped&#39;" in response.text
+    assert "Неможливо змінити статус замовлення з «Нове» на «Відправлено»" in response.text
     assert detail_response.status_code == 200
     assert "status-new" in detail_response.text
 
@@ -1857,8 +1866,8 @@ def test_admin_can_open_categories_page():
     response = admin_client.get("/admin/categories")
 
     assert response.status_code == 200
-    assert "Admin Categories" in response.text
-    assert "Create category" in response.text
+    assert "Адмін: категорії" in response.text
+    assert "Створити категорію" in response.text
 
 
 def test_anonymous_cannot_open_categories_page():
@@ -1928,7 +1937,7 @@ def test_admin_category_create_empty_name_returns_controlled_error():
     )
 
     assert response.status_code == 400
-    assert "Category name is required" in response.text
+    assert "Назва категорії не може бути порожньою" in response.text
 
 
 def test_admin_category_create_duplicate_name_returns_controlled_error():
@@ -1944,13 +1953,13 @@ def test_admin_category_create_duplicate_name_returns_controlled_error():
     )
 
     assert response.status_code == 400
-    assert "Category already exists" in response.text
+    assert "Категорія вже існує" in response.text
 
 
 def test_admin_can_edit_category_from_ui_with_valid_csrf():
     admin_client = get_admin_ui_client()
     category = create_test_category()
-    updated_name = f"Edited Admin UI Category {time.time()}"
+    updated_name = f"Редагуватиed Admin UI Category {time.time()}"
 
     response = admin_client.post(
         f"/admin/categories/{category['id']}/edit",
@@ -1974,7 +1983,7 @@ def test_admin_category_edit_missing_csrf_returns_403():
 
     response = admin_client.post(
         f"/admin/categories/{category['id']}/edit",
-        data={"name": f"Missing Edit CSRF {time.time()}"},
+        data={"name": f"Missing Редагувати CSRF {time.time()}"},
         follow_redirects=False,
     )
 
@@ -1990,9 +1999,9 @@ def test_admin_categories_empty_category_delete_ui_has_warning_confirmation_and_
     assert response.status_code == 200
     assert category["name"] in response.text
     assert f'/admin/categories/{category["id"]}/delete' in response.text
-    assert "Deleting this empty category is permanent and cannot be undone." in response.text
+    assert "Видалення цієї порожньої категорії є остаточним і не може бути скасоване." in response.text
     assert (
-        "return confirm('Delete this category? This action cannot be undone.');"
+        "return confirm('Видалити цю категорію? Цю дію не можна скасувати.');"
         in response.text
     )
     assert 'name="csrf_token"' in response.text
@@ -2006,7 +2015,7 @@ def test_admin_categories_category_with_products_shows_blocked_delete_explanatio
 
     assert response.status_code == 200
     assert (
-        "Delete unavailable: this category has products. Move or delete those products first."
+        "Видалення недоступне: ця категорія має товари. Спочатку перемістіть або видаліть ці товари."
         in response.text
     )
     assert f'/admin/categories/{product["category_id"]}/delete' not in response.text
@@ -2057,7 +2066,7 @@ def test_admin_category_delete_missing_csrf_returns_403():
 def test_categories_page_shows_created_and_edited_categories():
     admin_client = get_admin_ui_client()
     category_name = f"Visible Admin UI Category {time.time()}"
-    edited_name = f"Visible Edited Admin UI Category {time.time()}"
+    edited_name = f"Visible Редагуватиed Admin UI Category {time.time()}"
     csrf_token = get_admin_ui_csrf_token(admin_client, "/admin/categories")
 
     create_response = admin_client.post(
@@ -2093,7 +2102,7 @@ def test_admin_customers_list_contains_detail_links():
 
     assert response.status_code == 200
     assert f'/admin/customers/{customer["id"]}' in response.text
-    assert "View details" in response.text
+    assert "Переглянути деталі" in response.text
 
 
 def test_admin_can_view_customer_detail():
@@ -2103,8 +2112,8 @@ def test_admin_can_view_customer_detail():
     response = admin_client.get(f'/admin/customers/{customer["id"]}')
 
     assert response.status_code == 200
-    assert "Admin Customer Detail" in response.text
-    assert f"Customer #{customer['id']}" in response.text
+    assert "Адмін: деталі клієнта" in response.text
+    assert f"Клієнт №{customer['id']}" in response.text
     assert str(customer["user_id"]) in response.text
     assert customer["name"] in response.text
     assert customer["email"] in response.text
@@ -2149,7 +2158,7 @@ def test_unknown_customer_detail_returns_404():
     response = admin_client.get('/admin/customers/999999')
 
     assert response.status_code == 404
-    assert "Customer not found" in response.text
+    assert "Клієнта не знайдено" in response.text
 
 
 def test_customer_list_links_to_detail_page_from_id_and_name():
@@ -2178,11 +2187,11 @@ def test_customer_detail_shows_related_orders_with_items_count():
     response = admin_client.get(f'/admin/customers/{customer["id"]}')
 
     assert response.status_code == 200
-    assert "Orders" in response.text
-    assert "Items Count" in response.text
+    assert "Замовлення" in response.text
+    assert "Кількість позицій" in response.text
     assert f'<td>{order["id"]}</td>' in response.text
     assert f'<td>{order["status"]}</td>' not in response.text
-    assert f'>{order["status"]}</span>' in response.text
+    assert f'>{format_order_status_uk_for_test(order["status"])}</span>' in response.text
     assert '<td>1</td>' in response.text
 
 
@@ -2217,7 +2226,7 @@ def test_admin_customer_detail_page_shows_fields_and_orders():
     response = admin_client.get(f'/admin/customers/{customer["id"]}')
 
     assert response.status_code == 200
-    assert "Admin Customer Detail" in response.text
+    assert "Адмін: деталі клієнта" in response.text
     assert str(customer["user_id"]) in response.text
     assert customer["name"] in response.text
     assert customer["email"] in response.text
@@ -2233,20 +2242,20 @@ def test_admin_customer_detail_contains_full_admin_navigation():
 
     assert response.status_code == 200
     expected_links = [
-        ("Dashboard", "/admin"),
-        ("Products", "/admin/products"),
-        ("Categories", "/admin/categories"),
-        ("Customers", "/admin/customers"),
-        ("Orders", "/admin/orders"),
-        ("Low stock", "/admin/low-stock"),
+        ("Панель", "/admin"),
+        ("Товари", "/admin/products"),
+        ("Категорії", "/admin/categories"),
+        ("Клієнти", "/admin/customers"),
+        ("Замовлення", "/admin/orders"),
+        ("Низькі залишки", "/admin/low-stock"),
         ("Swagger UI", "/docs"),
-        ("Logout", "/admin/logout"),
+        ("Вийти", "/admin/logout"),
     ]
     for label, href in expected_links:
         assert label in response.text
         assert f'href="{href}"' in response.text
-    assert "Admin Customer Detail" in response.text
-    assert f"Customer #{customer['id']}" in response.text
+    assert "Адмін: деталі клієнта" in response.text
+    assert f"Клієнт №{customer['id']}" in response.text
 
 
 def test_admin_customer_detail_contains_back_to_customers_link():
@@ -2256,7 +2265,7 @@ def test_admin_customer_detail_contains_back_to_customers_link():
     response = admin_client.get(f'/admin/customers/{customer["id"]}')
 
     assert response.status_code == 200
-    assert "Back to Customers" in response.text
+    assert "Повернутися до клієнтів" in response.text
     assert 'href="/admin/customers"' in response.text
 
 
@@ -2322,7 +2331,7 @@ def test_admin_customer_edit_empty_fields_returns_controlled_error():
     )
 
     assert response.status_code == 400
-    assert "Name, email and phone are required" in response.text
+    assert "Ім’я, email і телефон є обов’язковими" in response.text
 
 
 def test_admin_customer_edit_duplicate_email_returns_controlled_error():
@@ -2345,7 +2354,7 @@ def test_admin_customer_edit_duplicate_email_returns_controlled_error():
     )
 
     assert response.status_code == 400
-    assert "Customer with this email already exists" in response.text
+    assert "Клієнт із цим email уже існує" in response.text
 
 
 def test_admin_customer_without_orders_delete_ui_has_warning_confirmation_and_csrf():
@@ -2355,9 +2364,9 @@ def test_admin_customer_without_orders_delete_ui_has_warning_confirmation_and_cs
     response = admin_client.get(f'/admin/customers/{customer["id"]}')
 
     assert response.status_code == 200
-    assert "Deleting this customer is permanent and cannot be undone." in response.text
+    assert "Видалення цього клієнта є остаточним і не може бути скасоване." in response.text
     assert (
-        "return confirm('Delete this customer? This action cannot be undone.');"
+        "return confirm('Видалити цього клієнта? Цю дію не можна скасувати.');"
         in response.text
     )
     assert f'/admin/customers/{customer["id"]}/delete' in response.text
@@ -2379,8 +2388,8 @@ def test_admin_customer_with_orders_shows_blocked_delete_explanation():
 
     assert response.status_code == 200
     assert (
-        "Delete unavailable: this customer has orders. "
-        "Customer records with orders are retained for order history."
+        "Видалення недоступне: цей клієнт має замовлення. "
+        "Записи клієнтів із замовленнями зберігаються для історії замовлень."
         in response.text
     )
     assert f'/admin/customers/{customer["id"]}/delete' not in response.text
@@ -2404,7 +2413,7 @@ def test_admin_can_delete_customer_with_no_orders_from_ui():
     assert response.status_code == 303
     assert response.headers["location"] == "/admin/customers"
     assert detail_response.status_code == 404
-    assert "Customer not found" in detail_response.text
+    assert "Клієнта не знайдено" in detail_response.text
 
 
 def test_admin_customer_delete_missing_csrf_returns_403():
@@ -2437,7 +2446,7 @@ def test_admin_customer_delete_with_orders_returns_controlled_error():
     )
 
     assert response.status_code == 400
-    assert "Customer cannot be deleted because they have orders" in response.text
+    assert "Неможливо видалити клієнта, оскільки він має замовлення" in response.text
 
 
 def test_admin_orders_invalid_status_filter_returns_controlled_error():
@@ -2446,8 +2455,8 @@ def test_admin_orders_invalid_status_filter_returns_controlled_error():
     response = admin_client.get("/admin/orders?status=invalid")
 
     assert response.status_code == 400
-    assert "Invalid order status filter" in response.text
-    assert "Filtered by status: <strong>invalid</strong>" not in response.text
+    assert "Недійсний фільтр статусу замовлення" in response.text
+    assert "Відфільтровано за статусом: <strong>invalid</strong>" not in response.text
 
 
 def test_admin_order_detail_status_form_shows_valid_transitions_only():
@@ -2457,11 +2466,11 @@ def test_admin_order_detail_status_form_shows_valid_transitions_only():
     new_response = admin_client.get(f"/admin/orders/{order['id']}")
 
     assert new_response.status_code == 200
-    assert 'Mark as paid' in new_response.text
-    assert 'Cancel order' in new_response.text
+    assert 'Позначити як оплачене' in new_response.text
+    assert 'Скасувати замовлення' in new_response.text
     assert 'value="paid"' in new_response.text
     assert 'value="cancelled"' in new_response.text
-    assert 'Mark as shipped' not in new_response.text
+    assert 'Позначити як відправлене' not in new_response.text
     assert 'value="shipped"' not in new_response.text
 
     csrf_token = get_admin_ui_csrf_token(admin_client, path=f"/admin/orders/{order['id']}")
@@ -2474,8 +2483,8 @@ def test_admin_order_detail_status_form_shows_valid_transitions_only():
 
     assert paid_response.status_code == 303
     assert paid_detail_response.status_code == 200
-    assert 'Mark as shipped' in paid_detail_response.text
-    assert 'Cancel order' in paid_detail_response.text
+    assert 'Позначити як відправлене' in paid_detail_response.text
+    assert 'Скасувати замовлення' in paid_detail_response.text
     assert 'value="shipped"' in paid_detail_response.text
     assert 'value="cancelled"' in paid_detail_response.text
     assert 'value="new"' not in paid_detail_response.text
@@ -2490,11 +2499,11 @@ def test_admin_dashboard_shows_overview_counts():
     )
 
     assert response.status_code == 200
-    assert "<h2>Products</h2>\n                <p>2</p>" in response.text
-    assert "<h2>Categories</h2>\n                <p>1</p>" in response.text
-    assert "<h2>Customers</h2>\n                <p>1</p>" in response.text
-    assert "<h2>Orders</h2>\n                <p>3</p>" in response.text
-    assert "<h2>Low stock products</h2>\n                <p>1</p>" in response.text
+    assert "<h2>Товари</h2>\n                <p>2</p>" in response.text
+    assert "<h2>Категорії</h2>\n                <p>1</p>" in response.text
+    assert "<h2>Клієнти</h2>\n                <p>1</p>" in response.text
+    assert "<h2>Замовлення</h2>\n                <p>3</p>" in response.text
+    assert "<h2>Товари з низьким залишком</h2>\n                <p>1</p>" in response.text
 
 
 def test_admin_dashboard_shows_orders_by_status():
@@ -2508,10 +2517,10 @@ def test_admin_dashboard_shows_orders_by_status():
     )
 
     assert response.status_code == 200
-    assert "<h2>New Orders</h2>\n                <p>2</p>" in response.text
-    assert "<h2>Paid Orders</h2>\n                <p>1</p>" in response.text
-    assert "<h2>Shipped Orders</h2>\n                <p>3</p>" in response.text
-    assert "<h2>Cancelled Orders</h2>\n                <p>1</p>" in response.text
+    assert "<h2>Нові замовлення</h2>\n                <p>2</p>" in response.text
+    assert "<h2>Оплачені замовлення</h2>\n                <p>1</p>" in response.text
+    assert "<h2>Відправлені замовлення</h2>\n                <p>3</p>" in response.text
+    assert "<h2>Скасовані замовлення</h2>\n                <p>1</p>" in response.text
 
 
 def test_admin_dashboard_recent_orders_link_to_order_detail():
@@ -2529,7 +2538,7 @@ def test_admin_dashboard_recent_orders_link_to_order_detail():
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Recent Orders" in response.text
+    assert "Останні замовлення" in response.text
     assert f'href="/admin/orders/{order["id"]}"' in response.text
 
 
@@ -2541,7 +2550,7 @@ def test_admin_dashboard_recent_customers_link_to_customer_detail():
     response = admin_client.get("/admin")
 
     assert response.status_code == 200
-    assert "Recent Customers" in response.text
+    assert "Останні клієнти" in response.text
     assert f'href="/admin/customers/{customer["id"]}"' in response.text
     assert customer["name"] in response.text
 

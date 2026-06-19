@@ -16,6 +16,19 @@ from utils.money import MoneyValidationError, parse_positive_money
 router = APIRouter()
 
 
+def translate_admin_money_error(message: str) -> str:
+    translations = {
+        "price is required": "Ціна є обов’язковою",
+        "price must be a valid decimal amount": "Ціна має бути коректним десятковим числом",
+        "price must be a finite decimal amount": "Ціна має бути скінченним десятковим числом",
+        "price must be greater than or equal to 0": "Ціна має бути більшою або дорівнювати 0",
+        "price must not have more than 2 decimal places": "Ціна не може мати більше ніж 2 десяткові знаки",
+        "price must be greater than 0": "Ціна має бути більшою за 0",
+    }
+
+    return translations.get(message, message)
+
+
 def build_product_form_values(
     name: str,
     price: str,
@@ -50,7 +63,7 @@ def validate_admin_product_image_url(image_url: str | None) -> str | None:
         cleaned_image_url.startswith("http://")
         or cleaned_image_url.startswith("https://")
     ):
-        return "Image URL must start with http:// or https://"
+        return "URL зображення має починатися з http:// або https://"
 
     return None
 
@@ -205,7 +218,7 @@ def admin_product_create(
             request=request,
             name="admin_product_create.html",
             context={
-                "error": "Product name is required",
+                "error": "Назва товару не може бути порожньою",
                 "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -217,7 +230,7 @@ def admin_product_create(
             request=request,
             name="admin_product_create.html",
             context={
-                "error": "Product description is required",
+                "error": "Опис товару не може бути порожнім",
                 "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -231,7 +244,7 @@ def admin_product_create(
             request=request,
             name="admin_product_create.html",
             context={
-                "error": str(exc),
+                "error": translate_admin_money_error(str(exc)),
                 "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -243,7 +256,7 @@ def admin_product_create(
             request=request,
             name="admin_product_create.html",
             context={
-                "error": "stock must be greater than or equal to 0",
+                "error": "Залишок має бути більшим або дорівнювати 0",
                 "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -255,7 +268,7 @@ def admin_product_create(
             request=request,
             name="admin_product_create.html",
             context={
-                "error": "low_stock_threshold must be between 1 and 100",
+                "error": "Поріг низького залишку має бути від 1 до 100",
                 "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -269,7 +282,7 @@ def admin_product_create(
             request=request,
             name="admin_product_create.html",
             context={
-                "error": "Category not found",
+                "error": "Категорію не знайдено",
                 "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -386,7 +399,7 @@ def admin_product_edit(
             name="admin_product_edit.html",
             context={
                 "product": product,
-                "error": "Product name is required",
+                "error": "Назва товару не може бути порожньою",
                 "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -399,7 +412,7 @@ def admin_product_edit(
             name="admin_product_edit.html",
             context={
                 "product": product,
-                "error": "Product description is required",
+                "error": "Опис товару не може бути порожнім",
                 "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -414,7 +427,7 @@ def admin_product_edit(
             name="admin_product_edit.html",
             context={
                 "product": product,
-                "error": str(exc),
+                "error": translate_admin_money_error(str(exc)),
                 "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -427,7 +440,7 @@ def admin_product_edit(
             name="admin_product_edit.html",
             context={
                 "product": product,
-                "error": "stock must be greater than or equal to 0",
+                "error": "Залишок має бути більшим або дорівнювати 0",
                 "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -440,7 +453,7 @@ def admin_product_edit(
             name="admin_product_edit.html",
             context={
                 "product": product,
-                "error": "low_stock_threshold must be between 1 and 100",
+                "error": "Поріг низького залишку має бути від 1 до 100",
                 "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -455,7 +468,7 @@ def admin_product_edit(
             name="admin_product_edit.html",
             context={
                 "product": product,
-                "error": "Category not found",
+                "error": "Категорію не знайдено",
                 "form_values": form_values,
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -512,7 +525,7 @@ def admin_product_delete(
                 "products": db.query(Product).order_by(Product.id.desc()).all(),
                 "search": "",
                 "in_stock": None,
-                "error": "Cannot delete product because it is used in existing orders.",
+                "error": "Неможливо видалити товар, оскільки він використовується в наявних замовленнях.",
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400

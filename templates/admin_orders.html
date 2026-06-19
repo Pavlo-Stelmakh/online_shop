@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Orders</title>
+    <title>Адмін: замовлення</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -169,20 +169,20 @@
 </head>
 <body>
     <header>
-        <h1>Admin Orders</h1>
-        <p>Inspect order status, total price, customer ownership and order items.</p>
+        <h1>Адмін: замовлення</h1>
+        <p>Переглядайте статус замовлення, загальну суму, клієнта та позиції замовлення.</p>
     </header>
 
     <main>
         <section class="nav">
-            <a href="/admin">Dashboard</a>
-            <a href="/admin/products">Products</a>
-            <a href="/admin/orders">Orders</a>
-            <a href="/admin/categories">Categories</a>
-            <a href="/admin/customers">Customers</a>
-            <a href="/admin/low-stock">Low stock</a>
+            <a href="/admin">Панель</a>
+            <a href="/admin/products">Товари</a>
+            <a href="/admin/orders">Замовлення</a>
+            <a href="/admin/categories">Категорії</a>
+            <a href="/admin/customers">Клієнти</a>
+            <a href="/admin/low-stock">Низькі залишки</a>
             <a href="/docs">Swagger UI</a>
-            <a href="/admin/logout">Logout</a>
+            <a href="/admin/logout">Вийти</a>
         </section>
 
         {% if error %}
@@ -190,19 +190,19 @@
         {% endif %}
 
         <section class="filters">
-            <h2>Filter by status</h2>
+            <h2>Фільтр за статусом</h2>
         
-            <a href="/admin/orders" class="{% if not status %}active{% endif %}">All</a>
-            <a href="/admin/orders?status=new" class="{% if status == 'new' %}active{% endif %}">New</a>
-            <a href="/admin/orders?status=paid" class="{% if status == 'paid' %}active{% endif %}">Paid</a>
-            <a href="/admin/orders?status=shipped" class="{% if status == 'shipped' %}active{% endif %}">Shipped</a>
-            <a href="/admin/orders?status=cancelled" class="{% if status == 'cancelled' %}active{% endif %}">Cancelled</a>
+            <a href="/admin/orders" class="{% if not status %}active{% endif %}">Усі</a>
+            <a href="/admin/orders?status=new" class="{% if status == 'new' %}active{% endif %}">Нове</a>
+            <a href="/admin/orders?status=paid" class="{% if status == 'paid' %}active{% endif %}">Оплачено</a>
+            <a href="/admin/orders?status=shipped" class="{% if status == 'shipped' %}active{% endif %}">Відправлено</a>
+            <a href="/admin/orders?status=cancelled" class="{% if status == 'cancelled' %}active{% endif %}">Скасовано</a>
         </section>
 
 
         {% if status %}
             <section class="empty">
-                <p>Filtered by status: <strong>{{ status }}</strong></p>
+                <p>Відфільтровано за статусом: <strong>{{ status|order_status_uk }}</strong></p>
             </section>
         {% endif %}
 
@@ -212,12 +212,12 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Customer ID</th>
-                            <th>Status</th>
-                            <th>Total Price</th>
-                            <th>Created At</th>
-                            <th>Items Count</th>
-                            <th>Actions</th>
+                            <th>ID клієнта</th>
+                            <th>Статус</th>
+                            <th>Загальна сума</th>
+                            <th>Створено</th>
+                            <th>Кількість позицій</th>
+                            <th>Дії</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -227,13 +227,13 @@
                                 <td>{{ order.customer_id }}</td>
                                 <td>
                                     <span class="status status-{{ order.status }}">
-                                        {{ order.status }}
+                                        {{ order.status|order_status_uk }}
                                     </span>
                                 </td>
                                 <td>{{ order.total_price|money }}</td>
                                 <td>{{ order.created_at|datetime }}</td>
                                 <td>{{ order.items | length }}</td>
-                                <td><a href="/admin/orders/{{ order.id }}">View details</a></td>
+                                <td><a href="/admin/orders/{{ order.id }}">Переглянути деталі</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -241,13 +241,13 @@
             </section>
         {% else %}
             <section class="empty">
-                <p>No orders found.</p>
+                <p>Замовлень не знайдено.</p>
             </section>
         {% endif %}
     </main>
 
     <footer>
-        Online Shop Admin Dashboard — v4.0.0
+        Адмін-панель Online Shop — v4.0.0
     </footer>
 </body>
 </html>

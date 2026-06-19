@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Categories</title>
+    <title>Адмін: категорії</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -199,51 +199,51 @@
 </head>
 <body>
     <header>
-        <h1>Admin Categories</h1>
-        <p>Inspect and manage product categories and related products count.</p>
+        <h1>Адмін: категорії</h1>
+        <p>Переглядайте категорії товарів і кількість пов’язаних товарів.</p>
     </header>
 
     <main>
         <section class="nav">
-            <a href="/admin">Dashboard</a>
-            <a href="/admin/products">Products</a>
-            <a href="/admin/orders">Orders</a>
-            <a href="/admin/categories">Categories</a>
-            <a href="/admin/customers">Customers</a>
-            <a href="/admin/low-stock">Low stock</a>
+            <a href="/admin">Панель</a>
+            <a href="/admin/products">Товари</a>
+            <a href="/admin/orders">Замовлення</a>
+            <a href="/admin/categories">Категорії</a>
+            <a href="/admin/customers">Клієнти</a>
+            <a href="/admin/low-stock">Низькі залишки</a>
             <a href="/docs">Swagger UI</a>
-            <a href="/admin/logout">Logout</a>
+            <a href="/admin/logout">Вийти</a>
         </section>
 
         {% if error %}
-            <section class="alert" role="alert">{{ error }}{% if error == "Cannot delete category because it is used by existing products." %}<!-- Cannot delete category with products -->{% endif %}</section>
+            <section class="alert" role="alert">{{ error }}{% if error == "Неможливо видалити категорію, оскільки вона використовується наявними товарами." %}<!-- Cannot delete category with products -->{% endif %}</section>
         {% endif %}
 
         <section class="actions">
-            <a href="/admin/categories/new">Add category</a>
+            <a href="/admin/categories/new">Додати категорію</a>
         </section>
 
         <section class="create-category">
-            <h2>Create category</h2>
+            <h2>Створити категорію</h2>
             <form method="post" action="/admin/categories/create">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <input type="text" name="name" placeholder="Category name" required>
-                <button type="submit">Create</button>
+                <input type="text" name="name" placeholder="Назва категорії" required>
+                <button type="submit">Створити</button>
             </form>
         </section>
 
         <section class="filters">
-            <h2>Category search</h2>
+            <h2>Пошук категорій</h2>
 
             <form method="get" action="/admin/categories">
                 <input
                     type="text"
                     name="search"
-                    placeholder="Search by category name"
+                    placeholder="Пошук за назвою категорії"
                     value="{{ search }}"
                 >
-                <button type="submit">Search</button>
-                <a class="secondary" href="/admin/categories">Reset</a>
+                <button type="submit">Пошук</button>
+                <a class="secondary" href="/admin/categories">Скинути</a>
             </form>
         </section>
 
@@ -253,10 +253,10 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Name</th>
-                            <th>Products Count</th>
-                            <th>Actions</th>
-                            <th>Delete</th>
+                            <th>Назва</th>
+                            <th>Кількість товарів</th>
+                            <th>Дії</th>
+                            <th>Видалення</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -266,7 +266,7 @@
                                 <td><a href="/admin/categories/{{ row.category.id }}/edit">{{ row.category.name }}</a></td>
                                 <td><span class="badge">{{ row.products_count }}</span></td>
                                 <td>
-                                    <a href="/admin/categories/{{ row.category.id }}/edit">Edit</a>
+                                    <a href="/admin/categories/{{ row.category.id }}/edit">Редагувати</a>
                                 </td>
                                 <td>
                                     {% if row.products_count == 0 %}
@@ -274,14 +274,14 @@
                                             class="delete-form"
                                             method="post"
                                             action="/admin/categories/{{ row.category.id }}/delete"
-                                            onsubmit="return confirm('Delete this category? This action cannot be undone.');"
+                                            onsubmit="return confirm('Видалити цю категорію? Цю дію не можна скасувати.');"
                                         >
-                                            <span class="delete-warning">Deleting this empty category is permanent and cannot be undone.</span>
+                                            <span class="delete-warning">Видалення цієї порожньої категорії є остаточним і не може бути скасоване.</span>
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                            <button type="submit">Delete</button>
+                                            <button type="submit">Видалити</button>
                                         </form>
                                     {% else %}
-                                        <span class="delete-unavailable">Delete unavailable: this category has products. Move or delete those products first.</span>
+                                        <span class="delete-unavailable">Видалення недоступне: ця категорія має товари. Спочатку перемістіть або видаліть ці товари.</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -291,13 +291,13 @@
             </section>
         {% else %}
             <section class="empty">
-                <p>No categories found.</p>
+                <p>Категорій не знайдено.</p>
             </section>
         {% endif %}
     </main>
 
     <footer>
-        Online Shop Admin Dashboard — v4.0.0
+        Адмін-панель Online Shop — v4.0.0
     </footer>
 </body>
 </html>

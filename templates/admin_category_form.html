@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <title>{{ title }}</title>
@@ -31,14 +31,14 @@
 
     <main>
         <section class="nav">
-            <a href="/admin">Dashboard</a>
-            <a href="/admin/products">Products</a>
-            <a href="/admin/orders">Orders</a>
-            <a href="/admin/categories">Categories</a>
-            <a href="/admin/customers">Customers</a>
-            <a href="/admin/low-stock">Low stock</a>
+            <a href="/admin">Панель</a>
+            <a href="/admin/products">Товари</a>
+            <a href="/admin/orders">Замовлення</a>
+            <a href="/admin/categories">Категорії</a>
+            <a href="/admin/customers">Клієнти</a>
+            <a href="/admin/low-stock">Низькі залишки</a>
             <a href="/docs">Swagger UI</a>
-            <a href="/admin/logout">Logout</a>
+            <a href="/admin/logout">Вийти</a>
         </section>
 
         <section class="form-card">
@@ -48,22 +48,22 @@
 
             <form method="post" action="{{ action_url }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <label for="name">Name</label>
+                <label for="name">Назва</label>
                 <input id="name" type="text" name="name" value="{{ form_values.get('name', '') }}" required>
 
                 {% if has_description %}
-                    <label for="description">Description</label>
+                    <label for="description">Опис</label>
                     <textarea id="description" name="description">{{ form_values.get('description', '') }}</textarea>
                 {% endif %}
 
                 <button type="submit">{{ submit_label }}</button>
-                <a class="secondary-link" href="/admin/categories">Back to categories</a>
+                <a class="secondary-link" href="/admin/categories">Повернутися до категорій</a>
             </form>
         </section>
     </main>
 
     <footer>
-        Online Shop Admin Dashboard — v4.0.0
+        Адмін-панель Online Shop — v4.0.0
     </footer>
 </body>
 </html>

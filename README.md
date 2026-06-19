@@ -14,7 +14,7 @@ The API supports two main roles:
 admin
 customer
 ```
-Admin users can manage products, categories and orders. The admin product UI supports listing products, opening the Add product form, creating products, editing existing products, and safely deleting products when they are not referenced by order items. The admin category UI supports listing categories, opening the Add category form, creating categories, editing categories, and safely deleting categories that are not used by products. Customer users can create orders, manage their customer profile and access their own order history.
+Admin users can manage products, categories and orders. The visible admin panel interface is localized in Ukrainian, including admin templates, displayed validation messages, and order status labels. API endpoints, route paths, schemas, JSON keys, database fields, and stored order status values remain in English. The admin product UI supports listing products, opening the Add product form, creating products, editing existing products, and safely deleting products when they are not referenced by order items. The admin category UI supports listing categories, opening the Add category form, creating categories, editing categories, and safely deleting categories that are not used by products. Customer users can create orders, manage their customer profile and access their own order history.
 
 ## Live Demo
 Production API:

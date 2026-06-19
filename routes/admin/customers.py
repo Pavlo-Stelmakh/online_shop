@@ -104,7 +104,7 @@ def admin_customer_detail(
             name="admin_customer_detail.html",
             context={
                 "customer": None,
-                "error": "Customer not found",
+                "error": "Клієнта не знайдено",
                 "form_values": {},
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -139,7 +139,7 @@ def admin_customer_edit(
             name="admin_customer_detail.html",
             context={
                 "customer": None,
-                "error": "Customer not found",
+                "error": "Клієнта не знайдено",
                 "form_values": {},
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -156,7 +156,7 @@ def admin_customer_edit(
         return render_admin_customer_detail(
             request,
             customer,
-            error="Name, email and phone are required",
+            error="Ім’я, email і телефон є обов’язковими",
             status_code=400,
             form_values=form_values
         )
@@ -170,7 +170,7 @@ def admin_customer_edit(
         return render_admin_customer_detail(
             request,
             customer,
-            error="Customer with this email already exists",
+            error="Клієнт із цим email уже існує",
             status_code=400,
             form_values=form_values
         )
@@ -186,7 +186,7 @@ def admin_customer_edit(
         return render_admin_customer_detail(
             request,
             customer,
-            error="Customer could not be updated",
+            error="Не вдалося оновити клієнта",
             status_code=400,
             form_values=form_values
         )
@@ -219,7 +219,7 @@ def admin_customer_delete(
             name="admin_customer_detail.html",
             context={
                 "customer": None,
-                "error": "Customer not found",
+                "error": "Клієнта не знайдено",
                 "form_values": {},
                 "csrf_token": get_admin_csrf_token(request)
             },
@@ -234,7 +234,7 @@ def admin_customer_delete(
         return render_admin_customer_detail(
             request,
             customer,
-            error="Customer cannot be deleted because they have orders",
+            error="Неможливо видалити клієнта, оскільки він має замовлення",
             status_code=400
         )
 

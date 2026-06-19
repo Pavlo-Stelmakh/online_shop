@@ -16,7 +16,7 @@ from routes.admin.common import (
 router = APIRouter()
 
 CATEGORY_DELETE_IN_USE_ERROR = (
-    "Cannot delete category because it is used by existing products."
+    "Неможливо видалити категорію, оскільки вона використовується наявними товарами."
 )
 
 
@@ -148,7 +148,7 @@ def validate_category_name(
     category_name = name.strip()
 
     if not category_name:
-        return "Category name is required"
+        return "Назва категорії не може бути порожньою"
 
     query = db.query(Category).filter(Category.name == category_name)
 
@@ -156,7 +156,7 @@ def validate_category_name(
         query = query.filter(Category.id != category_id)
 
     if query.first() is not None:
-        return "Category already exists"
+        return "Категорія вже існує"
 
     return None
 
@@ -188,9 +188,9 @@ def admin_category_new_page(
     return render_category_form(
         request,
         action_url="/admin/categories/new",
-        title="Add category",
-        subtitle="Create a new product category from the admin dashboard.",
-        submit_label="Add category",
+        title="Додати категорію",
+        subtitle="Створіть нову категорію товарів з адмін-панелі.",
+        submit_label="Додати категорію",
         form_values=category_form_values()
     )
 
@@ -216,9 +216,9 @@ def admin_category_new(
         return render_category_form(
             request,
             action_url="/admin/categories/new",
-            title="Add category",
-            subtitle="Create a new product category from the admin dashboard.",
-            submit_label="Add category",
+            title="Додати категорію",
+            subtitle="Створіть нову категорію товарів з адмін-панелі.",
+            submit_label="Додати категорію",
             form_values=category_form_values(name=name),
             error=validation_error,
             status_code=400
@@ -234,11 +234,11 @@ def admin_category_new(
         return render_category_form(
             request,
             action_url="/admin/categories/new",
-            title="Add category",
-            subtitle="Create a new product category from the admin dashboard.",
-            submit_label="Add category",
+            title="Додати категорію",
+            subtitle="Створіть нову категорію товарів з адмін-панелі.",
+            submit_label="Додати категорію",
             form_values=category_form_values(name=name),
-            error="Category already exists",
+            error="Категорія вже існує",
             status_code=400
         )
 
@@ -265,7 +265,7 @@ def admin_category_create(
         return render_admin_categories(
             request,
             db,
-            error="Category name is required",
+            error="Назва категорії не може бути порожньою",
             status_code=400
         )
 
@@ -277,7 +277,7 @@ def admin_category_create(
         return render_admin_categories(
             request,
             db,
-            error="Category already exists",
+            error="Категорія вже існує",
             status_code=400
         )
 
@@ -291,7 +291,7 @@ def admin_category_create(
         return render_admin_categories(
             request,
             db,
-            error="Category already exists",
+            error="Категорія вже існує",
             status_code=400
         )
 
@@ -315,16 +315,16 @@ def admin_category_edit_page(
         return render_admin_categories(
             request,
             db,
-            error="Category not found",
+            error="Категорію не знайдено",
             status_code=404
         )
 
     return render_category_form(
         request,
         action_url=f"/admin/categories/{category_id}/edit",
-        title="Edit category",
-        subtitle="Update this product category from the admin dashboard.",
-        submit_label="Save category",
+        title="Редагувати категорію",
+        subtitle="Оновіть цю категорію товарів з адмін-панелі.",
+        submit_label="Зберегти категорію",
         form_values=category_form_values(category=category)
     )
 
@@ -350,7 +350,7 @@ def admin_category_edit(
         return render_admin_categories(
             request,
             db,
-            error="Category not found",
+            error="Категорію не знайдено",
             status_code=404
         )
 
@@ -362,9 +362,9 @@ def admin_category_edit(
         return render_category_form(
             request,
             action_url=f"/admin/categories/{category_id}/edit",
-            title="Edit category",
-            subtitle="Update this product category from the admin dashboard.",
-            submit_label="Save category",
+            title="Редагувати категорію",
+            subtitle="Оновіть цю категорію товарів з адмін-панелі.",
+            submit_label="Зберегти категорію",
             form_values=category_form_values(category=category, name=name),
             error=validation_error,
             status_code=400
@@ -379,11 +379,11 @@ def admin_category_edit(
         return render_category_form(
             request,
             action_url=f"/admin/categories/{category_id}/edit",
-            title="Edit category",
-            subtitle="Update this product category from the admin dashboard.",
-            submit_label="Save category",
+            title="Редагувати категорію",
+            subtitle="Оновіть цю категорію товарів з адмін-панелі.",
+            submit_label="Зберегти категорію",
             form_values=category_form_values(category=category, name=name),
-            error="Category already exists",
+            error="Категорія вже існує",
             status_code=400
         )
 
@@ -410,7 +410,7 @@ def admin_category_delete(
         return render_admin_categories(
             request,
             db,
-            error="Category not found",
+            error="Категорію не знайдено",
             status_code=404
         )
 

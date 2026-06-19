@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Order Detail</title>
+    <title>Адмін: деталі замовлення</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; color: #222; }
         header { background: #111827; color: white; padding: 24px 40px; }
@@ -31,53 +31,53 @@
 </head>
 <body>
     <header>
-        <h1>Admin Order Detail</h1>
-        <p>Review customer, items, prices and status for order #{{ order.id }}.</p>
+        <h1>Адмін: деталі замовлення</h1>
+        <p>Переглядайте клієнта, позиції, ціни та статус замовлення №{{ order.id }}.</p>
     </header>
 
     <main>
         <section class="nav">
-            <a href="/admin">Dashboard</a>
-            <a href="/admin/products">Products</a>
-            <a href="/admin/categories">Categories</a>
-            <a href="/admin/customers">Customers</a>
-            <a href="/admin/orders">Orders</a>
-            <a href="/admin/low-stock">Low stock</a>
+            <a href="/admin">Панель</a>
+            <a href="/admin/products">Товари</a>
+            <a href="/admin/categories">Категорії</a>
+            <a href="/admin/customers">Клієнти</a>
+            <a href="/admin/orders">Замовлення</a>
+            <a href="/admin/low-stock">Низькі залишки</a>
             <a href="/docs">Swagger UI</a>
-            <a href="/admin/logout">Logout</a>
+            <a href="/admin/logout">Вийти</a>
         </section>
-        <p><a href="/admin/orders">Back to Orders</a></p>
+        <p><a href="/admin/orders">Повернутися до замовлень</a></p>
 
         {% if error %}
             <section class="error">{{ error }}</section>
         {% endif %}
 
         <section class="card">
-            <h2>Order #{{ order.id }}</h2>
+            <h2>Замовлення №{{ order.id }}</h2>
             <dl>
-                <dt>Order ID</dt>
+                <dt>ID замовлення</dt>
                 <dd>{{ order.id }}</dd>
-                <dt>Status</dt>
-                <dd><span class="status status-{{ order.status }}">{{ order.status }}</span></dd>
-                <dt>Customer</dt>
+                <dt>Статус</dt>
+                <dd><span class="status status-{{ order.status }}">{{ order.status|order_status_uk }}</span></dd>
+                <dt>Клієнт</dt>
                 <dd>{{ order.customer.name }} (ID {{ order.customer.id }}, {{ order.customer.email }})</dd>
-                <dt>Total Price</dt>
+                <dt>Загальна сума</dt>
                 <dd>{{ order.total_price|money }}</dd>
-                <dt>Created At</dt>
+                <dt>Створено</dt>
                 <dd>{{ order.created_at|datetime }}</dd>
             </dl>
         </section>
 
         <section class="table-wrapper">
-            <h2>Items</h2>
+            <h2>Позиції</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>Product ID</th>
-                        <th>Product</th>
-                        <th>Quantity</th>
-                        <th>Unit Price</th>
-                        <th>Line Total</th>
+                        <th>ID товару</th>
+                        <th>Товар</th>
+                        <th>Кількість</th>
+                        <th>Ціна за одиницю</th>
+                        <th>Сума рядка</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -95,21 +95,21 @@
         </section>
 
         <section class="card">
-            <h2>Order Actions</h2>
+            <h2>Дії із замовленням</h2>
             {% if status_actions %}
                 {% for action in status_actions %}
                     <form method="post" action="/admin/orders/{{ order.id }}/status" style="display: inline-block;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <input type="hidden" name="status" value="{{ action.status }}">
-                        <button type="submit">{{ action.label }}</button>
+                        <button type="submit">{{ action.status|order_action_uk }}</button>
                     </form>
                 {% endfor %}
             {% else %}
-                <p>No status actions are available for this order.</p>
+                <p>Для цього замовлення немає доступних дій.</p>
             {% endif %}
         </section>
     </main>
 
-    <footer>Online Shop Admin Dashboard — v4.0.0</footer>
+    <footer>Адмін-панель Online Shop — v4.0.0</footer>
 </body>
 </html>
