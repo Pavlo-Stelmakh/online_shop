@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Customers</title>
+    <title>Адмін: клієнти</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -144,34 +144,34 @@
 </head>
 <body>
     <header>
-        <h1>Admin Customers</h1>
-        <p>Inspect customer profiles connected to registered users.</p>
+        <h1>Адмін: клієнти</h1>
+        <p>Переглядайте профілі клієнтів, пов’язані із зареєстрованими користувачами.</p>
     </header>
 
     <main>
         <section class="nav">
-            <a href="/admin">Dashboard</a>
-            <a href="/admin/products">Products</a>
-            <a href="/admin/orders">Orders</a>
-            <a href="/admin/categories">Categories</a>
-            <a href="/admin/customers">Customers</a>
-            <a href="/admin/low-stock">Low stock</a>
+            <a href="/admin">Панель</a>
+            <a href="/admin/products">Товари</a>
+            <a href="/admin/orders">Замовлення</a>
+            <a href="/admin/categories">Категорії</a>
+            <a href="/admin/customers">Клієнти</a>
+            <a href="/admin/low-stock">Низькі залишки</a>
             <a href="/docs">Swagger UI</a>
-            <a href="/admin/logout">Logout</a>
+            <a href="/admin/logout">Вийти</a>
         </section>
 
         <section class="filters">
-            <h2>Customer search</h2>
+            <h2>Пошук клієнтів</h2>
 
             <form method="get" action="/admin/customers">
                 <input
                     type="text"
                     name="search"
-                    placeholder="Search by name, email or phone"
+                    placeholder="Пошук за іменем, email або телефоном"
                     value="{{ search }}"
                 >
-                <button type="submit">Search</button>
-                <a class="secondary" href="/admin/customers">Reset</a>
+                <button type="submit">Пошук</button>
+                <a class="secondary" href="/admin/customers">Скинути</a>
             </form>
         </section>
 
@@ -181,11 +181,11 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>User ID</th>
-                            <th>Name</th>
+                            <th>ID користувача</th>
+                            <th>Назва</th>
                             <th>Email</th>
-                            <th>Phone</th>
-                            <th>Actions</th>
+                            <th>Телефон</th>
+                            <th>Дії</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -196,7 +196,7 @@
                                 <td><a href="/admin/customers/{{ customer.id }}">{{ customer.name }}</a></td>
                                 <td>{{ customer.email }}</td>
                                 <td>{{ customer.phone }}</td>
-                                <td><a href="/admin/customers/{{ customer.id }}">View details</a></td>
+                                <td><a href="/admin/customers/{{ customer.id }}">Переглянути деталі</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -204,13 +204,13 @@
             </section>
         {% else %}
             <section class="empty">
-                <p>No customers found.</p>
+                <p>Клієнтів не знайдено.</p>
             </section>
         {% endif %}
     </main>
 
     <footer>
-        Online Shop Admin Dashboard — v4.0.0
+        Адмін-панель Online Shop — v4.0.0
     </footer>
 </body>
 </html>

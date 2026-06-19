@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Customer Detail</title>
+    <title>Адмін: деталі клієнта</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; color: #222; }
         header { background: #111827; color: white; padding: 24px 40px; }
@@ -37,26 +37,26 @@
 </head>
 <body>
     <header>
-        <h1>Admin Customer Detail</h1>
+        <h1>Адмін: деталі клієнта</h1>
         {% if customer %}
-            <p>Review and edit customer #{{ customer.id }}.</p>
+            <p>Перегляд і редагування клієнта №{{ customer.id }}.</p>
         {% else %}
-            <p>Customer record was not found.</p>
+            <p>Запис клієнта не знайдено.</p>
         {% endif %}
     </header>
 
     <main>
         <section class="nav">
-            <a href="/admin">Dashboard</a>
-            <a href="/admin/products">Products</a>
-            <a href="/admin/categories">Categories</a>
-            <a href="/admin/customers">Customers</a>
-            <a href="/admin/orders">Orders</a>
-            <a href="/admin/low-stock">Low stock</a>
+            <a href="/admin">Панель</a>
+            <a href="/admin/products">Товари</a>
+            <a href="/admin/categories">Категорії</a>
+            <a href="/admin/customers">Клієнти</a>
+            <a href="/admin/orders">Замовлення</a>
+            <a href="/admin/low-stock">Низькі залишки</a>
             <a href="/docs">Swagger UI</a>
-            <a href="/admin/logout">Logout</a>
+            <a href="/admin/logout">Вийти</a>
         </section>
-        <p><a href="/admin/customers">Back to Customers</a></p>
+        <p><a href="/admin/customers">Повернутися до клієнтів</a></p>
 
         {% if error %}
             <section class="error">{{ error }}</section>
@@ -64,91 +64,91 @@
 
         {% if customer %}
             <section class="card">
-                <h2>Customer #{{ customer.id }}</h2>
+                <h2>Клієнт №{{ customer.id }}</h2>
                 <dl>
-                    <dt>Customer ID</dt>
+                    <dt>ID клієнта</dt>
                     <dd>{{ customer.id }}</dd>
-                    <dt>User ID</dt>
+                    <dt>ID користувача</dt>
                     <dd>{{ customer.user_id }}</dd>
-                    <dt>Name</dt>
+                    <dt>Ім’я</dt>
                     <dd>{{ customer.name }}</dd>
                     <dt>Email</dt>
                     <dd>{{ customer.email }}</dd>
-                    <dt>Phone</dt>
+                    <dt>Телефон</dt>
                     <dd>{{ customer.phone }}</dd>
                     {% if customer.created_at is defined and customer.created_at %}
-                        <dt>Created At</dt>
+                        <dt>Створено</dt>
                         <dd>{{ customer.created_at|datetime }}</dd>
                     {% endif %}
                 </dl>
             </section>
 
             <section class="card">
-                <h2>Edit Customer</h2>
+                <h2>Редагувати клієнта</h2>
                 <form method="post" action="/admin/customers/{{ customer.id }}/edit">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <label for="name">Name</label>
+                    <label for="name">Назва</label>
                     <input id="name" name="name" value="{{ form_values.get('name', customer.name) }}" required>
                     <label for="email">Email</label>
                     <input id="email" name="email" type="email" value="{{ form_values.get('email', customer.email) }}" required>
-                    <label for="phone">Phone</label>
+                    <label for="phone">Телефон</label>
                     <input id="phone" name="phone" value="{{ form_values.get('phone', customer.phone) }}" required>
-                    <p><button type="submit">Save Customer</button></p>
+                    <p><button type="submit">Зберегти клієнта</button></p>
                 </form>
             </section>
 
             <section class="table-wrapper">
-                <h2>Orders</h2>
+                <h2>Замовлення</h2>
                 {% if customer.orders %}
                     <table>
                         <thead>
                             <tr>
-                                <th>Order ID</th>
-                                <th>Status</th>
-                                <th>Total Price</th>
-                                <th>Created At</th>
-                                <th>Items Count</th>
-                                <th>Actions</th>
+                                <th>ID замовлення</th>
+                                <th>Статус</th>
+                                <th>Загальна сума</th>
+                                <th>Створено</th>
+                                <th>Кількість позицій</th>
+                                <th>Дії</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for order in customer.orders %}
                                 <tr>
                                     <td>{{ order.id }}</td>
-                                    <td><span class="status status-{{ order.status }}">{{ order.status }}</span></td>
+                                    <td><span class="status status-{{ order.status }}">{{ order.status|order_status_uk }}</span></td>
                                     <td>{{ order.total_price|money }}</td>
                                     <td>{{ order.created_at|datetime }}</td>
                                     <td>{{ order.items|length }}</td>
-                                    <td><a href="/admin/orders/{{ order.id }}">View details</a></td>
+                                    <td><a href="/admin/orders/{{ order.id }}">Переглянути деталі</a></td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 {% else %}
-                    <p>No orders found for this customer.</p>
+                    <p>Для цього клієнта замовлень не знайдено.</p>
                 {% endif %}
             </section>
 
             <section class="card">
-                <h2>Delete Customer</h2>
+                <h2>Видалити клієнта</h2>
                 {% if customer.orders %}
-                    <p class="delete-unavailable">Delete unavailable: this customer has orders. Customer records with orders are retained for order history.</p>
+                    <p class="delete-unavailable">Видалення недоступне: цей клієнт має замовлення. Записи клієнтів із замовленнями зберігаються для історії замовлень.</p>
                 {% else %}
-                    <p class="delete-warning">Deleting this customer is permanent and cannot be undone.</p>
+                    <p class="delete-warning">Видалення цього клієнта є остаточним і не може бути скасоване.</p>
                     <form
                         class="inline"
                         method="post"
                         action="/admin/customers/{{ customer.id }}/delete"
-                        onsubmit="return confirm('Delete this customer? This action cannot be undone.');"
+                        onsubmit="return confirm('Видалити цього клієнта? Цю дію не можна скасувати.');"
                     >
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <button class="danger" type="submit">Delete Customer</button>
+                        <button class="danger" type="submit">Видалити клієнта</button>
                     </form>
                 {% endif %}
             </section>
         {% endif %}
     </main>
 
-    <footer>Online Shop Admin Dashboard — v4.0.0</footer>
+    <footer>Адмін-панель Online Shop — v4.0.0</footer>
 </body>
 </html>

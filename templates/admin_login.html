@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Login</title>
+    <title>Вхід адміністратора</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -86,8 +86,8 @@
 </head>
 <body>
     <header>
-        <h1>Admin Login</h1>
-        <p>Sign in to access the Online Shop Admin Dashboard</p>
+        <h1>Вхід адміністратора</h1>
+        <p>Увійдіть, щоб отримати доступ до адмін-панелі Online Shop</p>
     </header>
 
     <main>
@@ -97,19 +97,19 @@
             {% endif %}
 
             <form method="post" action="/admin/login">
-                <label for="username">Username</label>
+                <label for="username">Ім’я користувача</label>
                 <input id="username" type="text" name="username" value="{{ form_values.get('username', '') }}" required>
 
-                <label for="password">Password</label>
+                <label for="password">Пароль</label>
                 <input id="password" type="password" name="password" required>
 
-                <button type="submit">Login</button>
+                <button type="submit">Увійти</button>
             </form>
         </section>
     </main>
 
     <footer>
-        Online Shop Admin Dashboard — Login
+        Адмін-панель Online Shop — вхід
     </footer>
 </body>
 </html>

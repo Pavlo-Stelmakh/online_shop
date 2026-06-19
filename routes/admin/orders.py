@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import Order
 from routes.admin.common import (
+    format_order_status_uk,
     get_admin_csrf_token,
     require_admin_csrf,
     require_admin_ui,
@@ -16,6 +17,26 @@ from services.orders import get_available_order_status_actions, transition_order
 
 ORDER_STATUSES = ORDER_STATUS_VALUES
 router = APIRouter()
+
+
+def translate_admin_order_error(message: str) -> str:
+    if message.startswith("Order already has status "):
+        status = message.rsplit("'", 2)[1]
+        return f"Замовлення вже має статус «{format_order_status_uk(status)}»"
+
+    if message.startswith("Cannot change order status from "):
+        parts = message.split("'")
+        if len(parts) >= 4:
+            return (
+                "Неможливо змінити статус замовлення "
+                f"з «{format_order_status_uk(parts[1])}» "
+                f"на «{format_order_status_uk(parts[3])}»"
+            )
+
+    if message == "Order not found":
+        return "Замовлення не знайдено"
+
+    return message
 
 
 @router.get("/orders")
@@ -35,7 +56,7 @@ def admin_orders(
 
     if status is not None:
         if status not in ORDER_STATUSES:
-            error = "Invalid order status filter"
+            error = "Недійсний фільтр статусу замовлення"
         else:
             query = query.filter(Order.status == status)
 
@@ -67,7 +88,7 @@ def admin_order_detail(
     order = db.query(Order).filter(Order.id == order_id).first()
 
     if order is None:
-        raise HTTPException(status_code=404, detail="Order not found")
+        raise HTTPException(status_code=404, detail="Замовлення не знайдено")
 
     return templates.TemplateResponse(
         request=request,
@@ -111,7 +132,7 @@ def admin_order_status_update(
             context={
                 "order": order,
                 "status_actions": get_available_order_status_actions(order),
-                "error": "Invalid order status",
+                "error": "Недійсний статус замовлення",
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=400
@@ -138,7 +159,7 @@ def admin_order_status_update(
             context={
                 "order": order,
                 "status_actions": get_available_order_status_actions(order),
-                "error": exc.detail,
+                "error": translate_admin_order_error(str(exc.detail)),
                 "csrf_token": get_admin_csrf_token(request)
             },
             status_code=exc.status_code

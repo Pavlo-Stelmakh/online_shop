@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Admin low stock</title>
+    <title>Адмін: низькі залишки</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -114,24 +114,24 @@
 </head>
 <body>
     <header>
-        <h1>Admin low stock</h1>
-        <p>Monitor products with stock less than or equal to the low stock threshold.</p>
+        <h1>Адмін: низькі залишки</h1>
+        <p>Відстежуйте товари із залишком, меншим або рівним порогу низького залишку.</p>
     </header>
 
     <main>
         <section class="nav">
-            <a href="/admin">Dashboard</a>
-            <a href="/admin/products">Products</a>
-            <a href="/admin/orders">Orders</a>
-            <a href="/admin/categories">Categories</a>
-            <a href="/admin/customers">Customers</a>
-            <a href="/admin/low-stock">Low stock</a>
+            <a href="/admin">Панель</a>
+            <a href="/admin/products">Товари</a>
+            <a href="/admin/orders">Замовлення</a>
+            <a href="/admin/categories">Категорії</a>
+            <a href="/admin/customers">Клієнти</a>
+            <a href="/admin/low-stock">Низькі залишки</a>
             <a href="/docs">Swagger UI</a>
-            <a href="/admin/logout">Logout</a>
+            <a href="/admin/logout">Вийти</a>
         </section>
 
         <section class="warning">
-            Showing products where stock is less than or equal to each product low stock threshold.
+            Показано товари, у яких залишок менший або дорівнює порогу низького залишку кожного товару.
         </section>
 
         {% if products %}
@@ -140,11 +140,11 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Name</th>
-                            <th>Price</th>
-                            <th>Stock</th>
-                            <th>Low stock threshold</th>
-                            <th>Category ID</th>
+                            <th>Назва</th>
+                            <th>Ціна</th>
+                            <th>Залишок</th>
+                            <th>Поріг низького залишку</th>
+                            <th>ID категорії</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -169,13 +169,13 @@
             </section>
         {% else %}
             <section class="empty">
-                <p>No low stock products found.</p>
+                <p>Товарів із низьким залишком не знайдено.</p>
             </section>
         {% endif %}
     </main>
 
     <footer>
-        Online Shop Admin Dashboard — v4.0.0
+        Адмін-панель Online Shop — v4.0.0
     </footer>
 </body>
 </html>

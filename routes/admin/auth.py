@@ -43,7 +43,7 @@ def admin_login(
             request=request,
             name="admin_login.html",
             context={
-                "error": "Invalid username or password",
+                "error": "Недійсне ім’я користувача або пароль",
                 "form_values": {"username": username}
             },
             status_code=401
@@ -54,7 +54,7 @@ def admin_login(
             request=request,
             name="admin_login.html",
             context={
-                "error": "Admin access required",
+                "error": "Потрібен доступ адміністратора",
                 "form_values": {"username": username}
             },
             status_code=403

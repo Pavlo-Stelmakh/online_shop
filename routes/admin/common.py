@@ -17,6 +17,33 @@ templates = Jinja2Templates(directory="templates")
 templates.env.filters["money"] = format_money
 
 
+def format_order_status_uk(status: str | None) -> str:
+    status_labels = {
+        "new": "Нове",
+        "paid": "Оплачено",
+        "shipped": "Відправлено",
+        "cancelled": "Скасовано",
+    }
+
+    return status_labels.get(status, status or "")
+
+
+templates.env.filters["order_status_uk"] = format_order_status_uk
+
+
+def format_order_action_uk(status: str | None) -> str:
+    action_labels = {
+        "paid": "Позначити як оплачене",
+        "shipped": "Позначити як відправлене",
+        "cancelled": "Скасувати замовлення",
+    }
+
+    return action_labels.get(status, status or "")
+
+
+templates.env.filters["order_action_uk"] = format_order_action_uk
+
+
 def format_admin_datetime(value: datetime | None) -> str:
     if value is None:
         return ""
