@@ -1,5 +1,7 @@
 # Online Shop API
 
+Ukrainian version: [README.uk.md](README.uk.md)
+
 ![Run API Tests](https://github.com/Pavlo-Stelmakh/online_shop/actions/workflows/tests.yml/badge.svg)
 
 ## Project Overview
