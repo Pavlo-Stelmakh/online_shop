@@ -810,6 +810,17 @@ Optional Render environment variables:
 | `APP_ENV` / `ENVIRONMENT` | Environment marker used to identify production-like runtime. |
 | `PORT` | Usually set by Render automatically; only set manually if needed. |
 
+### Local storefront CORS
+
+The API allows CORS requests from the local Next.js customer storefront during development:
+
+```text
+http://localhost:3000
+http://127.0.0.1:3000
+```
+
+These exact origins are allowed because credentialed CORS responses must not use wildcard origins. The CORS middleware handles frontend preflight `OPTIONS` requests before route handling for methods such as `GET`, `POST`, `PUT`, and `DELETE`, including `/auth/register` calls from the storefront.
+
 Pre-deploy checklist:
 
 - Confirm Render `DATABASE_URL` points to the intended PostgreSQL database, not SQLite.
