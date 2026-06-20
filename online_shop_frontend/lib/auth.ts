@@ -1,9 +1,19 @@
-import type { User } from "@/types";
+const TOKEN_STORAGE_KEY = "online_shop_access_token";
 
-const TOKEN_KEY = "online_shop_access_token";
+function canUseStorage() {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
 
-export function getAccessToken() { return typeof window === "undefined" ? null : window.localStorage.getItem(TOKEN_KEY); }
-export function setAccessToken(token: string) { if (typeof window === "undefined") return; window.localStorage.setItem(TOKEN_KEY, token); window.dispatchEvent(new Event("auth-changed")); }
-export function clearAccessToken() { if (typeof window === "undefined") return; window.localStorage.removeItem(TOKEN_KEY); window.dispatchEvent(new Event("auth-changed")); }
-export function isAuthenticated() { return Boolean(getAccessToken()); }
-export type AuthState = { token: string | null; user: User | null; loading: boolean };
+export function getAccessToken() {
+  if (!canUseStorage()) {
+    return null;
+  }
+
+  return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+}
+
+export function saveAccessToken(token: string) {
+  if (canUseStorage()) {
+    window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  }
+}

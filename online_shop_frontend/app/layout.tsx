@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
+import { Header } from "@/components/Header";
 import "./globals.css";
-import Header from "@/components/Header";
 
 export const metadata: Metadata = {
-  title: "Online Shop — Каталог",
-  description: "Українська вітрина онлайн-магазину",
+  title: "Online Shop",
+  description: "Мінімальна вітрина онлайн-магазину",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

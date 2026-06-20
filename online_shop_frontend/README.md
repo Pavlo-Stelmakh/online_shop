@@ -1,58 +1,35 @@
 # Online Shop Frontend
 
-Customer-facing storefront MVP for the existing FastAPI `online_shop` backend.
+Clean minimal customer storefront MVP built with Next.js, TypeScript, Tailwind CSS, App Router, client-side catalog fetching, and a `localStorage` cart.
 
-## Install
+## Setup
 
 ```bash
-cd online_shop_frontend
 npm install
 ```
 
-## Environment setup
-
-Create `.env.local`:
+Create a local environment file if needed:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=https://online-shop-api-z9y4.onrender.com
 ```
 
-A default example is included in `.env.example`.
-
-## Local run
+## Development
 
 ```bash
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open the storefront at http://localhost:3000.
 
-## Build
+## Production build
 
 ```bash
 npm run build
 ```
 
-## Vercel deploy
+## Notes
 
-1. Import `online_shop_frontend` as the project root in Vercel.
-2. Set `NEXT_PUBLIC_API_BASE_URL` to the backend URL.
-3. Deploy with the default Next.js framework preset.
-
-## Backend endpoints used
-
-- `GET /products` for the catalog envelope (`items`, `total`, `skip`, `limit`, `sort_by`, `sort_order`).
-- `GET /products/{id}` for product details.
-- `POST /auth/register` for customer registration.
-- `POST /auth/login` for token login.
-- `GET /auth/me` for current user support.
-- `GET /customers/me` to find the customer profile for checkout.
-- `POST /customers` to create a customer profile when one does not exist.
-- `POST /orders` with `Authorization: Bearer <token>` to create orders.
-
-## Current MVP limitations and backend follow-ups
-
-- The MVP stores the access token and cart in `localStorage`; use secure cookies/session hardening before production.
-- Checkout creates a customer profile only when `GET /customers/me` returns 404. If a profile exists, the form does not update it.
-- Product stock is enforced client-side only from the last known catalog/detail response; backend remains the source of truth during order creation.
-- The storefront assumes CORS is enabled for the deployed frontend domain.
+- The backend API and Ukrainian admin panel are separate applications.
+- This frontend only reads products, handles auth token storage, and manages the cart in the browser.
+- Checkout currently shows an order summary placeholder and does not create backend orders.

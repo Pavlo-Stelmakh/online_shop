@@ -1,37 +1,55 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useState } from "react";
-import { api } from "@/lib/api";
-import { setAccessToken } from "@/lib/auth";
+import { FormEvent, useState } from "react";
+import { apiUrl } from "@/lib/api";
+import { saveAccessToken } from "@/lib/auth";
 
-function LoginForm() {
-  const router = useRouter();
-  const params = useSearchParams();
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+export default function LoginPage() {
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
-    setError("");
-    const data = new FormData(event.currentTarget);
+    setIsLoading(true);
+    setMessage(null);
+
+    const formData = new FormData(event.currentTarget);
 
     try {
-      const token = await api.login(String(data.get("username")), String(data.get("password")));
-      setAccessToken(token.access_token);
-      router.push(params.get("next") ?? "/");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Помилка входу");
+      const response = await fetch(apiUrl("/auth/login"), { method: "POST", body: formData });
+      if (!response.ok) {
+        throw new Error("Помилка входу");
+      }
+      const data = (await response.json()) as { access_token?: string };
+      if (!data.access_token) {
+        throw new Error("Токен не отримано");
+      }
+      saveAccessToken(data.access_token);
+      setMessage("Вхід успішний");
+    } catch {
+      setMessage("Не вдалося увійти. Перевірте логін і пароль.");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }
 
-  return <form onSubmit={submit} className="mx-auto max-w-md space-y-4 rounded-2xl bg-white p-6 shadow"><h1 className="text-2xl font-bold">Вхід</h1>{error && <p className="rounded bg-red-50 p-3 text-red-700">{error}</p>}<input required name="username" placeholder="Імʼя користувача" className="w-full rounded border p-3" /><input required name="password" type="password" placeholder="Пароль" className="w-full rounded border p-3" /><button disabled={loading} className="w-full rounded bg-blue-600 p-3 text-white disabled:bg-slate-300">{loading ? "Входимо..." : "Увійти"}</button><p className="text-sm">Немає акаунта? <Link className="text-blue-700" href="/register">Зареєструватися</Link></p></form>;
-}
-
-export default function LoginPage() {
-  return <Suspense fallback={<div className="mx-auto max-w-md rounded-2xl bg-white p-6 shadow">Завантаження...</div>}><LoginForm /></Suspense>;
+  return (
+    <section className="mx-auto max-w-md rounded-2xl bg-white p-6 shadow-sm">
+      <h1 className="text-3xl font-bold text-slate-950">Вхід</h1>
+      <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        <label className="block text-sm font-medium text-slate-700">
+          Імʼя користувача
+          <input className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" name="username" required type="text" />
+        </label>
+        <label className="block text-sm font-medium text-slate-700">
+          Пароль
+          <input className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" name="password" required type="password" />
+        </label>
+        <button className="w-full rounded-xl bg-slate-950 px-4 py-2 font-semibold text-white hover:bg-slate-800 disabled:opacity-60" disabled={isLoading} type="submit">
+          {isLoading ? "Вхід..." : "Увійти"}
+        </button>
+      </form>
+      {message && <p className="mt-4 text-sm text-slate-700">{message}</p>}
+    </section>
+  );
 }
