@@ -24,3 +24,4 @@ test_shop.db
 # Frontend dependencies and build output
 online_shop_frontend/node_modules/
 online_shop_frontend/.next/
+.env.local
