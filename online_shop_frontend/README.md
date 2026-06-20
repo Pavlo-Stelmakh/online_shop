@@ -32,4 +32,6 @@ npm run build
 
 - The backend API and Ukrainian admin panel are separate applications.
 - This frontend only reads products, handles auth token storage, and manages the cart in the browser.
-- Checkout currently shows an order summary placeholder and does not create backend orders.
+- Checkout creates an authenticated backend order from the current `localStorage` cart, clears the cart after success, and shows a success state with a link back to the catalog.
+- Checkout requires an existing customer profile for the logged-in user because the backend order schema requires `customer_id`.
+- Payment and delivery flows are not implemented yet; the MVP only creates the order in the backend.
