@@ -19,32 +19,49 @@ export function saveCart(items: CartItem[]) {
   window.dispatchEvent(new Event("cart-changed"));
 }
 
+
 export function addProductToCart(product: Product) {
-  if (!isProductValidForCart(product)) return;
+  console.log("ADD TO CART CLICKED", product);
+
+  const productId = Number(product.id);
+  const stock = Number(product.stock);
+  const unitPrice = Number(product.price);
+
+  if (!Number.isFinite(productId) || productId <= 0) {
+    alert("Помилка: товар має неправильний ID");
+    return;
+  }
+
+  if (!Number.isFinite(stock) || stock <= 0) {
+    alert("Цього товару немає в наявності");
+    return;
+  }
 
   const items = getCart();
-  const existing = items.find((item) => item.productId === product.id);
+  const existing = items.find((item) => item.productId === productId);
 
   if (existing) {
-    existing.quantity = Math.min(existing.quantity + 1, product.stock);
-    existing.stock = product.stock;
-    existing.unitPrice = product.price;
+    existing.quantity = Math.min(existing.quantity + 1, stock);
+    existing.stock = stock;
+    existing.unitPrice = Number.isFinite(unitPrice) ? unitPrice : 0;
     existing.priceAmount = product.priceAmount;
   } else {
     items.push({
-      productId: product.id,
+      productId,
       name: product.name,
       description: product.description,
-      unitPrice: product.price,
+      unitPrice: Number.isFinite(unitPrice) ? unitPrice : 0,
       priceAmount: product.priceAmount,
       imageUrl: product.imageUrl,
-      stock: product.stock,
+      stock,
       quantity: 1,
     });
   }
 
   saveCart(items);
+  alert("Товар додано в кошик");
 }
+
 
 export function formatPrice(value: number, amount?: string) {
   const display = amount ?? (Number.isFinite(value) ? value.toFixed(2) : "0.00");
