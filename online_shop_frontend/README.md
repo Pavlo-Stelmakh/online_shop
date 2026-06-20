@@ -1,58 +1,27 @@
 # Online Shop Frontend
 
-Customer-facing storefront MVP for the existing FastAPI `online_shop` backend.
+Clean customer storefront MVP for the existing FastAPI `online_shop` backend.
 
-## Install
+## Clean storefront quick start
 
 ```bash
 cd online_shop_frontend
 npm install
+npm run dev
+npm run build
 ```
 
-## Environment setup
-
-Create `.env.local`:
+Create `.env.local` with the backend URL:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=https://online-shop-api-z9y4.onrender.com
 ```
 
-A default example is included in `.env.example`.
+## MVP scope
 
-## Local run
-
-```bash
-npm run dev
-```
-
-Open http://localhost:3000.
-
-## Build
-
-```bash
-npm run build
-```
-
-## Vercel deploy
-
-1. Import `online_shop_frontend` as the project root in Vercel.
-2. Set `NEXT_PUBLIC_API_BASE_URL` to the backend URL.
-3. Deploy with the default Next.js framework preset.
-
-## Backend endpoints used
-
-- `GET /products` for the catalog envelope (`items`, `total`, `skip`, `limit`, `sort_by`, `sort_order`).
-- `GET /products/{id}` for product details.
-- `POST /auth/register` for customer registration.
-- `POST /auth/login` for token login.
-- `GET /auth/me` for current user support.
-- `GET /customers/me` to find the customer profile for checkout.
-- `POST /customers` to create a customer profile when one does not exist.
-- `POST /orders` with `Authorization: Bearer <token>` to create orders.
-
-## Current MVP limitations and backend follow-ups
-
-- The MVP stores the access token and cart in `localStorage`; use secure cookies/session hardening before production.
-- Checkout creates a customer profile only when `GET /customers/me` returns 404. If a profile exists, the form does not update it.
-- Product stock is enforced client-side only from the last known catalog/detail response; backend remains the source of truth during order creation.
-- The storefront assumes CORS is enabled for the deployed frontend domain.
+- Route `/` fetches `GET /products` client-side and renders the Ukrainian catalog.
+- Product data is normalized in one helper before cart validation.
+- Cart data is stored in browser `localStorage` only from client components.
+- Route `/cart` supports quantity changes up to stock, item removal, and clearing the cart.
+- Routes `/login` and `/register` keep simple forms and store the token client-side.
+- Route `/checkout` is intentionally minimal and ready for a future order creation step.
