@@ -1,45 +1,50 @@
 import type { CartItem, Product } from "@/types";
 
-const CART_KEY = "online_shop_cart";
+const CART_STORAGE_KEY = "online_shop_cart";
 
-export function isValidProductId(id: Product["id"]): id is number {
-  return Number.isInteger(id) && id > 0;
-}
-
-export function canAddProductToCart(product: Product) {
-  return isValidProductId(product.id) && product.stock > 0;
+function canUseStorage() {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }
 
 export function getCart(): CartItem[] {
-  if (typeof window === "undefined") return [];
+  if (!canUseStorage()) {
+    return [];
+  }
+
+  const rawCart = window.localStorage.getItem(CART_STORAGE_KEY);
+  if (!rawCart) {
+    return [];
+  }
+
   try {
-    return JSON.parse(window.localStorage.getItem(CART_KEY) ?? "[]") as CartItem[];
+    const parsed = JSON.parse(rawCart) as CartItem[];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 }
 
-export function saveCart(items: CartItem[]) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(CART_KEY, JSON.stringify(items));
-  window.dispatchEvent(new Event("cart-changed"));
+export function saveCart(cart: CartItem[]) {
+  if (canUseStorage()) {
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  }
 }
 
-export function addProductToCart(product: Product, quantity = 1) {
-  if (!canAddProductToCart(product) || quantity < 1) return;
+export function addToCart(product: Product) {
+  const cart = getCart();
+  const existingItem = cart.find((item) => item.id === product.id);
 
-  const items = getCart();
-  const existing = items.find((item) => item.productId === product.id);
-  const quantityToAdd = Math.min(quantity, product.stock);
-
-  if (existing) {
-    existing.quantity = Math.min(existing.quantity + quantityToAdd, product.stock);
+  if (existingItem) {
+    existingItem.quantity = Math.min(existingItem.quantity + 1, product.stock);
+    existingItem.stock = product.stock;
   } else {
-    items.push({ productId: product.id, name: product.name, unitPrice: product.price, priceAmount: product.price_amount, imageUrl: product.image_url, stock: product.stock, quantity: quantityToAdd });
+    cart.push({ ...product, quantity: 1 });
   }
 
-  saveCart(items);
+  saveCart(cart);
+  return cart;
 }
 
-export function formatPrice(value: number, amount?: string) { return `${amount ?? value.toFixed(2)} ₴`; }
-export function cartTotal(items: CartItem[]) { return items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0); }
+export function clearCart() {
+  saveCart([]);
+}

@@ -1,104 +1,77 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { clearCart, getCart, saveCart } from "@/lib/cart";
 import type { CartItem } from "@/types";
-import { cartTotal, formatPrice, getCart, saveCart } from "@/lib/cart";
 
 export default function CartPage() {
-  const [items, setItems] = useState<CartItem[]>([]);
-
-  const refresh = () => setItems(getCart());
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   useEffect(() => {
-    refresh();
-    window.addEventListener("cart-changed", refresh);
-    return () => window.removeEventListener("cart-changed", refresh);
+    setCart(getCart());
   }, []);
 
-  const update = (next: CartItem[]) => {
-    saveCart(next);
-    setItems(next);
-  };
+  const total = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
 
-  const changeQuantity = (productId: number, quantity: number) => {
-    update(
-      items.map((item) => {
-        if (item.productId !== productId) return item;
-
-        const maxQuantity = Math.max(1, item.stock ?? quantity);
-        return { ...item, quantity: Math.min(Math.max(quantity, 1), maxQuantity) };
-      }),
+  function updateQuantity(id: number, quantity: number) {
+    const nextCart = cart.map((item) =>
+      item.id === id ? { ...item, quantity: Math.max(1, Math.min(quantity, item.stock)) } : item,
     );
-  };
+    setCart(nextCart);
+    saveCart(nextCart);
+  }
 
-  const removeItem = (productId: number) => update(items.filter((item) => item.productId !== productId));
+  function removeItem(id: number) {
+    const nextCart = cart.filter((item) => item.id !== id);
+    setCart(nextCart);
+    saveCart(nextCart);
+  }
 
-  if (!items.length) {
-    return (
-      <div className="rounded-xl bg-white p-8 text-center">
-        <h1 className="text-2xl font-bold">Кошик порожній</h1>
-        <Link className="mt-4 inline-block rounded bg-blue-600 px-4 py-2 text-white" href="/">
-          До каталогу
-        </Link>
-      </div>
-    );
+  function handleClearCart() {
+    clearCart();
+    setCart([]);
+  }
+
+  if (cart.length === 0) {
+    return <p className="rounded-2xl bg-white p-6 text-slate-600">Кошик порожній</p>;
   }
 
   return (
-    <div>
-      <h1 className="mb-6 text-3xl font-bold">Кошик</h1>
-      <div className="space-y-4">
-        {items.map((item) => {
-          const maxQuantity = Math.max(1, item.stock ?? item.quantity);
-          const canDecrease = item.quantity > 1;
-          const canIncrease = item.quantity < maxQuantity;
+    <section className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-3xl font-bold text-slate-950">Кошик</h1>
+        <button className="rounded-xl border border-slate-300 px-4 py-2 font-semibold hover:bg-slate-100" onClick={handleClearCart} type="button">
+          Очистити кошик
+        </button>
+      </div>
 
-          return (
-            <div key={item.productId} className="grid gap-4 rounded-xl bg-white p-4 md:grid-cols-[1fr_auto_auto_auto]">
+      <div className="space-y-4">
+        {cart.map((item) => (
+          <article className="rounded-2xl border border-slate-200 bg-white p-5" key={item.id}>
+            <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
               <div>
-                <h2 className="font-semibold">{item.name}</h2>
-                <p className="text-sm text-slate-600">Ціна: {formatPrice(item.unitPrice, item.priceAmount)}</p>
-                {item.stock !== undefined && <p className="text-sm text-slate-500">Доступно: {item.stock}</p>}
+                <h2 className="text-lg font-semibold text-slate-950">{item.name}</h2>
+                <p className="text-sm text-slate-600">Ціна: {item.price.toFixed(2)} грн</p>
+                <p className="text-sm text-slate-600">Разом: {(item.price * item.quantity).toFixed(2)} грн</p>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  className="rounded border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={!canDecrease}
-                  onClick={() => changeQuantity(item.productId, item.quantity - 1)}
-                  type="button"
-                >
+              <div className="flex flex-wrap items-center gap-3">
+                <button className="rounded-lg border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50" disabled={item.quantity <= 1} onClick={() => updateQuantity(item.id, item.quantity - 1)} type="button">
                   −
                 </button>
-                <span>{item.quantity}</span>
-                <button
-                  className="rounded border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={!canIncrease}
-                  onClick={() => changeQuantity(item.productId, item.quantity + 1)}
-                  type="button"
-                >
+                <span className="min-w-8 text-center font-semibold">{item.quantity}</span>
+                <button className="rounded-lg border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50" disabled={item.quantity >= item.stock} onClick={() => updateQuantity(item.id, item.quantity + 1)} type="button">
                   +
                 </button>
+                <button className="rounded-lg bg-red-600 px-3 py-1 text-white hover:bg-red-700" onClick={() => removeItem(item.id)} type="button">
+                  Видалити
+                </button>
               </div>
-              <div className="font-semibold">{formatPrice(item.unitPrice * item.quantity)}</div>
-              <button className="text-red-600" onClick={() => removeItem(item.productId)} type="button">
-                Видалити
-              </button>
             </div>
-          );
-        })}
+          </article>
+        ))}
       </div>
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-white p-4">
-        <strong>Разом: {formatPrice(cartTotal(items))}</strong>
-        <div className="flex gap-3">
-          <button className="rounded border px-4 py-2" onClick={() => update([])} type="button">
-            Очистити кошик
-          </button>
-          <Link className="rounded bg-blue-600 px-4 py-2 text-white" href="/checkout">
-            Оформити замовлення
-          </Link>
-        </div>
-      </div>
-    </div>
+
+      <div className="rounded-2xl bg-slate-950 p-6 text-right text-xl font-bold text-white">Загальна сума: {total.toFixed(2)} грн</div>
+    </section>
   );
 }
