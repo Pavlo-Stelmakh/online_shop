@@ -18,6 +18,26 @@ Example local environment value:
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
 
+## Render deployment
+
+Deploy this customer frontend as its own Render frontend web service, separate from the FastAPI backend/admin service.
+
+Use these Render settings:
+
+```text
+Root Directory: online_shop_customer_frontend
+Build Command: npm install && npm run build
+Start Command: npm run start
+```
+
+Set this environment variable in Render:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=https://online-shop-api-z9y4.onrender.com
+```
+
+Render will install dependencies, build the Next.js production bundle, and start the app with `next start` through the `npm run start` script.
+
 ## Current scope
 
 The customer frontend currently displays the product catalog and provides a client-side cart stored in `localStorage` under `online_shop_customer_cart`. A checkout page exists as UI only: it reads the local cart and collects delivery/contact details, but backend order creation is still not implemented. Login and registration routes are placeholder pages only, and authentication flows are still not implemented.
