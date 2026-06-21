@@ -3,8 +3,8 @@ import Link from "next/link";
 const navigation = [
   { label: "Каталог", href: "/" },
   { label: "Кошик", href: "/cart" },
-  { label: "Вхід", href: "#" },
-  { label: "Реєстрація", href: "#" },
+  { label: "Вхід", href: "/login" },
+  { label: "Реєстрація", href: "/register" },
 ];
 
 export function Header() {
