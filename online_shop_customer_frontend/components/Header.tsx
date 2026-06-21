@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const navigation = [
   { label: "Каталог", href: "/" },
-  { label: "Кошик", href: "#" },
+  { label: "Кошик", href: "/cart" },
   { label: "Вхід", href: "#" },
   { label: "Реєстрація", href: "#" },
 ];
