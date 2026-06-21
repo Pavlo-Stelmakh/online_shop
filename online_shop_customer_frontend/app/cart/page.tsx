@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import {
@@ -102,13 +103,21 @@ export default function CartPage() {
 
           <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xl font-bold text-slate-950">Загальна сума: {formatPrice(cartTotal)}</p>
-            <button
-              type="button"
-              onClick={handleClearCart}
-              className="rounded-full bg-slate-950 px-5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-            >
-              Очистити кошик
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+              <Link
+                href="/checkout"
+                className="rounded-full bg-emerald-600 px-5 py-2 text-center text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                Оформити замовлення
+              </Link>
+              <button
+                type="button"
+                onClick={handleClearCart}
+                className="rounded-full bg-slate-950 px-5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Очистити кошик
+              </button>
+            </div>
           </div>
         </div>
       )}
