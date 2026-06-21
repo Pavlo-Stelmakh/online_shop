@@ -20,4 +20,4 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 
 ## Current scope
 
-The customer frontend currently displays the product catalog and provides a client-side cart stored in `localStorage` under `online_shop_customer_cart`. A checkout page exists as UI only: it reads the local cart and collects delivery/contact details, but backend order creation is still not implemented. Authentication, login, and registration flows are still not implemented.
+The customer frontend currently displays the product catalog and provides a client-side cart stored in `localStorage` under `online_shop_customer_cart`. A checkout page exists as UI only: it reads the local cart and collects delivery/contact details, but backend order creation is still not implemented. Login and registration routes are placeholder pages only, and authentication flows are still not implemented.

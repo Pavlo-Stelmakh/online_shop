@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
 import { getCart, type CartItem } from "../../lib/cart";
@@ -39,6 +40,12 @@ export default function CheckoutPage() {
 
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
           <p className="text-lg text-slate-700">Кошик порожній. Додайте товари перед оформленням замовлення.</p>
+          <Link
+            href="/"
+            className="mt-6 inline-flex rounded-full bg-slate-950 px-5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            Повернутися до каталогу
+          </Link>
         </div>
       </section>
     );
