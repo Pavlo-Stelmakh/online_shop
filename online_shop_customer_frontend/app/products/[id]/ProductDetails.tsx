@@ -21,7 +21,8 @@ export function ProductDetails({ product }: { product: Product }) {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const imageUrl = product.image_url?.trim() ?? "";
-  const hasImage = Boolean(imageUrl) && isValidImageUrl(imageUrl) && !imageLoadFailed;
+  const hasImageUrl = Boolean(imageUrl) && isValidImageUrl(imageUrl);
+  const shouldShowImage = hasImageUrl && !imageLoadFailed;
   const isInStock = product.stock > 0;
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export function ProductDetails({ product }: { product: Product }) {
 
       <article className="grid gap-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2 md:p-8">
         <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl bg-slate-100">
-          {hasImage ? (
+          {shouldShowImage ? (
             <Image
               src={imageUrl}
               alt={product.name}
