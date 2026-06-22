@@ -33,7 +33,11 @@ export default function CheckoutPage() {
     const errors: Record<string, string> = {};
 
     if (!String(formData.get("customerName") ?? "").trim()) {
-      errors.customerName = "Введіть ваше ім’я.";
+      errors.customerName = "Введіть прізвище та ім’я.";
+    }
+
+    if (!String(formData.get("customerEmail") ?? "").trim()) {
+      errors.customerEmail = "Введіть електронну пошту.";
     }
 
     if (!String(formData.get("customerPhone") ?? "").trim()) {
@@ -86,13 +90,13 @@ export default function CheckoutPage() {
         <form noValidate onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div>
             <label htmlFor="customer-name" className="block text-sm font-semibold text-slate-700">
-              Ім’я
+              Прізвище, ім’я
             </label>
             <input
               id="customer-name"
               name="customerName"
               type="text"
-              placeholder="Введіть ваше ім’я"
+              placeholder="Введіть прізвище та ім’я"
               aria-invalid={validationErrors.customerName ? "true" : "false"}
               aria-describedby={validationErrors.customerName ? "customer-name-error" : undefined}
               className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
@@ -100,6 +104,27 @@ export default function CheckoutPage() {
             {validationErrors.customerName ? (
               <p id="customer-name-error" className="mt-2 text-sm font-medium text-red-600">
                 {validationErrors.customerName}
+              </p>
+            ) : null}
+          </div>
+
+
+          <div>
+            <label htmlFor="customer-email" className="block text-sm font-semibold text-slate-700">
+              Електронна пошта
+            </label>
+            <input
+              id="customer-email"
+              name="customerEmail"
+              type="email"
+              placeholder="Введіть електронну пошту"
+              aria-invalid={validationErrors.customerEmail ? "true" : "false"}
+              aria-describedby={validationErrors.customerEmail ? "customer-email-error" : undefined}
+              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+            />
+            {validationErrors.customerEmail ? (
+              <p id="customer-email-error" className="mt-2 text-sm font-medium text-red-600">
+                {validationErrors.customerEmail}
               </p>
             ) : null}
           </div>
@@ -128,14 +153,14 @@ export default function CheckoutPage() {
             <label htmlFor="delivery-address" className="block text-sm font-semibold text-slate-700">
               Адреса доставки
             </label>
-            <input
+            <textarea
               id="delivery-address"
               name="deliveryAddress"
-              type="text"
+              rows={2}
               placeholder="Місто, вулиця, будинок, квартира"
               aria-invalid={validationErrors.deliveryAddress ? "true" : "false"}
               aria-describedby={validationErrors.deliveryAddress ? "delivery-address-error" : undefined}
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
+              className="mt-2 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
             />
             {validationErrors.deliveryAddress ? (
               <p id="delivery-address-error" className="mt-2 text-sm font-medium text-red-600">
