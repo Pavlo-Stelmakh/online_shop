@@ -1,13 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { addToCart } from "../lib/cart";
 import type { Product } from "../lib/products";
 
-function isValidImageUrl(imageUrl?: string | null) {
-  return Boolean(imageUrl && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")));
+function isValidImageUrl(imageUrl: string) {
+  return imageUrl.startsWith("http://") || imageUrl.startsWith("https://");
 }
 
 function formatPrice(product: Product) {
@@ -18,8 +18,14 @@ function formatPrice(product: Product) {
 
 export function ProductCard({ product }: { product: Product }) {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const hasImage = isValidImageUrl(product.image_url);
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
+  const imageUrl = product.image_url?.trim() ?? "";
+  const hasImage = Boolean(imageUrl) && isValidImageUrl(imageUrl) && !imageLoadFailed;
   const isInStock = product.stock > 0;
+
+  useEffect(() => {
+    setImageLoadFailed(false);
+  }, [imageUrl]);
 
   function handleAddToCart() {
     addToCart(product);
@@ -32,11 +38,12 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="relative flex aspect-[4/3] items-center justify-center bg-slate-100">
         {hasImage ? (
           <Image
-            src={product.image_url as string}
+            src={imageUrl}
             alt={product.name}
             fill
             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
             className="object-cover"
+            onError={() => setImageLoadFailed(true)}
           />
         ) : (
           <span className="text-sm font-medium text-slate-500">Немає фото</span>
