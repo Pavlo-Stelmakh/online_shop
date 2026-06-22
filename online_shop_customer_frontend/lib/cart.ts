@@ -10,6 +10,7 @@ export type CartItem = {
 };
 
 const CART_STORAGE_KEY = "online_shop_customer_cart";
+export const CART_UPDATED_EVENT = "customer-cart-updated";
 
 type CartProduct = Omit<CartItem, "quantity">;
 
@@ -55,6 +56,14 @@ function normalizeCartItem(item: unknown): CartItem | null {
   };
 }
 
+function dispatchCartUpdatedEvent() {
+  if (!isBrowser()) {
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT));
+}
+
 function getItemPrice(item: Pick<CartItem, "price" | "price_amount">) {
   const priceAmount = item.price_amount ? Number(item.price_amount) : Number.NaN;
 
@@ -92,6 +101,7 @@ export function saveCart(cart: CartItem[]) {
 
   const normalizedCart = cart.map(normalizeCartItem).filter((item): item is CartItem => item !== null);
   window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(normalizedCart));
+  dispatchCartUpdatedEvent();
 }
 
 export function addToCart(product: CartProduct) {
