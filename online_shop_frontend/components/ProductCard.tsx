@@ -1,11 +1,25 @@
+"use client";
+
+import { useState } from "react";
 import type { Product } from "@/types";
+import { addToCart } from "@/lib/cart";
 
 type ProductCardProps = {
   product: Product;
 };
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const [added, setAdded] = useState(false);
   const isAvailable = product.stock > 0;
+
+  function handleAddToCart() {
+    addToCart(product);
+    setAdded(true);
+
+    window.setTimeout(() => {
+      setAdded(false);
+    }, 1500);
+  }
 
   return (
     <article className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -31,9 +45,10 @@ export default function ProductCard({ product }: ProductCardProps) {
       <button
         type="button"
         disabled={!isAvailable}
+        onClick={handleAddToCart}
         className="w-full rounded-lg bg-black px-4 py-2 text-white disabled:cursor-not-allowed disabled:bg-gray-300"
       >
-        Додати в кошик
+        {added ? "Додано" : "Додати в кошик"}
       </button>
     </article>
   );
