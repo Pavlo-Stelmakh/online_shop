@@ -18,6 +18,7 @@ function formatPrice(price: number) {
 export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [successMessage, setSuccessMessage] = useState("");
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setCartItems(getCart());
@@ -27,6 +28,29 @@ export default function CheckoutPage() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const errors: Record<string, string> = {};
+
+    if (!String(formData.get("customerName") ?? "").trim()) {
+      errors.customerName = "Введіть ваше ім’я.";
+    }
+
+    if (!String(formData.get("customerPhone") ?? "").trim()) {
+      errors.customerPhone = "Введіть номер телефону.";
+    }
+
+    if (!String(formData.get("deliveryAddress") ?? "").trim()) {
+      errors.deliveryAddress = "Введіть адресу доставки.";
+    }
+
+    setValidationErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      setSuccessMessage("");
+      return;
+    }
+
     setSuccessMessage("Форма оформлення готова. Надсилання замовлення буде додано на наступному етапі.");
   }
 
@@ -59,7 +83,7 @@ export default function CheckoutPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-        <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <form noValidate onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div>
             <label htmlFor="customer-name" className="block text-sm font-semibold text-slate-700">
               Ім’я
@@ -68,10 +92,16 @@ export default function CheckoutPage() {
               id="customer-name"
               name="customerName"
               type="text"
-              required
               placeholder="Введіть ваше ім’я"
+              aria-invalid={validationErrors.customerName ? "true" : "false"}
+              aria-describedby={validationErrors.customerName ? "customer-name-error" : undefined}
               className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
             />
+            {validationErrors.customerName ? (
+              <p id="customer-name-error" className="mt-2 text-sm font-medium text-red-600">
+                {validationErrors.customerName}
+              </p>
+            ) : null}
           </div>
 
           <div>
@@ -82,10 +112,16 @@ export default function CheckoutPage() {
               id="customer-phone"
               name="customerPhone"
               type="tel"
-              required
               placeholder="Введіть номер телефону"
+              aria-invalid={validationErrors.customerPhone ? "true" : "false"}
+              aria-describedby={validationErrors.customerPhone ? "customer-phone-error" : undefined}
               className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
             />
+            {validationErrors.customerPhone ? (
+              <p id="customer-phone-error" className="mt-2 text-sm font-medium text-red-600">
+                {validationErrors.customerPhone}
+              </p>
+            ) : null}
           </div>
 
           <div>
@@ -96,10 +132,16 @@ export default function CheckoutPage() {
               id="delivery-address"
               name="deliveryAddress"
               type="text"
-              required
               placeholder="Місто, вулиця, будинок, квартира"
+              aria-invalid={validationErrors.deliveryAddress ? "true" : "false"}
+              aria-describedby={validationErrors.deliveryAddress ? "delivery-address-error" : undefined}
               className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-slate-950"
             />
+            {validationErrors.deliveryAddress ? (
+              <p id="delivery-address-error" className="mt-2 text-sm font-medium text-red-600">
+                {validationErrors.deliveryAddress}
+              </p>
+            ) : null}
           </div>
 
           <div>
