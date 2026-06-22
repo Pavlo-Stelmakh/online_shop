@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { addToCart } from "../lib/cart";
@@ -52,7 +53,11 @@ export function ProductCard({ product }: { product: Product }) {
 
       <div className="space-y-4 p-5">
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold text-slate-950">{product.name}</h2>
+          <h2 className="text-xl font-semibold text-slate-950">
+            <Link href={`/products/${product.id}`} className="transition hover:text-slate-700">
+              {product.name}
+            </Link>
+          </h2>
           <p className="text-sm leading-6 text-slate-600">{product.description}</p>
         </div>
 
@@ -62,6 +67,12 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
 
         <div className="space-y-2">
+          <Link
+            href={`/products/${product.id}`}
+            className="block w-full rounded-full border border-slate-300 px-4 py-2 text-center text-sm font-semibold text-slate-700 transition hover:border-slate-950 hover:text-slate-950"
+          >
+            Детальніше
+          </Link>
           <button
             type="button"
             onClick={handleAddToCart}
