@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Header from "@/components/Header";
-import { getMyOrders, type MyOrder } from "@/lib/orders";
+import { cancelMyOrder, getMyOrders, type MyOrder } from "@/lib/orders";
 
 function formatDate(value: string): string {
   const date = new Date(value);
@@ -27,6 +27,9 @@ export default function OrdersPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [cancelErrorMessage, setCancelErrorMessage] = useState("");
+  const [cancelSuccessMessage, setCancelSuccessMessage] = useState("");
+  const [cancellingOrderId, setCancellingOrderId] = useState<number | null>(null);
 
   async function handleLoadOrders() {
     setErrorMessage("");
@@ -42,6 +45,26 @@ export default function OrdersPage() {
       );
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleCancelOrder(orderId: number) {
+    setCancelErrorMessage("");
+    setCancelSuccessMessage("");
+    setCancellingOrderId(orderId);
+
+    try {
+      await cancelMyOrder(orderId);
+
+      const data = await getMyOrders();
+      setOrders(data);
+      setCancelSuccessMessage(`Замовлення #${orderId} скасовано.`);
+    } catch (error) {
+      setCancelErrorMessage(
+        error instanceof Error ? error.message : "Не вдалося скасувати замовлення"
+      );
+    } finally {
+      setCancellingOrderId(null);
     }
   }
 
@@ -70,6 +93,21 @@ export default function OrdersPage() {
           </p>
         )}
 
+        {cancelErrorMessage && (
+          <p className="mb-6 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            {cancelErrorMessage}
+          </p>
+        )}
+
+        {cancelSuccessMessage && (
+          <p className="mb-6 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+            {cancelSuccessMessage}
+          </p>
+        )}
+
+
+
+
         {isLoaded && orders.length === 0 && (
           <div className="rounded-xl border border-gray-200 bg-white p-6 text-gray-700">
             Замовлень поки немає.
@@ -92,10 +130,21 @@ export default function OrdersPage() {
                       Створено: {formatDate(order.created_at)}
                     </p>
                   </div>
-
+                  
                   <div className="text-left sm:text-right">
                     <p className="text-sm text-gray-500">Статус</p>
                     <p className="font-semibold text-gray-900">{order.status}</p>
+
+                    {order.status === "new" && (
+                      <button
+                        type="button"
+                        onClick={() => handleCancelOrder(order.id)}
+                        disabled={cancellingOrderId === order.id}
+                        className="mt-3 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {cancellingOrderId === order.id ? "Скасування..." : "Скасувати"}
+                      </button>
+                    )}
                   </div>
                 </div>
 

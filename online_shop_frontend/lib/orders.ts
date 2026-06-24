@@ -96,3 +96,26 @@ export async function getMyOrders(): Promise<MyOrder[]> {
 
   return (await response.json()) as MyOrder[];
 }
+
+
+export async function cancelMyOrder(orderId: number): Promise<MyOrder> {
+  const token = getAuthToken();
+
+  if (!token) {
+    throw new Error("Потрібно увійти, щоб скасувати замовлення");
+  }
+
+  const response = await fetch(`${API_URL}/orders/${orderId}/cancel`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Не вдалося скасувати замовлення: ${response.status} ${errorText}`);
+  }
+
+  return (await response.json()) as MyOrder;
+}
