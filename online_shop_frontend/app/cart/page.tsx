@@ -13,11 +13,17 @@ import {
   updateCartItemQuantity,
   type CartItem,
 } from "@/lib/cart";
+import { createOrderFromCart } from "@/lib/orders";
 
 export default function CartPage() {
+
   const [items, setItems] = useState<CartItem[]>(() => getCartItems());
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+  const [checkoutSuccess, setCheckoutSuccess] = useState("");
 
   const total = getCartTotal(items);
+
 
   function handleDecrease(productId: number, currentQuantity: number) {
     setItems(updateCartItemQuantity(productId, currentQuantity - 1));
@@ -34,6 +40,26 @@ export default function CartPage() {
   function handleClearCart() {
     clearCart();
     setItems([]);
+  }
+
+  async function handleCheckout() {
+    setCheckoutError("");
+    setCheckoutSuccess("");
+    setIsCheckoutLoading(true);
+
+    try {
+      const order = await createOrderFromCart(items);
+
+      clearCart();
+      setItems([]);
+      setCheckoutSuccess(`Замовлення #${order.id} створено успішно.`);
+    } catch (error) {
+      setCheckoutError(
+        error instanceof Error ? error.message : "Не вдалося створити замовлення"
+      );
+    } finally {
+      setIsCheckoutLoading(false);
+    }
   }
 
   return (
@@ -114,11 +140,14 @@ export default function CartPage() {
               </div>
 
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+
                 <button
                   type="button"
-                  className="rounded-lg bg-black px-4 py-2 text-white"
+                  onClick={handleCheckout}
+                  disabled={isCheckoutLoading || items.length === 0}
+                  className="rounded-lg bg-black px-4 py-2 text-white disabled:cursor-not-allowed disabled:bg-gray-400"
                 >
-                  Оформити замовлення
+                  {isCheckoutLoading ? "Оформлення..." : "Оформити замовлення"}
                 </button>
 
                 <button
@@ -129,6 +158,19 @@ export default function CartPage() {
                   Очистити кошик
                 </button>
               </div>
+
+              {checkoutError && (
+                <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {checkoutError}
+                </p>
+              )}
+
+              {checkoutSuccess && (
+                <p className="mt-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+                  {checkoutSuccess}
+                </p>
+              )}
+              
             </div>
           </section>
         )}
