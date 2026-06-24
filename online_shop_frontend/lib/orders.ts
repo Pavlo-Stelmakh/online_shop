@@ -58,3 +58,41 @@ export async function createOrderFromCart(items: CartItem[]): Promise<OrderRespo
 
   return (await response.json()) as OrderResponse;
 }
+
+export type OrderItemResponse = {
+  id: number;
+  product_id: number;
+  quantity: number;
+  unit_price: number;
+};
+
+export type MyOrder = {
+  id: number;
+  customer_id: number;
+  status: string;
+  total_price: number;
+  total_price_amount?: string;
+  created_at: string;
+  items: OrderItemResponse[];
+};
+
+export async function getMyOrders(): Promise<MyOrder[]> {
+  const token = getAuthToken();
+
+  if (!token) {
+    throw new Error("Потрібно увійти, щоб переглянути замовлення");
+  }
+
+  const response = await fetch(`${API_URL}/orders/my`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Не вдалося завантажити замовлення: ${response.status} ${errorText}`);
+  }
+
+  return (await response.json()) as MyOrder[];
+}

@@ -37,6 +37,10 @@ export default function Header({ title, description }: HeaderProps) {
           Каталог
         </Link>
 
+        <Link href="/orders" className="rounded-lg border border-gray-300 px-4 py-2 text-gray-800">
+          Мої замовлення
+        </Link>
+        
         <Link href="/cart" className="rounded-lg border border-gray-300 px-4 py-2 text-gray-800">
           Кошик
         </Link>
