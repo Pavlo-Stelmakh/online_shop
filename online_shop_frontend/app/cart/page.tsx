@@ -3,6 +3,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import Header from "@/components/Header";
+
 import {
   clearCart,
   getCartItems,
@@ -14,7 +16,7 @@ import {
 
 export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>(() => getCartItems());
-  
+
   const total = getCartTotal(items);
 
   function handleDecrease(productId: number, currentQuantity: number) {
@@ -38,19 +40,11 @@ export default function CartPage() {
     <main className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="mx-auto max-w-4xl">
 
-        <header className="mb-8 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Кошик</h1>
-            <p className="mt-2 text-gray-600">
-              Товари, які ви додали до замовлення.
-            </p>
-          </div>
-
-          <Link href="/" className="rounded-lg border border-gray-300 px-4 py-2 text-gray-800">
-            До каталогу
-          </Link>
-        </header>
-
+        <Header
+          title="Кошик"
+          description="Товари, які ви додали до замовлення."
+        />
+        
         {items.length === 0 ? (
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <p className="text-gray-700">Кошик порожній.</p>
