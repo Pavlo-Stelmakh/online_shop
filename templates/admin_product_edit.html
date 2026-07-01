@@ -100,6 +100,23 @@
             margin-bottom: 14px;
         }
 
+        .current-product-image {
+            display: block;
+            width: 180px;
+            max-width: 100%;
+            height: auto;
+            margin: 8px 0 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f9fafb;
+        }
+
+        .image-help {
+            margin: 6px 0 0;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
         footer {
             padding: 20px 40px;
             color: #6b7280;
@@ -191,7 +208,7 @@
                 <div class="error">{{ error }}</div>
             {% endif %}
 
-            <form id="editProductForm" method="post" action="/admin/products/{{ product.id }}/edit">
+            <form id="editProductForm" method="post" action="/admin/products/{{ product.id }}/edit" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <label for="name">Назва</label>
                 <input id="name" type="text" name="name" value="{{ form_values.get('name', product.name) }}" required>
@@ -202,8 +219,21 @@
                 <label for="description">Опис</label>
                 <textarea id="description" name="description" required>{{ form_values.get('description', product.description) }}</textarea>
 
+                {% if product.image_url %}
+                    <label>Поточне зображення</label>
+                    <img
+                        class="current-product-image"
+                        src="{{ product.image_url }}"
+                        alt="Поточне зображення {{ product.name }}"
+                    >
+                {% endif %}
+
                 <label for="image_url">URL зображення</label>
                 <input id="image_url" type="text" name="image_url" value="{{ form_values.get('image_url', product.image_url or '') }}">
+
+                <label for="image_file">Замінити зображення</label>
+                <input id="image_file" type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
+                <p class="image-help">Якщо вибрати файл, він замінить URL зображення після збереження.</p>
 
                 <label for="stock">Залишок</label>
                 <input id="stock" type="number" name="stock" min="0" value="{{ form_values.get('stock', product.stock) }}" required>

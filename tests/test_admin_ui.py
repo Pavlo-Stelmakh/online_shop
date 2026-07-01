@@ -26,7 +26,7 @@ from tests.helpers import (
     get_auth_headers,
     TestingSessionLocal,
 )
-from models import Order, User
+from models import Order, Product, User
 
 
 def format_order_status_uk_for_test(status):
@@ -2576,3 +2576,116 @@ def test_anonymous_and_customer_cannot_access_admin_dashboard():
 
     assert customer_response.status_code == 303
     assert customer_response.headers["location"] == "/admin/login"
+
+
+def test_admin_create_product_uploads_image_file(monkeypatch):
+    from routes.admin import products as admin_products_routes
+
+    admin_client = get_admin_ui_client()
+    category = create_test_category()
+    product_name = f"Admin Upload Product {time.time()}"
+    uploaded_url = f"https://cdn.example.com/admin-upload-{time.time()}.webp"
+    calls = []
+
+    def fake_upload_product_image(file, product_id):
+        calls.append((file.filename, file.content_type, product_id))
+        return uploaded_url
+
+    monkeypatch.setattr(
+        admin_products_routes,
+        "upload_product_image",
+        fake_upload_product_image,
+    )
+
+    response = admin_client.post(
+        "/admin/products/new",
+        data={
+            "name": product_name,
+            "price": 150,
+            "description": "Created from admin UI with an uploaded image",
+            "stock": 7,
+            "low_stock_threshold": 10,
+            "category_id": category["id"],
+            "csrf_token": get_admin_ui_csrf_token(admin_client),
+        },
+        files={"image_file": ("product.webp", b"fake image", "image/webp")},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/products"
+    assert len(calls) == 1
+    assert calls[0][0] == "product.webp"
+    assert calls[0][1] == "image/webp"
+    assert isinstance(calls[0][2], int)
+
+    products_response = admin_client.get("/admin/products")
+
+    assert products_response.status_code == 200
+    assert product_name in products_response.text
+    assert f'src="{uploaded_url}"' in products_response.text
+
+
+def test_admin_edit_product_shows_current_image_and_uploads_replacement(monkeypatch):
+    from routes.admin import products as admin_products_routes
+
+    admin_client = get_admin_ui_client()
+    original_url = f"https://example.com/original-{time.time()}.jpg"
+    replacement_url = f"https://cdn.example.com/replacement-{time.time()}.png"
+    product = create_test_product(stock=5, price=100)
+    db = TestingSessionLocal()
+
+    try:
+        db_product = db.query(Product).filter(Product.id == product["id"]).first()
+        assert db_product is not None
+        db_product.image_url = original_url
+        db.commit()
+    finally:
+        db.close()
+
+    calls = []
+
+    edit_page_response = admin_client.get(f"/admin/products/{product['id']}/edit")
+
+    assert edit_page_response.status_code == 200
+    assert 'class="current-product-image"' in edit_page_response.text
+    assert f'src="{original_url}"' in edit_page_response.text
+    assert 'name="image_file"' in edit_page_response.text
+
+    def fake_upload_product_image(file, product_id):
+        calls.append((file.filename, file.content_type, product_id))
+        return replacement_url
+
+    monkeypatch.setattr(
+        admin_products_routes,
+        "upload_product_image",
+        fake_upload_product_image,
+    )
+
+    response = admin_client.post(
+        f"/admin/products/{product['id']}/edit",
+        data={
+            "name": product["name"],
+            "price": 250,
+            "description": "Updated with replacement image",
+            "image_url": original_url,
+            "stock": 12,
+            "low_stock_threshold": 20,
+            "category_id": product["category_id"],
+            "csrf_token": get_admin_ui_csrf_token(
+                admin_client,
+                f"/admin/products/{product['id']}/edit",
+            ),
+        },
+        files={"image_file": ("replacement.png", b"fake image", "image/png")},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/products"
+    assert calls == [("replacement.png", "image/png", product["id"])]
+
+    products_response = admin_client.get("/admin/products")
+
+    assert products_response.status_code == 200
+    assert f'src="{replacement_url}"' in products_response.text
