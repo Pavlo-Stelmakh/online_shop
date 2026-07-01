@@ -7,6 +7,7 @@ export type RawProduct = {
   stock?: number | string | null;
   category_id?: number | string | null;
   category_name?: string | null;
+  image_url?: string | null;
 };
 
 export type Product = {

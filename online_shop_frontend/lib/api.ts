@@ -30,6 +30,7 @@ function normalizeProduct(raw: RawProduct): Product | null {
     stock: toNumber(raw.stock, 0),
     categoryId: raw.category_id == null ? null : toNumber(raw.category_id, 0),
     categoryName: raw.category_name || "Без категорії",
+    image_url: raw.image_url ?? null,
   };
 }
 
