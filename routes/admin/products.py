@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -10,6 +10,7 @@ from routes.admin.common import (
     require_admin_ui,
     templates,
 )
+from services.cloudinary_service import upload_product_image
 from utils.money import MoneyValidationError, parse_positive_money
 
 
@@ -48,6 +49,24 @@ def build_product_form_values(
         "category_id": category_id
     }
 
+
+
+def has_uploaded_file(image_file: UploadFile | None) -> bool:
+    return bool(image_file and image_file.filename)
+
+
+def upload_admin_product_image(image_file: UploadFile | None, product_id: int) -> str | None:
+    if not has_uploaded_file(image_file):
+        return None
+
+    return upload_product_image(file=image_file, product_id=product_id)
+
+
+def format_admin_upload_error(exc: HTTPException) -> str:
+    if isinstance(exc.detail, str):
+        return exc.detail
+
+    return "Не вдалося завантажити зображення товару"
 
 
 def validate_admin_product_image_url(image_url: str | None) -> str | None:
@@ -149,6 +168,7 @@ def admin_product_create_legacy(
     price: str = Form(...),
     description: str = Form(...),
     image_url: str | None = Form(None),
+    image_file: UploadFile | None = File(None),
     stock: int = Form(...),
     low_stock_threshold: int = Form(...),
     category_id: int = Form(...),
@@ -161,6 +181,7 @@ def admin_product_create_legacy(
         price=price,
         description=description,
         image_url=(image_url.strip() or None) if image_url else None,
+        image_file=image_file,
         stock=stock,
         low_stock_threshold=low_stock_threshold,
         category_id=category_id,
@@ -176,6 +197,7 @@ def admin_product_create(
     price: str = Form(...),
     description: str = Form(...),
     image_url: str | None = Form(None),
+    image_file: UploadFile | None = File(None),
     stock: int = Form(...),
     low_stock_threshold: int = Form(...),
     category_id: int = Form(...),
@@ -300,7 +322,25 @@ def admin_product_create(
     )
 
     db.add(product)
-    db.commit()
+
+    try:
+        db.flush()
+        uploaded_image_url = upload_admin_product_image(image_file, product.id)
+        if uploaded_image_url is not None:
+            product.image_url = uploaded_image_url
+        db.commit()
+    except HTTPException as exc:
+        db.rollback()
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_product_create.html",
+            context={
+                "error": format_admin_upload_error(exc),
+                "form_values": form_values,
+                "csrf_token": get_admin_csrf_token(request)
+            },
+            status_code=exc.status_code
+        )
 
     return RedirectResponse(
         url="/admin/products",
@@ -347,6 +387,7 @@ def admin_product_edit(
     price: str = Form(...),
     description: str = Form(...),
     image_url: str | None = Form(None),
+    image_file: UploadFile | None = File(None),
     stock: int = Form(...),
     low_stock_threshold: int = Form(...),
     category_id: int = Form(...),
@@ -483,7 +524,24 @@ def admin_product_edit(
     product.low_stock_threshold = low_stock_threshold
     product.category_id = category_id
 
-    db.commit()
+    try:
+        uploaded_image_url = upload_admin_product_image(image_file, product.id)
+        if uploaded_image_url is not None:
+            product.image_url = uploaded_image_url
+        db.commit()
+    except HTTPException as exc:
+        db.rollback()
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_product_edit.html",
+            context={
+                "product": product,
+                "error": format_admin_upload_error(exc),
+                "form_values": form_values,
+                "csrf_token": get_admin_csrf_token(request)
+            },
+            status_code=exc.status_code
+        )
 
     return RedirectResponse(
         url="/admin/products",
