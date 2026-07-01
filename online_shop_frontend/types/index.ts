@@ -17,6 +17,7 @@ export type Product = {
   stock: number;
   categoryId: number | null;
   categoryName: string;
+  image_url?: string | null;
 };
 
 export type ProductsResponse =

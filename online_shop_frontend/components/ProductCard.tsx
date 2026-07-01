@@ -23,7 +23,15 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <article className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <div className="mb-3">
+      {product.image_url ? (
+        <img
+          src={product.image_url}
+          alt={product.name}
+          className="mb-4 h-48 w-full rounded-lg object-cover"
+        />
+      ) : null}
+
+        <div className="mb-3">
         <p className="text-sm text-gray-500">{product.categoryName}</p>
         <h2 className="text-xl font-semibold text-gray-900">{product.name}</h2>
       </div>
