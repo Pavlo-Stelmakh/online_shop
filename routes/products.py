@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -11,11 +11,35 @@ from schemas import (
     ProductListResponse,
     ProductResponse,
 )
+from services.cloudinary_service import upload_product_image
 
 router = APIRouter(
     prefix="/products",
     tags=["products"]
 )
+
+@router.post("/{product_id}/image", response_model=ProductResponse)
+def upload_image_for_product(
+    product_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    product = db.query(Product).filter(Product.id == product_id).first()
+
+    if product is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Product not found",
+        )
+
+    image_url = upload_product_image(file=file, product_id=product_id)
+
+    product.image_url = image_url
+    db.commit()
+    db.refresh(product)
+
+    return product
 
 
 def apply_product_filters(
